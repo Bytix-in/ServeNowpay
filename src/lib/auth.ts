@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 export interface User {
   id: string
@@ -14,83 +15,70 @@ export interface AuthState {
   error: string | null
 }
 
-// Mock authentication functions for demo purposes
-// In a real app, these would integrate with Supabase Auth
-
+// Supabase authentication functions
 export async function signIn(email: string, password: string): Promise<User> {
   try {
-    const response = await fetch('/api/auth', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password, action: 'login' }),
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     })
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Login failed')
+    if (error) {
+      throw new Error(error.message)
     }
 
-    const { user } = await response.json()
-    
-    // Store user in localStorage for demo purposes
-    localStorage.setItem('user', JSON.stringify(user))
-    
-    return user
+    if (!data.user) {
+      throw new Error('No user returned from authentication')
+    }
+
+    // Get user with role from metadata
+    const userWithRole = await getUserWithRole(data.user)
+    return userWithRole
   } catch (error) {
     throw error
   }
 }
 
-export async function signUp(name: string, email: string, password: string): Promise<User> {
-  try {
-    const response = await fetch('/api/auth', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name, email, password, action: 'register' }),
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Registration failed')
-    }
-
-    const { user } = await response.json()
-    
-    // Store user in localStorage for demo purposes
-    localStorage.setItem('user', JSON.stringify(user))
-    
-    return user
-  } catch (error) {
-    throw error
-  }
-}
-
-export async function signOut(): Promise<void> {
-  try {
-    await fetch('/api/auth', {
-      method: 'DELETE',
-    })
-    
-    // Remove user from localStorage
-    localStorage.removeItem('user')
-  } catch (error) {
-    console.error('Sign out error:', error)
-  }
-}
-
-export function getCurrentUser(): User | null {
-  if (typeof window === 'undefined') return null
+// Get user with role from Supabase user metadata
+export async function getUserWithRole(supabaseUser: SupabaseUser): Promise<User> {
+  const role = supabaseUser.user_metadata?.role || 'staff'
+  const name = supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User'
   
+  return {
+    id: supabaseUser.id,
+    email: supabaseUser.email || '',
+    name,
+    role,
+    avatar: supabaseUser.user_metadata?.avatar_url
+  }
+}
+
+// Get current authenticated user with role
+export async function getCurrentUserWithRole(): Promise<User | null> {
   try {
-    const userStr = localStorage.getItem('user')
-    return userStr ? JSON.parse(userStr) : null
+    const { data: { user }, error } = await supabase.auth.getUser()
+    
+    if (error || !user) {
+      return null
+    }
+
+    return await getUserWithRole(user)
   } catch (error) {
     console.error('Error getting current user:', error)
     return null
+  }
+}
+
+// Sign out user from Supabase
+export async function signOut(): Promise<void> {
+  try {
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      throw new Error(error.message)
+    }
+  } catch (error) {
+    console.error('Sign out error:', error)
+    throw error
   }
 }
 

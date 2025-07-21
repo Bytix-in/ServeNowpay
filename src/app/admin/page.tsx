@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
   Users, 
@@ -9,11 +11,65 @@ import {
   CreditCard, 
   Database,
   Activity,
-  AlertTriangle
+  AlertTriangle,
+  Loader2,
+  LogOut
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { getCurrentUserWithRole, signOut, type User } from '@/lib/auth'
 
 export default function AdminDashboard() {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const currentUser = await getCurrentUserWithRole()
+        
+        if (!currentUser || currentUser.role !== 'admin') {
+          router.push('/auth/login')
+          return
+        }
+        
+        setUser(currentUser)
+      } catch (error) {
+        console.error('Auth check failed:', error)
+        router.push('/auth/login')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkAuth()
+  }, [router])
+
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+      router.push('/auth/login')
+    } catch (error) {
+      console.error('Sign out failed:', error)
+    }
+  }
+
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Checking authentication...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render the dashboard if user is not authenticated
+  if (!user) {
+    return null
+  }
   const stats = [
     {
       title: 'Total Users',
@@ -110,11 +166,17 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-              <p className="text-muted-foreground">System administration and management</p>
+              <p className="text-muted-foreground">Welcome back, {user.name}</p>
             </div>
-            <div className="flex space-x-2">
-              <Button variant="outline">Settings</Button>
-              <Button>New User</Button>
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <p className="text-sm font-medium">{user.name}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+              </div>
+              <Button variant="outline" onClick={handleSignOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
             </div>
           </div>
         </div>
