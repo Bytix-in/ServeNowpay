@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircle, Clock, IndianRupee, AlertCircle, XCircle, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -24,7 +24,8 @@ type Order = {
 
 type PaymentStatus = 'SUCCESS' | 'PENDING' | 'FAILED' | 'PROCESSING' | null
 
-export default function PaymentSuccessPage() {
+// Create a separate component that uses useSearchParams
+function PaymentSuccessContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get('order_id')
   const [order, setOrder] = useState<Order | null>(null)
@@ -332,4 +333,25 @@ export default function PaymentSuccessPage() {
       </div>
     </div>
   )
+}
+/
+/ Loading fallback component
+function PaymentSuccessLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading payment details...</p>
+      </div>
+    </div>
+  );
+}
+
+// Main component that wraps the content with Suspense
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<PaymentSuccessLoading />}>
+      <PaymentSuccessContent />
+    </Suspense>
+  );
 }
