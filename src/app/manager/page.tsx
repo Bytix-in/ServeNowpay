@@ -147,7 +147,7 @@ export default function ManagerDashboard() {
   }
 
   // Secondary tooltip for the Order Analytics chart
-  const SecondaryTooltip = ({ x, y }: SecondaryTooltipProps) => {
+  const SecondaryTooltip = ({ x = 0, y = 0 }: SecondaryTooltipProps) => {
     return (
       <div 
         className="absolute bg-gray-600 text-white p-2 rounded text-xs"
