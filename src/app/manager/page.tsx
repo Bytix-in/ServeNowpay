@@ -96,8 +96,15 @@ export default function ManagerDashboard() {
     { date: 'Jan 28', value: 25000 },
   ]
 
+  // Define tooltip props interface
+  interface TooltipProps {
+    active?: boolean;
+    payload?: any[];
+    label?: string;
+  }
+
   // Custom tooltip for the Order Analytics chart
-  const OrderAnalyticsTooltip = ({ active, payload, label }) => {
+  const OrderAnalyticsTooltip = ({ active, payload, label }: TooltipProps) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       
@@ -121,7 +128,7 @@ export default function ManagerDashboard() {
   };
 
   // Custom tooltip for the Revenue Profile chart
-  const RevenueProfileTooltip = ({ active, payload, label }) => {
+  const RevenueProfileTooltip = ({ active, payload, label }: TooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-black bg-opacity-80 text-white p-2 rounded text-xs">
@@ -133,8 +140,14 @@ export default function ManagerDashboard() {
     return null;
   };
 
+  // Secondary tooltip props interface
+  interface SecondaryTooltipProps {
+    x?: number;
+    y?: number;
+  }
+
   // Secondary tooltip for the Order Analytics chart
-  const SecondaryTooltip = ({ x, y }) => {
+  const SecondaryTooltip = ({ x, y }: SecondaryTooltipProps) => {
     return (
       <div 
         className="absolute bg-gray-600 text-white p-2 rounded text-xs"
