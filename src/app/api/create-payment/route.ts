@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getDecryptedCredentials } from '../payment-settings/route'
+import { getDecryptedCredentials } from '@/lib/payment-utils'
+
+// Define interfaces for type safety
+interface OrderData {
+  restaurant_id: string;
+  customer_name: string;
+  customer_phone: string;
+  table_number: string;
+  items: any[];
+  total_amount: number;
+  status: string;
+  payment_status?: string;
+  payment_error?: string;
+  payment_gateway_order_id?: string;
+  updated_at?: string;
+}
+
+interface CashfreeOrder {
+  order_id: string;
+  payment_session_id: string;
+  [key: string]: any;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,17 +86,17 @@ export async function POST(request: NextRequest) {
           message: 'Order created successfully. Payment processing not configured.',
           redirect_url: `/payment/success?order_id=${order.id}`
         })
-      } catch (fallbackError) {
+      } catch (fallbackError: any) {
         console.error('Fallback order creation failed:', fallbackError)
         return NextResponse.json(
-          { error: `Payment not configured and order creation failed: ${fallbackError.message}` },
+          { error: `Payment not configured and order creation failed: ${fallbackError?.message || 'Unknown error'}` },
           { status: 400 }
         )
       }
     }
 
     // Create order in database first
-    const orderData = {
+    const orderData: OrderData = {
       restaurant_id,
       customer_name,
       customer_phone,
@@ -184,7 +205,7 @@ export async function POST(request: NextRequest) {
     
     // Make the API call
     let createOrderResponse;
-    let cashfreeOrder;
+    let cashfreeOrder: CashfreeOrder;
     
     try {
       createOrderResponse = await fetch(`${baseUrl}/pg/orders`, {
@@ -228,7 +249,7 @@ export async function POST(request: NextRequest) {
       cashfreeOrder = await createOrderResponse.json();
       console.log('Cashfree order created successfully:', cashfreeOrder.order_id);
       
-    } catch (apiError) {
+    } catch (apiError: any) {
       console.error('API call error:', apiError);
       
       // Update order with error information
@@ -236,7 +257,7 @@ export async function POST(request: NextRequest) {
         .from('orders')
         .update({
           payment_status: 'failed',
-          payment_error: JSON.stringify({ message: apiError.message || 'API call failed' }),
+          payment_error: JSON.stringify({ message: apiError?.message || 'API call failed' }),
           updated_at: new Date().toISOString()
         })
         .eq('id', order.id);
@@ -275,14 +296,14 @@ export async function POST(request: NextRequest) {
       environment: credentials.environment
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating payment:', error)
     console.error('Error stack:', error.stack)
     return NextResponse.json(
       {
         error: 'Failed to create payment',
-        details: error.message,
-        debug: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        details: error?.message || 'Unknown error',
+        debug: process.env.NODE_ENV === 'development' ? error?.stack : undefined
       },
       { status: 500 }
     )

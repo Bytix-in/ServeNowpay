@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDecryptedCredentials } from '../payment-settings/route'
+import { getDecryptedCredentials } from '@/lib/payment-utils'
 
 export async function POST(request: NextRequest) {
   try {
