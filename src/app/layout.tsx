@@ -17,6 +17,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+      </head>
       <body className={inter.className}>
         <ReactQueryProvider>
           {children}
