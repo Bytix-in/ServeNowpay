@@ -334,8 +334,8 @@ function PaymentSuccessContent() {
     </div>
   )
 }
-/
-/ Loading fallback component
+
+// Loading fallback component
 function PaymentSuccessLoading() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
