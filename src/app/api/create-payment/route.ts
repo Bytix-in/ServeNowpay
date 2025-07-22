@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
 
     // Create Cashfree order with more standardized format
     let appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    
+
     // For production mode, ensure HTTPS is used (required by Cashfree production)
     if (credentials.environment === 'production') {
       // If we're using localhost in development but testing production mode
@@ -152,15 +152,15 @@ export async function POST(request: NextRequest) {
         appUrl = appUrl.replace('http://', 'https://');
       }
     }
-    
+
     console.log('Using app URL for return/notify:', appUrl);
-    
+
     // Format order ID to ensure it meets Cashfree requirements
     // Cashfree requires alphanumeric order IDs with max 50 characters
     const timestamp = Date.now().toString().slice(-10); // Use last 10 digits of timestamp
     const shortOrderId = order.id.replace(/-/g, '').slice(0, 20); // Use first 20 chars of UUID without dashes
     const cashfreeOrderId = `ord_${timestamp}_${shortOrderId}`; // This will be under 50 chars
-    
+
     const orderPayload = {
       order_id: cashfreeOrderId,
       order_amount: total_amount,
@@ -172,8 +172,8 @@ export async function POST(request: NextRequest) {
         customer_phone: customer_phone.replace(/[^0-9]/g, '') // Ensure phone is numeric only
       },
       order_meta: {
-        return_url: `${appUrl}/payment/success?order_id=${order.id}`,
-        notify_url: `${appUrl}/api/payment-webhook`
+        return_url: `https://serrve-testing.vercel.app/payment/success?order_id=${order.id}`,
+        notify_url: `https://serrve-testing.vercel.app/api/payment-webhook`
       }
     }
 
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
     // Validate credentials before making the API call
     if (!credentials.client_id || !credentials.client_secret) {
       console.error('Invalid credentials: Missing client ID or secret');
-      
+
       // Update order with error information
       await supabase
         .from('orders')
@@ -192,21 +192,21 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString()
         })
         .eq('id', order.id);
-      
+
       throw new Error('Invalid payment credentials: Missing client ID or secret');
     }
-    
+
     // Add more detailed logging before making the API call
     console.log('Making Cashfree API request with:');
     console.log('- URL:', `${baseUrl}/pg/orders`);
     console.log('- Client ID length:', credentials.client_id.length);
     console.log('- Client Secret length:', credentials.client_secret.length);
     console.log('- Environment:', credentials.environment);
-    
+
     // Make the API call
     let createOrderResponse;
     let cashfreeOrder: CashfreeOrder;
-    
+
     try {
       createOrderResponse = await fetch(`${baseUrl}/pg/orders`, {
         method: 'POST',
@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
           console.error('Cashfree error response (text):', textResponse);
           errorData = { message: textResponse };
         }
-        
+
         // Update order with error information
         await supabase
           .from('orders')
@@ -241,17 +241,17 @@ export async function POST(request: NextRequest) {
             updated_at: new Date().toISOString()
           })
           .eq('id', order.id);
-        
+
         throw new Error(`Failed to create Cashfree order: ${JSON.stringify(errorData)}`);
       }
-      
+
       // Parse the response
       cashfreeOrder = await createOrderResponse.json();
       console.log('Cashfree order created successfully:', cashfreeOrder.order_id);
-      
+
     } catch (apiError: any) {
       console.error('API call error:', apiError);
-      
+
       // Update order with error information
       await supabase
         .from('orders')
@@ -261,7 +261,7 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString()
         })
         .eq('id', order.id);
-      
+
       throw apiError;
     }
 
