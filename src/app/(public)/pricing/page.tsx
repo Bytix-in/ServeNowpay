@@ -8,15 +8,16 @@ export default function PricingPage() {
   const plans = [
     {
       name: 'Starter',
-      price: '$29',
+      price: '₹2,499',
       period: '/month',
-      description: 'Perfect for small teams getting started',
+      description: 'Perfect for small restaurants getting started',
       features: [
-        { name: 'Up to 5 team members', included: true },
-        { name: 'Basic analytics', included: true },
+        { name: 'Up to 5 staff members', included: true },
+        { name: 'Digital menu & QR ordering', included: true },
+        { name: 'Basic analytics & reports', included: true },
         { name: 'Email support', included: true },
-        { name: 'API access', included: true },
-        { name: 'Advanced security', included: false },
+        { name: 'Payment processing (2.5% fee)', included: true },
+        { name: 'Advanced inventory management', included: false },
         { name: 'Custom integrations', included: false },
         { name: 'Priority support', included: false },
         { name: 'Custom branding', included: false }
@@ -25,35 +26,37 @@ export default function PricingPage() {
     },
     {
       name: 'Professional',
-      price: '$79',
+      price: '₹6,999',
       period: '/month',
-      description: 'Best for growing businesses',
+      description: 'Best for growing restaurant businesses',
       features: [
-        { name: 'Up to 25 team members', included: true },
-        { name: 'Advanced analytics', included: true },
+        { name: 'Up to 25 staff members', included: true },
+        { name: 'Advanced menu management', included: true },
+        { name: 'Detailed analytics & insights', included: true },
         { name: 'Priority email support', included: true },
-        { name: 'Full API access', included: true },
-        { name: 'Advanced security', included: true },
-        { name: 'Custom integrations', included: true },
-        { name: 'Priority support', included: false },
+        { name: 'Payment processing (2% fee)', included: true },
+        { name: 'Advanced inventory management', included: true },
+        { name: 'Kitchen display system', included: true },
+        { name: 'Customer loyalty program', included: true },
         { name: 'Custom branding', included: false }
       ],
       popular: true
     },
     {
       name: 'Enterprise',
-      price: '$199',
+      price: '₹15,999',
       period: '/month',
-      description: 'For large organizations with advanced needs',
+      description: 'For restaurant chains and large establishments',
       features: [
-        { name: 'Unlimited team members', included: true },
-        { name: 'Enterprise analytics', included: true },
+        { name: 'Unlimited staff members', included: true },
+        { name: 'Multi-location management', included: true },
+        { name: 'Enterprise analytics & reporting', included: true },
         { name: '24/7 phone & email support', included: true },
-        { name: 'Full API access', included: true },
-        { name: 'Enterprise security', included: true },
-        { name: 'Custom integrations', included: true },
-        { name: 'Priority support', included: true },
-        { name: 'Custom branding', included: true }
+        { name: 'Payment processing (1.5% fee)', included: true },
+        { name: 'Advanced inventory & supply chain', included: true },
+        { name: 'Custom integrations & API', included: true },
+        { name: 'White-label solution', included: true },
+        { name: 'Dedicated account manager', included: true }
       ],
       popular: false
     }
@@ -145,7 +148,7 @@ export default function PricingPage() {
           <div>
             <h3 className="font-semibold mb-2">Can I change plans anytime?</h3>
             <p className="text-muted-foreground">
-              Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.
+              Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately with prorated billing.
             </p>
           </div>
           <div>
@@ -157,13 +160,25 @@ export default function PricingPage() {
           <div>
             <h3 className="font-semibold mb-2">What payment methods do you accept?</h3>
             <p className="text-muted-foreground">
-              We accept all major credit cards, PayPal, and bank transfers for Enterprise plans.
+              We accept UPI, credit/debit cards, net banking, and NEFT/RTGS transfers for Enterprise plans.
             </p>
           </div>
           <div>
             <h3 className="font-semibold mb-2">Do you offer refunds?</h3>
             <p className="text-muted-foreground">
-              Yes, we offer a 30-day money-back guarantee for all paid plans.
+              Yes, we offer a 30-day money-back guarantee for all paid plans. See our refund policy for details.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-2">Are there any setup fees?</h3>
+            <p className="text-muted-foreground">
+              No setup fees for Starter and Professional plans. Enterprise plans may have one-time setup costs.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-2">What about GST?</h3>
+            <p className="text-muted-foreground">
+              All prices are exclusive of GST. 18% GST will be added to your invoice as per Indian tax regulations.
             </p>
           </div>
         </div>

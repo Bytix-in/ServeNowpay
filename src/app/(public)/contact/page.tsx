@@ -1,115 +1,201 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Mail, Phone, MapPin, Clock } from 'lucide-react'
-import { ContactForm } from '@/components/forms/ContactForm'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Textarea } from '@/components/ui/Textarea'
+import { MapPin, Phone, Mail, Clock } from 'lucide-react'
 
 export default function ContactPage() {
-  const contactInfo = [
-    {
-      icon: Mail,
-      title: 'Email',
-      details: 'hello@servenow.com',
-      description: 'Send us an email anytime!'
-    },
-    {
-      icon: Phone,
-      title: 'Phone',
-      details: '+1 (555) 123-4567',
-      description: 'Mon-Fri from 8am to 6pm PST'
-    },
-    {
-      icon: MapPin,
-      title: 'Office',
-      details: '123 Business Ave, Suite 100',
-      description: 'San Francisco, CA 94105'
-    },
-    {
-      icon: Clock,
-      title: 'Business Hours',
-      details: 'Monday - Friday',
-      description: '8:00 AM - 6:00 PM PST'
-    }
-  ]
-
   return (
     <div className="container mx-auto px-4 py-16">
-      {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="text-center mb-16"
+        className="text-center mb-12"
       >
-        <h1 className="text-4xl font-bold mb-6">
-          Get in Touch
-        </h1>
+        <h1 className="text-4xl font-bold mb-6">Contact Us</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Have questions about ServeNow? We'd love to hear from you. 
-          Send us a message and we'll respond as soon as possible.
+          Have questions or need assistance? Our team is here to help you.
+          Reach out to us through any of the channels below.
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
         {/* Contact Form */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
+          className="bg-card p-8 rounded-lg border shadow-sm"
         >
-          <h2 className="text-2xl font-bold mb-6">Send us a message</h2>
-          <ContactForm />
+          <h2 className="text-2xl font-semibold mb-6">Send us a message</h2>
+          <form className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium">
+                  Full Name
+                </label>
+                <Input id="name" placeholder="Your name" />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium">
+                  Email Address
+                </label>
+                <Input id="email" type="email" placeholder="your.email@example.com" />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="phone" className="text-sm font-medium">
+                Phone Number
+              </label>
+              <Input id="phone" placeholder="+91 98765 43210" />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="subject" className="text-sm font-medium">
+                Subject
+              </label>
+              <Input id="subject" placeholder="How can we help you?" />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="message" className="text-sm font-medium">
+                Message
+              </label>
+              <Textarea 
+                id="message" 
+                placeholder="Please provide details about your inquiry..." 
+                rows={5}
+              />
+            </div>
+            
+            <Button type="submit" className="w-full">
+              Send Message
+            </Button>
+          </form>
         </motion.div>
 
         {/* Contact Information */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="space-y-8"
+          transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <h2 className="text-2xl font-bold mb-6">Contact Information</h2>
+          <h2 className="text-2xl font-semibold mb-6">Contact Information</h2>
           
-          {contactInfo.map((info, index) => (
-            <motion.div
-              key={info.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 * index }}
-              className="flex items-start space-x-4"
-            >
-              <div className="bg-primary/10 p-3 rounded-lg">
-                <info.icon className="h-6 w-6 text-primary" />
+          <div className="space-y-8">
+            <div className="flex items-start">
+              <div className="bg-primary/10 p-3 rounded-full mr-4">
+                <MapPin className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold mb-1">{info.title}</h3>
-                <p className="text-foreground mb-1">{info.details}</p>
-                <p className="text-muted-foreground text-sm">{info.description}</p>
+                <h3 className="font-medium mb-1">Office Address</h3>
+                <p className="text-muted-foreground">
+                  Sijua, Bhubaneswar<br />
+                  Odisha 751019<br />
+                  India
+                </p>
               </div>
-            </motion.div>
-          ))}
-
-          {/* Additional Info */}
-          <div className="bg-card p-6 rounded-lg border">
-            <h3 className="font-semibold mb-3">Need immediate help?</h3>
-            <p className="text-muted-foreground mb-4">
-              Check out our comprehensive documentation and FAQ section for quick answers 
-              to common questions.
-            </p>
-            <div className="space-y-2">
-              <a href="#" className="block text-primary hover:underline">
-                → Documentation
-              </a>
-              <a href="#" className="block text-primary hover:underline">
-                → FAQ
-              </a>
-              <a href="#" className="block text-primary hover:underline">
-                → Community Forum
-              </a>
+            </div>
+            
+            <div className="flex items-start">
+              <div className="bg-primary/10 p-3 rounded-full mr-4">
+                <Phone className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-medium mb-1">Phone Numbers</h3>
+                <p className="text-muted-foreground">
+                  Customer Support: +91 85217 36139<br />
+                  Sales Inquiries: +91 82605 42544<br />
+                  Technical Support: +91 96924 02032
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start">
+              <div className="bg-primary/10 p-3 rounded-full mr-4">
+                <Mail className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-medium mb-1">Email Addresses</h3>
+                <p className="text-muted-foreground">
+                  General Inquiries: bytixcompany@gmail.com<br />
+                  Customer Support: bytixcompany@gmail.com<br />
+                  Sales: bytixcompany@gmail.com
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start">
+              <div className="bg-primary/10 p-3 rounded-full mr-4">
+                <Clock className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-medium mb-1">Business Hours</h3>
+                <p className="text-muted-foreground">
+                  Monday - Friday: 9:00 AM - 6:00 PM IST<br />
+                  Saturday: 10:00 AM - 2:00 PM IST<br />
+                  Sunday: Closed
+                </p>
+              </div>
             </div>
           </div>
         </motion.div>
       </div>
+
+      {/* Map Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+        className="mb-16"
+      >
+        <h2 className="text-2xl font-semibold mb-6 text-center">Find Us</h2>
+        <div className="bg-muted h-96 rounded-lg overflow-hidden">
+          {/* Replace with actual map integration */}
+          <div className="w-full h-full flex items-center justify-center bg-muted">
+            <p className="text-muted-foreground">Interactive map will be displayed here</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* FAQ Section */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.5 }}
+      >
+        <h2 className="text-2xl font-semibold mb-6 text-center">Frequently Asked Questions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h3 className="font-semibold mb-2">What are your support hours?</h3>
+            <p className="text-muted-foreground">
+              Our customer support team is available Monday through Friday from 9:00 AM to 6:00 PM IST, and Saturday from 10:00 AM to 2:00 PM IST.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-2">How quickly will I receive a response?</h3>
+            <p className="text-muted-foreground">
+              We aim to respond to all inquiries within 24 hours during business days. For urgent matters, please call our support line.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-2">Do you offer on-site support?</h3>
+            <p className="text-muted-foreground">
+              Yes, we offer on-site support for Enterprise customers in select cities across India. Additional charges may apply.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-semibold mb-2">How can I schedule a demo?</h3>
+            <p className="text-muted-foreground">
+              You can schedule a product demo by filling out the contact form above or by emailing sales@servenow.com with your preferred date and time.
+            </p>
+          </div>
+        </div>
+      </motion.div>
     </div>
   )
 }
