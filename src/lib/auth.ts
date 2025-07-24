@@ -97,6 +97,75 @@ export function hasRole(user: User | null, requiredRole: string): boolean {
   return userLevel >= requiredLevel
 }
 
+// Check if token is expired (1 day = 24 hours)
+export async function isTokenExpired(): Promise<boolean> {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession()
+    
+    if (error || !session) {
+      return true
+    }
+
+    // Check if token is expired
+    const now = Math.floor(Date.now() / 1000) // Current time in seconds
+    const expiresAt = session.expires_at || 0
+    
+    // Add buffer of 5 minutes (300 seconds) before actual expiration
+    return now >= (expiresAt - 300)
+  } catch (error) {
+    console.error('Error checking token expiration:', error)
+    return true
+  }
+}
+
+// Check if session is older than 1 day
+export async function isSessionExpired(): Promise<boolean> {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession()
+    
+    if (error || !session) {
+      return true
+    }
+
+    // Check if session is older than 1 day (24 hours)
+    const sessionCreated = new Date(session.user.created_at).getTime()
+    const lastSignIn = session.user.last_sign_in_at ? new Date(session.user.last_sign_in_at).getTime() : sessionCreated
+    const now = Date.now()
+    const oneDayInMs = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
+    
+    return (now - lastSignIn) > oneDayInMs
+  } catch (error) {
+    console.error('Error checking session expiration:', error)
+    return true
+  }
+}
+
+// Enhanced getCurrentUserWithRole with expiration check
+export async function getCurrentUserWithRoleAndExpiration(): Promise<User | null> {
+  try {
+    // First get the current user
+    const currentUser = await getCurrentUserWithRole()
+    if (!currentUser) {
+      return null
+    }
+
+    // Then check if session is expired (only for admin users)
+    if (currentUser.role === 'admin') {
+      const sessionExpired = await isSessionExpired()
+      if (sessionExpired) {
+        // Auto sign out if expired
+        await signOut()
+        return null
+      }
+    }
+
+    return currentUser
+  } catch (error) {
+    console.error('Error getting current user with expiration check:', error)
+    return null
+  }
+}
+
 export function redirectByRole(user: User): string {
   switch (user.role) {
     case 'admin':

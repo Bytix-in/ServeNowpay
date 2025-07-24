@@ -29,6 +29,15 @@ export type Database = {
           name: string
           slug: string
           owner_id: string | null
+          owner_name: string | null
+          phone_number: string | null
+          email: string | null
+          address: string | null
+          cuisine_tags: string | null
+          seating_capacity: number | null
+          status: string
+          manager_username: string | null
+          manager_password_hash: string | null
           created_at: string
           updated_at: string
         }
@@ -37,6 +46,15 @@ export type Database = {
           name: string
           slug: string
           owner_id?: string | null
+          owner_name?: string | null
+          phone_number?: string | null
+          email?: string | null
+          address?: string | null
+          cuisine_tags?: string | null
+          seating_capacity?: number | null
+          status?: string
+          manager_username?: string | null
+          manager_password_hash?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -45,6 +63,15 @@ export type Database = {
           name?: string
           slug?: string
           owner_id?: string | null
+          owner_name?: string | null
+          phone_number?: string | null
+          email?: string | null
+          address?: string | null
+          cuisine_tags?: string | null
+          seating_capacity?: number | null
+          status?: string
+          manager_username?: string | null
+          manager_password_hash?: string | null
           updated_at?: string
         }
       }
