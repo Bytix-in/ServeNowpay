@@ -1,17 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
-  Users,
   Settings,
   BarChart3,
-  Shield,
   LogOut,
   LayoutGrid,
-  PlusCircle,
-  HelpCircle
+  PlusCircle
 } from 'lucide-react'
 import { getCurrentUserWithRole, signOut, type User } from '@/lib/auth'
 
@@ -23,6 +20,7 @@ export default function AdminLayout({
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -57,10 +55,10 @@ export default function AdminLayout({
 
   // Navigation items for the sidebar
   const navItems = [
-    { name: 'Dashboard', icon: LayoutGrid, href: '/admin', active: router.pathname === '/admin' },
-    { name: 'Add Restaurant', icon: PlusCircle, href: '/admin/add-restaurant', active: router.pathname === '/admin/add-restaurant' },
-    { name: 'Analytics', icon: BarChart3, href: '/admin/analytics', active: router.pathname === '/admin/analytics' },
-    { name: 'Settings', icon: Settings, href: '/admin/settings', active: router.pathname === '/admin/settings' },
+    { name: 'Dashboard', icon: LayoutGrid, href: '/admin' },
+    { name: 'Add Restaurant', icon: PlusCircle, href: '/admin/add-restaurant' },
+    { name: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
+    { name: 'Settings', icon: Settings, href: '/admin/settings' },
   ]
 
   // Quick actions for the sidebar
@@ -86,14 +84,14 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <aside className="w-64 border-r bg-white flex flex-col h-screen fixed">
+      <aside className="w-64 bg-white border-r flex flex-col h-screen fixed">
         {/* Logo and title */}
         <div className="p-4 border-b">
           <div className="flex items-center gap-3">
             <div className="bg-black rounded-md p-2">
-              <Shield className="h-5 w-5 text-white" />
+              <div className="w-5 h-5 bg-white rounded-sm"></div>
             </div>
             <div>
               <h1 className="font-bold text-lg">ServeNow Admin</h1>
@@ -105,36 +103,39 @@ export default function AdminLayout({
         {/* Navigation */}
         <nav className="flex-1 p-4">
           <ul className="space-y-2">
-            {navItems.map((item) => (
-              <li key={item.name}>
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-3 p-3 rounded-md ${
-                    item.active 
-                      ? 'bg-black text-white' 
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.name}</span>
-                </Link>
-              </li>
-            ))}
+            {navItems.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className={`flex items-center gap-3 p-3 rounded-md transition-colors ${
+                      isActive 
+                        ? 'bg-black text-white' 
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                </li>
+              )
+            })}
           </ul>
         </nav>
 
         {/* Quick Actions */}
-        <div className="p-4 border-t mt-auto">
+        <div className="p-4 border-t">
           <h3 className="text-sm font-medium text-gray-700 mb-2">Quick Actions</h3>
           <ul className="space-y-1">
             {sidebarQuickActions.map((action) => (
               <li key={action.name}>
                 <Link
                   href={action.href}
-                  className="flex items-center gap-3 p-2 text-gray-600 hover:bg-gray-100 rounded-md"
+                  className="flex items-center gap-3 p-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
                 >
-                  <action.icon className="h-5 w-5" />
-                  <span>{action.name}</span>
+                  <action.icon className="h-4 w-4" />
+                  <span className="text-sm">{action.name}</span>
                 </Link>
               </li>
             ))}
@@ -145,10 +146,10 @@ export default function AdminLayout({
         <div className="p-4 border-t">
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-3 p-2 w-full text-gray-600 hover:bg-gray-100 rounded-md"
+            className="flex items-center gap-3 p-2 w-full text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
           >
-            <LogOut className="h-5 w-5" />
-            <span>Logout</span>
+            <LogOut className="h-4 w-4" />
+            <span className="text-sm">Logout</span>
           </button>
         </div>
       </aside>
