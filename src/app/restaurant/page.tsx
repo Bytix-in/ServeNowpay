@@ -1,6 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { PaymentSetupBanner, PaymentDisabledBanner } from '@/components/restaurant/PaymentSetupBanner'
 import { 
   Users, 
   BarChart3, 
@@ -39,10 +42,32 @@ import {
   ReferenceLine,
   ReferenceDot
 } from 'recharts'
-import { useState } from 'react'
 
-export default function ManagerDashboard() {
+export default function RestaurantDashboard() {
+  const router = useRouter()
   const [selectedMonth, setSelectedMonth] = useState('Month')
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    // Check if user is authenticated and has restaurant role
+    const userData = localStorage.getItem('user')
+    if (!userData) {
+      router.push('/auth/restaurant-login')
+      return
+    }
+
+    try {
+      const parsedUser = JSON.parse(userData)
+      if (parsedUser.role !== 'restaurant') {
+        router.push('/auth/restaurant-login')
+        return
+      }
+      setUser(parsedUser)
+    } catch (error) {
+      router.push('/auth/restaurant-login')
+      return
+    }
+  }, [router])
   
   // Mock data for the dashboard
   const performanceMetrics = [
@@ -162,8 +187,26 @@ export default function ManagerDashboard() {
     );
   };
 
+  if (!user) {
+    return null
+  }
+
   return (
     <div className="flex flex-col gap-6 font-sans">
+      {/* Welcome Header */}
+      <div className="bg-white p-6 rounded-3xl shadow border border-gray-200">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          Welcome back, {user.name}!
+        </h1>
+        <p className="text-gray-600">
+          Here's your restaurant dashboard overview for today.
+        </p>
+      </div>
+
+      {/* Payment Setup Banners */}
+      <PaymentSetupBanner />
+      <PaymentDisabledBanner />
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-3xl shadow border border-gray-200">

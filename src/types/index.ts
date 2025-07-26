@@ -110,13 +110,14 @@ export type Permission =
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   staff: ['take_orders', 'manage_tables'],
   senior_staff: ['take_orders', 'manage_tables', 'process_payments'],
-  manager: [
+  restaurant: [
     'take_orders',
     'manage_tables',
     'process_payments',
     'manage_menu',
     'manage_staff',
-    'view_analytics'
+    'view_analytics',
+    'manage_settings'
   ],
   admin: [
     'take_orders',

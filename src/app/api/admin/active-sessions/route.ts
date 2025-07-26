@@ -61,59 +61,48 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get all users from Supabase Auth
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers()
-    
-    if (authError) {
-      console.error('Error fetching users:', authError)
-      return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
+    // Check restaurants that are currently logged in
+    const { data: loggedInRestaurants, error: restaurantError } = await supabaseAdmin
+      .from('restaurants')
+      .select('id, name, status, last_login_at, is_logged_in')
+      .eq('is_logged_in', true)
+      .eq('status', 'active')
+      .not('last_login_at', 'is', null)
+
+    if (restaurantError) {
+      console.error('Error fetching restaurant login status:', restaurantError)
     }
 
-    // Filter for manager users and check their last sign in
-    const managerUsers = authData.users.filter(user => 
-      user.user_metadata?.role === 'manager'
-    )
-
-    // Count active sessions (users who signed in within the last 24 hours)
+    // Filter restaurants that logged in within the last 24 hours
+    const activeRestaurants: any[] = []
     const now = new Date()
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-    
-    const activeManagers = managerUsers.filter(user => {
-      if (!user.last_sign_in_at) return false
-      const lastSignIn = new Date(user.last_sign_in_at)
-      return lastSignIn > twentyFourHoursAgo
-    })
 
-    // Get restaurant details for active managers
-    const activeRestaurants = []
-    for (const manager of activeManagers) {
-      const restaurantId = manager.user_metadata?.restaurant_id
-      if (restaurantId) {
-        try {
-          const { data: restaurant } = await supabaseAdmin
-            .from('restaurants')
-            .select('id, name, status')
-            .eq('id', restaurantId)
-            .single()
-          
-          if (restaurant && restaurant.status === 'active') {
+    if (loggedInRestaurants) {
+      loggedInRestaurants.forEach(restaurant => {
+        if (restaurant.last_login_at) {
+          const lastLogin = new Date(restaurant.last_login_at)
+          if (lastLogin > twentyFourHoursAgo) {
             activeRestaurants.push({
               id: restaurant.id,
               name: restaurant.name,
-              managerEmail: manager.email,
-              lastSignIn: manager.last_sign_in_at
+              loginTime: restaurant.last_login_at,
+              lastActivity: restaurant.last_login_at
             })
           }
-        } catch (error) {
-          console.error('Error fetching restaurant for manager:', error)
         }
-      }
+      })
     }
+
+    // Get total restaurant count
+    const { count: totalRestaurants } = await supabaseAdmin
+      .from('restaurants')
+      .select('*', { count: 'exact', head: true })
 
     return NextResponse.json({
       activeCount: activeRestaurants.length,
       activeRestaurants: activeRestaurants,
-      totalManagers: managerUsers.length,
+      totalRestaurants: totalRestaurants || 0,
       lastUpdated: new Date().toISOString()
     })
 

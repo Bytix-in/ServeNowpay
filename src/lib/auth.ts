@@ -5,8 +5,10 @@ export interface User {
   id: string
   email: string
   name: string
-  role: 'admin' | 'manager' | 'staff'
+  role: 'admin' | 'restaurant' | 'staff'
   avatar?: string
+  restaurantId?: string
+  restaurantSlug?: string
 }
 
 export interface AuthState {
@@ -34,6 +36,33 @@ export async function signIn(email: string, password: string): Promise<User> {
     // Get user with role from metadata
     const userWithRole = await getUserWithRole(data.user)
     return userWithRole
+  } catch (error) {
+    throw error
+  }
+}
+
+// Restaurant authentication function
+export async function signInRestaurant(username: string, password: string): Promise<User> {
+  try {
+    const response = await fetch('/api/auth/restaurant', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username,
+        password,
+        action: 'login'
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Restaurant authentication failed')
+    }
+
+    return data.user
   } catch (error) {
     throw error
   }
@@ -87,7 +116,7 @@ export function hasRole(user: User | null, requiredRole: string): boolean {
   
   const roleHierarchy = {
     staff: 1,
-    manager: 2,
+    restaurant: 2,
     admin: 3
   }
   
@@ -170,8 +199,8 @@ export function redirectByRole(user: User): string {
   switch (user.role) {
     case 'admin':
       return '/admin'
-    case 'manager':
-      return '/manager'
+    case 'restaurant':
+      return '/restaurant'
     case 'staff':
       return '/staff'
     default:

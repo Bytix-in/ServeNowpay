@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { getDecryptedCredentials } from '@/lib/payment-utils'
+
+// Create a Supabase client with service role key for admin operations
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+)
 
 // Define interfaces for type safety
 interface OrderData {
@@ -57,9 +70,30 @@ export async function POST(request: NextRequest) {
     if (!credentials) {
       console.log('No payment credentials found for restaurant:', restaurant_id)
 
-      // Fallback: Create order without payment processing for testing
+      // Check if restaurant exists and is active
+      const { data: restaurantCheck, error: restaurantError } = await supabaseAdmin
+        .from('restaurants')
+        .select('id, name, status')
+        .eq('id', restaurant_id)
+        .single()
+
+      if (restaurantError || !restaurantCheck) {
+        return NextResponse.json(
+          { error: 'Restaurant not found' },
+          { status: 404 }
+        )
+      }
+
+      if (restaurantCheck.status !== 'active') {
+        return NextResponse.json(
+          { error: 'Restaurant is currently not accepting orders' },
+          { status: 400 }
+        )
+      }
+
+      // Create order without payment processing
       try {
-        const { data: order, error: orderError } = await supabase
+        const { data: order, error: orderError } = await supabaseAdmin
           .from('orders')
           .insert([{
             restaurant_id,
@@ -68,7 +102,8 @@ export async function POST(request: NextRequest) {
             table_number,
             items,
             total_amount,
-            status: 'pending'
+            status: 'pending',
+            payment_status: 'not_configured'
           }])
           .select()
           .single()
@@ -78,19 +113,20 @@ export async function POST(request: NextRequest) {
           throw new Error(`Failed to create order: ${orderError.message}`)
         }
 
-        console.log('Order created without payment:', order.id)
+        console.log('Order created without payment processing:', order.id)
 
         return NextResponse.json({
           success: true,
           order_id: order.id,
-          message: 'Order created successfully. Payment processing not configured.',
-          redirect_url: `/payment/success?order_id=${order.id}`
+          message: 'Order placed successfully! The restaurant will process payment manually.',
+          redirect_url: `/payment/success?order_id=${order.id}&no_payment=true`,
+          payment_configured: false
         })
       } catch (fallbackError: any) {
-        console.error('Fallback order creation failed:', fallbackError)
+        console.error('Order creation failed:', fallbackError)
         return NextResponse.json(
-          { error: `Payment not configured and order creation failed: ${fallbackError?.message || 'Unknown error'}` },
-          { status: 400 }
+          { error: `Failed to create order: ${fallbackError?.message || 'Unknown error'}` },
+          { status: 500 }
         )
       }
     }
@@ -113,7 +149,7 @@ export async function POST(request: NextRequest) {
       console.log('Payment status column might not exist')
     }
 
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert([orderData])
       .select()
@@ -184,7 +220,7 @@ export async function POST(request: NextRequest) {
       console.error('Invalid credentials: Missing client ID or secret');
 
       // Update order with error information
-      await supabase
+      await supabaseAdmin
         .from('orders')
         .update({
           payment_status: 'failed',
@@ -233,7 +269,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Update order with error information
-        await supabase
+        await supabaseAdmin
           .from('orders')
           .update({
             payment_status: 'failed',
@@ -253,7 +289,7 @@ export async function POST(request: NextRequest) {
       console.error('API call error:', apiError);
 
       // Update order with error information
-      await supabase
+      await supabaseAdmin
         .from('orders')
         .update({
           payment_status: 'failed',
@@ -266,7 +302,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update order with Cashfree order ID
-    await supabase
+    await supabaseAdmin
       .from('orders')
       .update({
         payment_gateway_order_id: cashfreeOrder.order_id,
@@ -275,7 +311,7 @@ export async function POST(request: NextRequest) {
       .eq('id', order.id)
 
     // Create transaction record
-    await supabase
+    await supabaseAdmin
       .from('transactions')
       .insert([{
         restaurant_id,

@@ -36,8 +36,11 @@ export type Database = {
           cuisine_tags: string | null
           seating_capacity: number | null
           status: string
-          manager_username: string | null
-          manager_password_hash: string | null
+          restaurant_username: string | null
+          restaurant_password_hash: string | null
+          is_logged_in: boolean | null
+          last_login_at: string | null
+          login_session_token: string | null
           created_at: string
           updated_at: string
         }
@@ -53,8 +56,11 @@ export type Database = {
           cuisine_tags?: string | null
           seating_capacity?: number | null
           status?: string
-          manager_username?: string | null
-          manager_password_hash?: string | null
+          restaurant_username?: string | null
+          restaurant_password_hash?: string | null
+          is_logged_in?: boolean | null
+          last_login_at?: string | null
+          login_session_token?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -70,8 +76,11 @@ export type Database = {
           cuisine_tags?: string | null
           seating_capacity?: number | null
           status?: string
-          manager_username?: string | null
-          manager_password_hash?: string | null
+          restaurant_username?: string | null
+          restaurant_password_hash?: string | null
+          is_logged_in?: boolean | null
+          last_login_at?: string | null
+          login_session_token?: string | null
           updated_at?: string
         }
       }
@@ -83,6 +92,11 @@ export type Database = {
           price: number
           description: string
           preparation_time: number
+          image_url: string | null
+          image_data: string | null
+          dish_type: string | null
+          ingredients: string | null
+          tags: string | null
           created_at: string
           updated_at: string
         }
@@ -93,6 +107,11 @@ export type Database = {
           price: number
           description: string
           preparation_time: number
+          image_url?: string | null
+          image_data?: string | null
+          dish_type?: string | null
+          ingredients?: string | null
+          tags?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -103,6 +122,11 @@ export type Database = {
           price?: number
           description?: string
           preparation_time?: number
+          image_url?: string | null
+          image_data?: string | null
+          dish_type?: string | null
+          ingredients?: string | null
+          tags?: string | null
           updated_at?: string
         }
       }
@@ -223,6 +247,49 @@ export type Database = {
           currency?: string
           status?: string
           gateway_response?: any | null
+          updated_at?: string
+        }
+      }
+      staff: {
+        Row: {
+          id: string
+          restaurant_id: string
+          name: string
+          phone: string
+          role: string
+          status: string
+          email: string | null
+          username: string | null
+          password_hash: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          restaurant_id: string
+          name: string
+          phone: string
+          role?: string
+          status?: string
+          email?: string | null
+          username?: string | null
+          password_hash?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          restaurant_id?: string
+          name?: string
+          phone?: string
+          role?: string
+          status?: string
+          email?: string | null
+          username?: string | null
+          password_hash?: string | null
+          is_active?: boolean
           updated_at?: string
         }
       }

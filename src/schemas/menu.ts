@@ -12,6 +12,11 @@ export type MenuItemFormValues = z.infer<typeof menuItemSchema>
 export type MenuItem = MenuItemFormValues & {
   id: string
   restaurant_id: string
+  image_url?: string | null
+  image_data?: string | null
+  dish_type?: string | null
+  ingredients?: string | null
+  tags?: string | null
   created_at: string
   updated_at: string
 }
