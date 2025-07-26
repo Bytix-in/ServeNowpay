@@ -9,27 +9,28 @@ export default function AccessPage() {
     {
       icon: Users,
       title: 'Staff Access',
-      description: 'Basic access for team members to manage daily operations',
+      description: 'Access for restaurant staff members (waiters, cooks, etc.)',
       features: [
-        'View and update orders',
-        'Manage customer information',
-        'Access basic reports',
-        'Mobile app access'
+        'Personal dashboard',
+        'Task management',
+        'Order notifications',
+        'Shift tracking',
+        'Communication tools'
       ],
-      link: '/staff'
+      link: '/auth/staff-login'
     },
     {
       icon: Settings,
-      title: 'Manager Access',
-      description: 'Advanced access for managers to oversee operations and teams',
+      title: 'Restaurant Access',
+      description: 'Complete restaurant management access for restaurant owners and operators',
       features: [
-        'All staff permissions',
-        'Team management',
-        'Advanced analytics',
-        'Inventory management',
-        'Staff scheduling'
+        'Full restaurant dashboard',
+        'Menu and inventory management',
+        'Order and payment tracking',
+        'Staff and table management',
+        'Analytics and reporting'
       ],
-      link: '/manager'
+      link: '/auth/restaurant-login'
     },
     {
       icon: Shield,
@@ -67,7 +68,7 @@ export default function AccessPage() {
       </motion.div>
 
       {/* Access Level Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
         {accessLevels.map((level, index) => (
           <motion.div
             key={level.title}

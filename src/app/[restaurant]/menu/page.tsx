@@ -180,13 +180,27 @@ export default function PublicMenuPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create payment')
+        console.error('Payment creation failed:', errorData)
+        
+        // Show more specific error messages
+        if (errorData.error?.includes('Payment not configured')) {
+          throw new Error('Payment system is not set up for this restaurant. Please contact the restaurant.')
+        } else if (errorData.error?.includes('credentials')) {
+          throw new Error('Payment processing is temporarily unavailable. Please try again later.')
+        } else {
+          throw new Error(errorData.error || errorData.details || 'Failed to create payment')
+        }
       }
 
       const paymentData = await response.json()
 
       // Check if payment processing is configured
-      if (paymentData.payment_session_id) {
+      if (paymentData.payment_configured === false) {
+        // No payment processing - show success message and redirect
+        alert(paymentData.message || 'Order placed successfully! The restaurant will contact you for payment.')
+        window.location.href = paymentData.redirect_url
+        return
+      } else if (paymentData.payment_session_id) {
         // Initialize Cashfree Checkout
         if (typeof window !== 'undefined' && (window as any).Cashfree) {
           console.log('Initializing Cashfree checkout in mode:', paymentData.environment);
@@ -311,11 +325,21 @@ export default function PublicMenuPage() {
                 >
                   <div className="p-6">
                     <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                      {/* Dish Image/Emoji Placeholder */}
+                      {/* Dish Image */}
                       <div className="flex-shrink-0">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-orange-100 rounded-lg flex items-center justify-center">
-                          <Utensils className="w-8 h-8 sm:w-10 sm:h-10 text-orange-600" />
-                        </div>
+                        {dish.image_url ? (
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden">
+                            <img
+                              src={dish.image_url}
+                              alt={dish.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <Utensils className="w-8 h-8 sm:w-10 sm:h-10 text-orange-600" />
+                          </div>
+                        )}
                       </div>
 
                       {/* Dish Details */}

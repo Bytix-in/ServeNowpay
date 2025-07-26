@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
       // In a real app, you'd verify credentials with Supabase Auth
       const mockUsers = [
         { email: 'admin@servenow.com', password: 'admin123', role: 'admin' },
-        { email: 'manager@servenow.com', password: 'manager123', role: 'manager' },
         { email: 'staff@servenow.com', password: 'staff123', role: 'staff' }
       ]
 

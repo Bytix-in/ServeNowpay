@@ -5,7 +5,10 @@ type Restaurant = {
   id: string
   name: string
   slug: string
-  owner_id: string
+  owner_id: string | null
+  address?: string
+  phone_number?: string
+  email?: string
 }
 
 export function useRestaurant() {
@@ -19,38 +22,47 @@ export function useRestaurant() {
         setLoading(true)
         setError(null)
         
-        // First get the current user
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        // Get restaurant data from localStorage (set during restaurant login)
+        const userData = localStorage.getItem('user')
         
-        if (userError || !user) {
-          // If no user is authenticated, fetch the demo restaurant from database
-          console.log('No authenticated user, fetching demo restaurant')
-          try {
-            const { data: demoRestaurant, error: demoError } = await supabase
-              .from('restaurants')
-              .select('id, name, slug, owner_id')
-              .eq('slug', 'mycafe')
-              .single()
+        if (!userData) {
+          setError('No restaurant logged in')
+          return
+        }
+
+        const user = JSON.parse(userData)
+        
+        if (user.role !== 'restaurant' || !user.restaurantId) {
+          setError('Invalid restaurant session')
+          return
+        }
+
+        // Fetch restaurant data from database using the restaurant ID
+        let { data, error: restaurantError } = await supabase
+          .from('restaurants')
+          .select('id, name, slug, owner_id, address, phone_number, email')
+          .eq('id', user.restaurantId)
+          .single()
+
+        // If restaurant not found with the stored ID, try to find by name/slug as fallback
+        if (restaurantError && user.name) {
+          console.log('Restaurant not found with stored ID, trying by name:', user.name)
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('restaurants')
+            .select('id, name, slug, owner_id, address, phone_number, email')
+            .eq('name', user.name)
+            .single()
+          
+          if (fallbackData && !fallbackError) {
+            data = fallbackData
+            restaurantError = null
             
-            if (demoError || !demoRestaurant) {
-              throw new Error('Demo restaurant not found')
-            }
-            
-            setRestaurant(demoRestaurant)
-            return
-          } catch (err) {
-            console.error('Error fetching demo restaurant:', err)
-            setError('Demo restaurant not available')
-            return
+            // Update localStorage with correct restaurant ID
+            const updatedUser = { ...user, restaurantId: fallbackData.id }
+            localStorage.setItem('user', JSON.stringify(updatedUser))
+            console.log('Updated localStorage with correct restaurant ID:', fallbackData.id)
           }
         }
-        
-        // Then fetch the restaurant owned by this user
-        const { data, error: restaurantError } = await supabase
-          .from('restaurants')
-          .select('id, name, slug, owner_id')
-          .eq('owner_id', user.id)
-          .maybeSingle()
         
         if (restaurantError) {
           console.error('Restaurant query error:', restaurantError)
@@ -58,26 +70,7 @@ export function useRestaurant() {
         }
         
         if (!data) {
-          // No restaurant found for this user, fetch the demo restaurant from database
-          console.log('No restaurant found for user, fetching demo restaurant from database')
-          try {
-            const { data: demoRestaurant, error: demoError } = await supabase
-              .from('restaurants')
-              .select('id, name, slug, owner_id')
-              .eq('slug', 'mycafe')
-              .single()
-            
-            if (demoError || !demoRestaurant) {
-              throw new Error('Demo restaurant not found')
-            }
-            
-            setRestaurant(demoRestaurant)
-            return
-          } catch (err) {
-            console.error('Error fetching demo restaurant:', err)
-            setError('Demo restaurant not available')
-            return
-          }
+          throw new Error('Restaurant not found')
         }
         
         setRestaurant(data)

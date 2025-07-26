@@ -40,7 +40,12 @@ export function useMenuItems(restaurantId?: string) {
     fetchMenuItems()
   }, [restaurantId])
 
-  const addMenuItem = async (values: MenuItemFormValues) => {
+  const addMenuItem = async (values: MenuItemFormValues & { 
+    image_url?: string | null, 
+    dish_type?: string, 
+    ingredients?: string, 
+    tags?: string 
+  }) => {
     if (!restaurantId) {
       setError('Restaurant ID is required')
       return null
@@ -52,7 +57,11 @@ export function useMenuItems(restaurantId?: string) {
         name: values.name,
         price: values.price,
         description: values.description,
-        preparation_time: values.preparation_time
+        preparation_time: values.preparation_time,
+        image_url: values.image_url || null,
+        dish_type: values.dish_type || 'Main Course',
+        ingredients: values.ingredients || '',
+        tags: values.tags || ''
       }
       
       const { data, error: insertError } = await supabase

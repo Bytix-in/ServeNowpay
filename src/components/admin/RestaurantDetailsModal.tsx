@@ -38,7 +38,7 @@ interface RestaurantDetails {
   cuisine_tags: string
   seating_capacity: number | null
   status: 'active' | 'inactive'
-  manager_username: string
+  restaurant_username: string
   created_at: string
   updated_at: string
 }
@@ -734,13 +734,13 @@ export default function RestaurantDetailsModal({
                       <div className="flex items-center justify-between mb-3">
                         <div className="text-sm text-gray-600">
                           <span className="font-medium text-gray-700">Current Username:</span>
-                          <span className="ml-2 font-mono text-gray-900">{restaurant.manager_username || 'mgr_not_set'}</span>
+                          <span className="ml-2 font-mono text-gray-900">{restaurant.restaurant_username || 'not_set'}</span>
                         </div>
-                        {restaurant.manager_username && (
+                        {restaurant.restaurant_username && (
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => copyToClipboard(restaurant.manager_username!)}
+                            onClick={() => copyToClipboard(restaurant.restaurant_username!)}
                             className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
                           >
                             <Copy className="h-3 w-3" />

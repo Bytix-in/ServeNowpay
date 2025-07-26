@@ -5,14 +5,16 @@ export const userSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   name: z.string().min(2),
-  role: z.enum(['admin', 'manager', 'staff']),
+  role: z.enum(['admin', 'restaurant', 'staff']),
   avatar: z.string().optional(),
+  restaurantId: z.string().optional(),
+  restaurantSlug: z.string().optional(),
 })
 
 export const createUserSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  role: z.enum(['admin', 'manager', 'staff']),
+  role: z.enum(['admin', 'restaurant', 'staff']),
   phone: z.string().optional(),
   hourlyRate: z.number().positive().optional(),
 })
@@ -134,7 +136,7 @@ export const staffSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   phone: z.string(),
-  role: z.enum(['staff', 'senior_staff', 'manager']),
+  role: z.enum(['staff', 'senior_staff', 'restaurant']),
   status: z.enum(['online', 'offline', 'break']),
   hourlyRate: z.number().positive(),
   isActive: z.boolean(),
@@ -144,7 +146,7 @@ export const createStaffSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   phone: z.string().min(10, 'Phone number is required'),
-  role: z.enum(['staff', 'senior_staff', 'manager']),
+  role: z.enum(['staff', 'senior_staff', 'restaurant']),
   hourlyRate: z.number().positive('Hourly rate must be positive'),
   permissions: z.array(z.string()),
 })
