@@ -1,10 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
+  // Force dynamic rendering for payment pages
+  async headers() {
+    return [
+      {
+        source: '/payment/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
+    ]
   },
 }
 

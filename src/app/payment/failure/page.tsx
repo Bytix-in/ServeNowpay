@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
@@ -35,7 +35,10 @@ interface OrderDetails {
   }
 }
 
-export default function PaymentFailurePage() {
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
+function PaymentFailureContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [order, setOrder] = useState<OrderDetails | null>(null)
@@ -322,5 +325,20 @@ export default function PaymentFailurePage() {
         </motion.div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentFailurePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <PaymentFailureContent />
+    </Suspense>
   )
 }
