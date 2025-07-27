@@ -242,6 +242,30 @@ export async function findOrderByGatewayId(gatewayOrderId: string): Promise<Orde
 }
 
 /**
+ * Generate a unique order ID with retry logic
+ */
+async function generateUniqueOrderIdWithRetry(maxRetries = 5): Promise<string> {
+  const { generateUniqueOrderId } = await import('./unique-id-utils')
+  
+  for (let i = 0; i < maxRetries; i++) {
+    const uniqueId = generateUniqueOrderId()
+    
+    // Check if this ID already exists
+    const { data: existing } = await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('unique_order_id', uniqueId)
+      .single()
+    
+    if (!existing) {
+      return uniqueId
+    }
+  }
+  
+  throw new Error('Failed to generate unique order ID after multiple attempts')
+}
+
+/**
  * Enhanced order creation with better ID generation and validation
  */
 export async function createOrderWithValidation(orderData: any): Promise<{ success: boolean; order?: any; error?: string }> {
@@ -256,10 +280,14 @@ export async function createOrderWithValidation(orderData: any): Promise<{ succe
       }
     }
 
+    // Generate unique order ID
+    const uniqueOrderId = await generateUniqueOrderIdWithRetry()
+
     const enhancedOrderData = {
       ...orderData,
       status: orderData.status || 'pending',
       payment_status: orderData.payment_status || 'pending',
+      unique_order_id: uniqueOrderId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }

@@ -1,8 +1,25 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
-import { Clock, IndianRupee, Utensils, Plus, Minus, ShoppingCart, X } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  Clock, 
+  IndianRupee, 
+  Utensils, 
+  Plus, 
+  Minus, 
+  ShoppingCart, 
+  X, 
+  User,
+  Star,
+  Heart,
+  Search,
+  Filter,
+  ChefHat,
+  Sparkles,
+  Eye
+} from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
@@ -28,12 +45,17 @@ type CustomerInfo = {
 
 export default function PublicMenuPage() {
   const params = useParams()
+  const router = useRouter()
   const restaurantSlug = params.restaurant as string
   
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [dishes, setDishes] = useState<MenuItem[]>([])
+  const [filteredDishes, setFilteredDishes] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [favorites, setFavorites] = useState<Set<string>>(new Set())
   
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([])
@@ -45,6 +67,8 @@ export default function PublicMenuPage() {
     tableNumber: ''
   })
   const [orderLoading, setOrderLoading] = useState(false)
+     const [selectedDish, setSelectedDish] = useState<MenuItem | null>(null)
+  const [showDishDetails, setShowDishDetails] = useState(false)
 
   // Fetch restaurant and menu data
   useEffect(() => {
@@ -88,6 +112,7 @@ export default function PublicMenuPage() {
         }
 
         setDishes(menuData || [])
+        setFilteredDishes(menuData || [])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
         console.error('Error fetching restaurant data:', err)
@@ -100,6 +125,47 @@ export default function PublicMenuPage() {
       fetchRestaurantAndMenu()
     }
   }, [restaurantSlug])
+
+  // Filter dishes based on search and category
+  useEffect(() => {
+    let filtered = dishes
+
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(dish =>
+        dish.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        dish.description.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    }
+
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(dish => 
+        dish.dish_type?.toLowerCase() === selectedCategory.toLowerCase()
+      )
+    }
+
+    setFilteredDishes(filtered)
+  }, [dishes, searchQuery, selectedCategory])
+
+  // Get unique categories
+  const getCategories = () => {
+    const categories = dishes.map(dish => dish.dish_type).filter(Boolean)
+    return ['all', ...Array.from(new Set(categories))]
+  }
+
+  // Toggle favorite
+  const toggleFavorite = (dishId: string) => {
+    setFavorites(prev => {
+      const newFavorites = new Set(prev)
+      if (newFavorites.has(dishId)) {
+        newFavorites.delete(dishId)
+      } else {
+        newFavorites.add(dishId)
+      }
+      return newFavorites
+    })
+  }
 
   // Cart functions
   const addToCart = (dish: MenuItem) => {
@@ -147,6 +213,11 @@ export default function PublicMenuPage() {
     setCart([])
     setShowCart(false)
     setShowCheckout(false)
+  }
+
+  const viewDishDetails = (dish: MenuItem) => {
+    setSelectedDish(dish)
+    setShowDishDetails(true)
   }
 
   // Order placement function with payment integration
@@ -287,150 +358,424 @@ export default function PublicMenuPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header Section */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <div className="text-4xl mb-4">🍽️</div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-              {restaurant.name}
-            </h1>
-            <p className="text-gray-600 text-lg">Menu</p>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50">
+      {/* Modern Header Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="bg-white/80 backdrop-blur-md shadow-lg border-b border-orange-100 sticky top-0 z-40"
+      >
+        <div className="container mx-auto px-4 py-4">
+          {/* Top Navigation */}
+          <div className="flex items-center justify-between mb-4">
+            <motion.div 
+              className="flex items-center space-x-3"
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            >
+              <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                <ChefHat className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                  {restaurant.name}
+                </h1>
+                <p className="text-xs text-gray-500">Digital Menu</p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Button
+                onClick={() => router.push('/profile')}
+                variant="outline"
+                size="sm"
+                className="bg-white/50 hover:bg-white/80 border-orange-200 hover:border-orange-300 text-orange-700 hover:text-orange-800 transition-all duration-300"
+              >
+                <User className="w-4 h-4 mr-2" />
+                Login
+              </Button>
+            </motion.div>
           </div>
+
+          {/* Hero Section */}
+          <motion.div 
+            className="text-center py-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+          >
+            <motion.div 
+              className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-400 to-red-400 rounded-full mb-4 shadow-lg"
+              animate={{ 
+                rotate: [0, 5, -5, 0],
+                scale: [1, 1.05, 1]
+              }}
+              transition={{ 
+                duration: 3,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
+            >
+              <Sparkles className="w-8 h-8 text-white" />
+            </motion.div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              Delicious Menu
+            </h2>
+            <p className="text-gray-600">Discover our carefully crafted dishes</p>
+          </motion.div>
+
+          {/* Search and Filter Bar */}
+          <motion.div 
+            className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search dishes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-white/70 border-orange-200 focus:border-orange-400 focus:ring-orange-200"
+              />
+            </div>
+
+            {/* Category Filter */}
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="pl-10 pr-8 py-2 bg-white/70 border border-orange-200 rounded-lg focus:border-orange-400 focus:ring-2 focus:ring-orange-200 focus:outline-none appearance-none cursor-pointer"
+              >
+                {getCategories().map(category => (
+                  <option key={category} value={category}>
+                    {category === 'all' ? 'All Categories' : category}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Menu Content */}
       <div className="container mx-auto px-4 py-8">
         {dishes.length === 0 ? (
           // Empty state
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">📋</div>
+          <motion.div 
+            className="text-center py-16"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+          >
+            <motion.div 
+              className="text-6xl mb-4"
+              animate={{ 
+                rotate: [0, 10, -10, 0],
+                scale: [1, 1.1, 1]
+              }}
+              transition={{ 
+                duration: 2,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
+            >
+              📋
+            </motion.div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">
               Menu Coming Soon
             </h2>
             <p className="text-gray-600">
               This restaurant hasn't added any dishes to their menu yet.
             </p>
-          </div>
+          </motion.div>
+        ) : filteredDishes.length === 0 ? (
+          // No results state
+          <motion.div 
+            className="text-center py-16"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="text-6xl mb-4">🔍</div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              No dishes found
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Try adjusting your search or filter criteria
+            </p>
+            <Button
+              onClick={() => {
+                setSearchQuery('')
+                setSelectedCategory('all')
+              }}
+              variant="outline"
+              className="border-orange-300 text-orange-700 hover:bg-orange-50"
+            >
+              Clear Filters
+            </Button>
+          </motion.div>
         ) : (
           // Dishes Grid
           <div className="max-w-4xl mx-auto">
-            <div className="grid gap-6 md:gap-8">
-              {dishes.map((dish) => (
-                <div
-                  key={dish.id}
-                  className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow duration-200"
-                >
-                  <div className="p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                      {/* Dish Image */}
-                      <div className="flex-shrink-0">
-                        {dish.image_url ? (
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden">
-                            <img
-                              src={dish.image_url}
-                              alt={dish.name}
-                              className="w-full h-full object-cover"
+            <motion.div 
+              className="grid gap-6 md:gap-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <AnimatePresence mode="popLayout">
+                {filteredDishes.map((dish, index) => (
+                  <motion.div
+                    key={dish.id}
+                    layout
+                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                    transition={{ 
+                      duration: 0.4,
+                      delay: index * 0.1,
+                      type: "spring",
+                      stiffness: 100
+                    }}
+                    whileHover={{ 
+                      y: -5,
+                      transition: { duration: 0.2 }
+                    }}
+                    className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl hover:border-orange-200 transition-all duration-300 overflow-hidden group"
+                  >
+                    <div className="p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                        {/* Dish Image */}
+                        <motion.div 
+                          className="flex-shrink-0 relative"
+                          whileHover={{ scale: 1.05 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          {dish.image_url ? (
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shadow-md">
+                              <img
+                                src={dish.image_url}
+                                alt={dish.name}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-orange-100 to-red-100 rounded-xl flex items-center justify-center shadow-md">
+                              <Utensils className="w-10 h-10 sm:w-12 sm:h-12 text-orange-600" />
+                            </div>
+                          )}
+                          
+                          {/* Favorite Button */}
+                          <motion.button
+                            onClick={() => toggleFavorite(dish.id)}
+                            className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <Heart 
+                              className={`w-4 h-4 ${
+                                favorites.has(dish.id) 
+                                  ? 'text-red-500 fill-red-500' 
+                                  : 'text-gray-400'
+                              }`} 
                             />
-                          </div>
-                        ) : (
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <Utensils className="w-8 h-8 sm:w-10 sm:h-10 text-orange-600" />
-                          </div>
-                        )}
-                      </div>
+                          </motion.button>
+                        </motion.div>
 
-                      {/* Dish Details */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
-                          <h3 className="text-xl font-semibold text-gray-900 leading-tight">
-                            {dish.name}
-                          </h3>
-                          <div className="flex items-center text-green-600 font-bold text-lg sm:text-xl">
-                            <IndianRupee className="w-5 h-5" />
-                            <span>{dish.price.toFixed(2)}</span>
-                          </div>
-                        </div>
-
-                        <p className="text-gray-600 text-sm sm:text-base mb-4 leading-relaxed">
-                          {dish.description}
-                        </p>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center text-gray-500 text-sm">
-                            <Clock className="w-4 h-4 mr-2" />
-                            <span>{dish.preparation_time} minutes prep time</span>
-                          </div>
-
-                          {/* Add to Cart Controls */}
-                          <div className="flex items-center gap-2">
-                            {getCartItemQuantity(dish.id) === 0 ? (
-                              <Button
-                                onClick={() => addToCart(dish)}
-                                size="sm"
-                                className="bg-orange-600 hover:bg-orange-700 text-white"
-                              >
-                                <Plus className="w-4 h-4 mr-1" />
-                                Add
-                              </Button>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  onClick={() => removeFromCart(dish.id)}
-                                  size="sm"
-                                  variant="outline"
-                                  className="p-1 h-8 w-8"
-                                >
-                                  <Minus className="w-4 h-4" />
-                                </Button>
-                                <span className="font-medium text-gray-900 min-w-[2rem] text-center">
-                                  {getCartItemQuantity(dish.id)}
+                        {/* Dish Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
+                            <div>
+                              <h3 className="text-xl font-bold text-gray-900 leading-tight mb-1">
+                                {dish.name}
+                              </h3>
+                              {dish.dish_type && (
+                                <span className="inline-block px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
+                                  {dish.dish_type}
                                 </span>
-                                <Button
-                                  onClick={() => addToCart(dish)}
-                                  size="sm"
-                                  variant="outline"
-                                  className="p-1 h-8 w-8"
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </Button>
+                              )}
+                            </div>
+                            <motion.div 
+                              className="flex items-center bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold text-lg sm:text-xl px-3 py-1 rounded-full shadow-md"
+                              whileHover={{ scale: 1.05 }}
+                            >
+                              <IndianRupee className="w-4 h-4" />
+                              <span>{dish.price.toFixed(2)}</span>
+                            </motion.div>
+                          </div>
+
+                          <p className="text-gray-600 text-sm sm:text-base mb-4 leading-relaxed">
+                            {dish.description}
+                          </p>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="flex items-center text-gray-500 text-sm">
+                                <Clock className="w-4 h-4 mr-1" />
+                                <span>{dish.preparation_time}min</span>
                               </div>
-                            )}
+                              <div className="flex items-center text-yellow-500 text-sm">
+                                <Star className="w-4 h-4 mr-1 fill-current" />
+                                <span>4.5</span>
+                              </div>
+                            </div>
+
+                            {/* Add to Cart Controls */}
+                            <div className="flex items-center gap-2">
+                              {getCartItemQuantity(dish.id) === 0 ? (
+                                <div className="flex gap-2">
+                                  <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <Button
+                                      onClick={() => viewDishDetails(dish)}
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-orange-300 hover:bg-orange-50 text-orange-700"
+                                    >
+                                      <Eye className="w-4 h-4 mr-1" />
+                                      View
+                                    </Button>
+                                  </motion.div>
+                                  <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                  >
+                                    <Button
+                                      onClick={() => addToCart(dish)}
+                                      size="sm"
+                                      className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-md"
+                                    >
+                                      <Plus className="w-4 h-4 mr-1" />
+                                      Add
+                                    </Button>
+                                  </motion.div>
+                                </div>
+                              ) : (
+                                <motion.div 
+                                  className="flex items-center gap-2"
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                >
+                                  <motion.div whileTap={{ scale: 0.9 }}>
+                                    <Button
+                                      onClick={() => removeFromCart(dish.id)}
+                                      size="sm"
+                                      variant="outline"
+                                      className="p-1 h-8 w-8 border-orange-300 hover:bg-orange-50"
+                                    >
+                                      <Minus className="w-4 h-4" />
+                                    </Button>
+                                  </motion.div>
+                                  <motion.span 
+                                    className="font-bold text-gray-900 min-w-[2rem] text-center bg-orange-100 px-2 py-1 rounded-lg"
+                                    key={getCartItemQuantity(dish.id)}
+                                    initial={{ scale: 1.2 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ duration: 0.2 }}
+                                  >
+                                    {getCartItemQuantity(dish.id)}
+                                  </motion.span>
+                                  <motion.div whileTap={{ scale: 0.9 }}>
+                                    <Button
+                                      onClick={() => addToCart(dish)}
+                                      size="sm"
+                                      variant="outline"
+                                      className="p-1 h-8 w-8 border-orange-300 hover:bg-orange-50"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                    </Button>
+                                  </motion.div>
+                                </motion.div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
           </div>
         )}
 
-        {/* Footer */}
-        <div className="text-center mt-16 pt-8 border-t border-gray-200">
-          <p className="text-gray-500 text-sm">
-            Powered by <span className="font-semibold">ServeNow</span>
-          </p>
-        </div>
+        {/* Modern Footer */}
+        <motion.div 
+          className="text-center mt-16 pt-8 border-t border-orange-200"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8, duration: 0.6 }}
+        >
+          <div className="flex items-center justify-center space-x-2 mb-2">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            >
+              <Sparkles className="w-5 h-5 text-orange-500" />
+            </motion.div>
+            <p className="text-gray-600 text-sm">
+              Powered by <span className="font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">ServeNow</span>
+            </p>
+          </div>
+          <p className="text-xs text-gray-400">Digital dining experience reimagined</p>
+        </motion.div>
       </div>
 
       {/* Floating Cart Button */}
-      {cart.length > 0 && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <Button
-            onClick={() => setShowCart(true)}
-            className="bg-orange-600 hover:bg-orange-700 text-white rounded-full p-4 shadow-lg relative"
+      <AnimatePresence>
+        {cart.length > 0 && (
+          <motion.div 
+            className="fixed bottom-6 right-6 z-50"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
           >
-            <ShoppingCart className="w-6 h-6" />
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
-              {getCartItemCount()}
-            </span>
-          </Button>
-        </div>
-      )}
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              animate={{ 
+                y: [0, -5, 0],
+                rotate: [0, 5, -5, 0]
+              }}
+              transition={{ 
+                duration: 2,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
+            >
+              <Button
+                onClick={() => setShowCart(true)}
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-full p-4 shadow-2xl relative"
+              >
+                <ShoppingCart className="w-6 h-6" />
+                <motion.span 
+                  className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold shadow-lg"
+                  key={getCartItemCount()}
+                  initial={{ scale: 1.5 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                >
+                  {getCartItemCount()}
+                </motion.span>
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Cart Modal */}
       {showCart && (
@@ -616,6 +961,108 @@ export default function PublicMenuPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Dish Details Modal */}
+      {showDishDetails && selectedDish && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-xl font-semibold text-gray-900">Dish Details</h2>
+              <Button
+                onClick={() => setShowDishDetails(false)}
+                variant="outline"
+                size="sm"
+                className="p-1"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Dish Image */}
+            <div className="relative w-full h-48 overflow-hidden">
+              {selectedDish.image_url ? (
+                <img
+                  src={selectedDish.image_url}
+                  alt={selectedDish.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
+                  <Utensils className="w-16 h-16 text-orange-600" />
+                </div>
+              )}
+              <div className="absolute top-2 right-2">
+                <span className="inline-block px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-full shadow-md">
+                  <IndianRupee className="w-3 h-3 inline-block mr-1" />
+                  {selectedDish.price.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            {/* Dish Content */}
+            <div className="p-6 space-y-4">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-1">{selectedDish.name}</h3>
+                {selectedDish.dish_type && (
+                  <span className="inline-block px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
+                    {selectedDish.dish_type}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center text-gray-500">
+                  <Clock className="w-4 h-4 mr-1" />
+                  <span>{selectedDish.preparation_time} min</span>
+                </div>
+                <div className="flex items-center text-yellow-500">
+                  <Star className="w-4 h-4 mr-1 fill-current" />
+                  <span>4.5</span>
+                </div>
+              </div>
+
+              <div className="border-t border-b py-4">
+                <h4 className="text-sm font-medium text-gray-500 mb-2">Description</h4>
+                <p className="text-gray-800">{selectedDish.description}</p>
+              </div>
+
+              {selectedDish.ingredients && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">Ingredients</h4>
+                  <p className="text-gray-800">{selectedDish.ingredients}</p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={() => setShowDishDetails(false)}
+                  variant="outline"
+                  className="flex-1 border-orange-300 text-orange-700"
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    addToCart(selectedDish)
+                    setShowDishDetails(false)
+                  }}
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add to Cart
+                </Button>
+              </div>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>
