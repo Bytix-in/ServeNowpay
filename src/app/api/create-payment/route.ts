@@ -209,30 +209,31 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify(orderPayload)
       });
 
-      if (!createOrderResponse.ok) {
-        let errorData;
-        try {
-          errorData = await createOrderResponse.json();
-        } catch (e) {
-          const textResponse = await createOrderResponse.text();
-          errorData = { message: textResponse };
-        }
+      // Parse the response once and store it
+      let responseData;
+      try {
+        responseData = await createOrderResponse.json();
+      } catch (e) {
+        const textResponse = await createOrderResponse.text();
+        throw new Error(`Failed to parse Cashfree response: ${textResponse}`);
+      }
 
+      if (!createOrderResponse.ok) {
         // Update order with error information
         await supabaseAdmin
           .from('orders')
           .update({
             payment_status: 'failed',
-            payment_error: JSON.stringify(errorData),
+            payment_error: JSON.stringify(responseData),
             updated_at: new Date().toISOString()
           })
           .eq('id', order.id);
 
-        throw new Error(`Failed to create Cashfree order: ${JSON.stringify(errorData)}`);
+        throw new Error(`Failed to create Cashfree order: ${JSON.stringify(responseData)}`);
       }
 
-      // Parse the response
-      cashfreeOrder = await createOrderResponse.json();
+      // Use the already parsed response
+      cashfreeOrder = responseData;
 
     } catch (apiError: any) {
       // Update order with error information

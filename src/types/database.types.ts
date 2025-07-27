@@ -143,6 +143,7 @@ export type Database = {
           payment_status: string
           payment_id: string | null
           payment_gateway_order_id: string | null
+          unique_order_id: string | null
           created_at: string
           updated_at: string
         }
@@ -158,6 +159,7 @@ export type Database = {
           payment_status?: string
           payment_id?: string | null
           payment_gateway_order_id?: string | null
+          unique_order_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -173,6 +175,7 @@ export type Database = {
           payment_status?: string
           payment_id?: string | null
           payment_gateway_order_id?: string | null
+          unique_order_id?: string | null
           updated_at?: string
         }
       }
