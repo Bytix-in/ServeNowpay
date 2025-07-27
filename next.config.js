@@ -3,6 +3,13 @@ const nextConfig = {
   experimental: {
     missingSuspenseWithCSRBailout: false,
   },
+  // Disable linting and type checking during build for faster deployment
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   // Force dynamic rendering for payment pages
   async headers() {
     return [

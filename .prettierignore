@@ -1,7 +1,9 @@
-node_modules
 .next
-out
-dist
-build
-*.log
+node_modules
+.git
 .env*
+*.md
+*.json
+public
+*.config.js
+*.config.ts
