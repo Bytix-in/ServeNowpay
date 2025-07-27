@@ -66,53 +66,70 @@ function PaymentSuccessContent() {
     }
   }, [orderId, paymentStatus, orderStatus, router, searchParams])
 
-  // Auto-refresh for pending payments
+  // Immediate payment verification for pending payments
   useEffect(() => {
     if (order && order.payment_status === 'pending' && !noPayment) {
-      const interval = setInterval(async () => {
-        setCheckingStatus(true)
-        try {
-          const response = await fetch(`/api/orders/${orderId}`)
-          const data = await response.json()
-          
-          if (data.success && data.order) {
-            if (data.order.payment_status !== order.payment_status) {
-              // Status changed, update the order
-              const { data: restaurantData } = await supabase
-                .from('restaurants')
-                .select('name, address, phone_number, email')
-                .eq('id', data.order.restaurant_id)
-                .single()
+      // Verify immediately when component loads
+      verifyPaymentStatus()
+      
+      // Then set up polling as backup
+      const interval = setInterval(() => {
+        verifyPaymentStatus()
+      }, 5000) // Check every 5 seconds
 
-              setOrder({ 
-                ...data.order, 
-                restaurant: restaurantData || order.restaurant 
-              })
-              
-              // If payment failed, redirect to failure page
-              if (data.order.payment_status === 'failed') {
-                router.push(`/payment/failure?order_id=${orderId}&reason=payment_failed`)
-              }
-            }
-          }
-        } catch (error) {
-          // Ignore errors during status check
-        } finally {
-          setCheckingStatus(false)
-        }
-      }, 3000) // Check every 3 seconds
-
-      // Clear interval after 2 minutes to avoid infinite polling
+      // Clear interval after 1 minute
       const timeout = setTimeout(() => {
         clearInterval(interval)
-      }, 120000)
+      }, 60000)
 
       return () => {
         clearInterval(interval)
         clearTimeout(timeout)
       }
     }
-  }, [order, orderId, noPayment, router, supabase])
+  }, [order, orderId, noPayment])
+
+  const verifyPaymentStatus = async () => {
+    if (checkingStatus) return // Prevent multiple simultaneous checks
+    
+    setCheckingStatus(true)
+    try {
+      const response = await fetch('/api/verify-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderId })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success && data.order) {
+        if (data.payment_status !== order?.payment_status) {
+          // Status changed, update the order
+          const { data: restaurantData } = await supabase
+            .from('restaurants')
+            .select('name, address, phone_number, email')
+            .eq('id', data.order.restaurant_id)
+            .single()
+
+          setOrder({ 
+            ...data.order, 
+            restaurant: restaurantData || order?.restaurant 
+          })
+          
+          // If payment failed, redirect to failure page
+          if (data.payment_status === 'failed') {
+            router.push(`/payment/failure?order_id=${orderId}&reason=payment_failed`)
+          }
+        }
+      }
+    } catch (error) {
+      // Ignore errors during verification
+    } finally {
+      setCheckingStatus(false)
+    }
+  }
 
   const fetchOrderDetails = async () => {
     try {
@@ -367,7 +384,7 @@ function PaymentSuccessContent() {
                   : 'text-blue-700'
               }`}>
                 {order.payment_status === 'pending' && !noPayment
-                  ? 'We are verifying your payment. This usually takes a few seconds.'
+                  ? 'Click "Verify Payment Now" to instantly check your payment status with the payment gateway.'
                   : order.payment_status === 'failed'
                   ? 'Your payment could not be processed. Please try again or contact the restaurant.'
                   : noPayment 
@@ -409,66 +426,43 @@ function PaymentSuccessContent() {
             Profile
           </Button>
 
-          <Button
-            onClick={printInvoice}
-            className="flex-1 bg-green-600 hover:bg-green-700"
-          >
-            <Printer className="h-4 w-4 mr-2" />
-            Print Invoice
-          </Button>
-
-          {order.payment_status === 'pending' && !noPayment && (
+          {order.payment_status === 'completed' ? (
             <Button
-              onClick={async () => {
-                setCheckingStatus(true)
-                try {
-                  const response = await fetch(`/api/orders/${orderId}`)
-                  const data = await response.json()
-                  
-                  if (data.success && data.order) {
-                    const { data: restaurantData } = await supabase
-                      .from('restaurants')
-                      .select('name, address, phone_number, email')
-                      .eq('id', data.order.restaurant_id)
-                      .single()
-
-                    setOrder({ 
-                      ...data.order, 
-                      restaurant: restaurantData || order.restaurant 
-                    })
-                    
-                    if (data.order.payment_status === 'failed') {
-                      router.push(`/payment/failure?order_id=${orderId}&reason=payment_failed`)
-                    }
-                  }
-                } catch (error) {
-                  // If manual check fails, just reload the page
-                  window.location.reload()
-                } finally {
-                  setCheckingStatus(false)
-                }
-              }}
-              variant="outline"
-              className="flex-1"
+              onClick={printInvoice}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Print Invoice
+            </Button>
+          ) : order.payment_status === 'pending' && !noPayment ? (
+            <Button
+              onClick={verifyPaymentStatus}
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
               disabled={checkingStatus}
             >
               {checkingStatus ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                  Checking...
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Verifying...
                 </>
               ) : (
-                'Check Status'
+                'Verify Payment Now'
               )}
             </Button>
-          )}
-
-          {order.payment_status === 'failed' && (
+          ) : order.payment_status === 'failed' ? (
             <Button
               onClick={() => router.push(`/payment/failure?order_id=${orderId}&reason=payment_failed`)}
               className="flex-1 bg-red-600 hover:bg-red-700"
             >
               Try Again
+            </Button>
+          ) : (
+            <Button
+              onClick={printInvoice}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Print Invoice
             </Button>
           )}
         </motion.div>
