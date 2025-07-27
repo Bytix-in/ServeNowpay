@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
         customer_phone: customer_phone.replace(/[^0-9]/g, '') // Ensure phone is numeric only
       },
       order_meta: {
-        return_url: `${appUrl}/payment/callback?order_id=${order.id}`,
+        return_url: `${appUrl}/payment/success?order_id=${order.id}`,
         notify_url: `${appUrl}/api/payment-webhook`
       }
     }

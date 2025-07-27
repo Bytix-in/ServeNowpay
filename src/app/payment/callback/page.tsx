@@ -21,33 +21,34 @@ export default function PaymentCallback() {
 
       // Check payment status from URL parameters
       if (paymentStatus === 'SUCCESS' || orderStatus === 'PAID') {
-        router.push(`/payment/success?order_id=${orderId}`)
+        router.push(`/payment/success?order_id=${orderId}&from_payment=true`)
       } else if (paymentStatus === 'FAILED' || orderStatus === 'FAILED') {
         const reason = searchParams.get('reason') || 'payment_failed'
         router.push(`/payment/failure?order_id=${orderId}&reason=${reason}`)
       } else {
-        // If status is unclear, fetch order details to determine status
-        try {
-          const response = await fetch(`/api/orders/${orderId}`)
-          const data = await response.json()
-          
-          if (data.success && data.order) {
-            if (data.order.payment_status === 'completed') {
-              router.push(`/payment/success?order_id=${orderId}`)
-            } else if (data.order.payment_status === 'failed') {
-              router.push(`/payment/failure?order_id=${orderId}&reason=payment_failed`)
+        // If status is unclear, wait for webhook to update and then check
+        setTimeout(async () => {
+          try {
+            const response = await fetch(`/api/orders/${orderId}`)
+            const data = await response.json()
+            
+            if (data.success && data.order) {
+              if (data.order.payment_status === 'completed') {
+                router.push(`/payment/success?order_id=${orderId}&from_payment=true`)
+              } else if (data.order.payment_status === 'failed') {
+                router.push(`/payment/failure?order_id=${orderId}&reason=payment_failed`)
+              } else {
+                // Still pending after waiting - assume success and let success page handle it
+                router.push(`/payment/success?order_id=${orderId}&from_payment=true`)
+              }
             } else {
-              // Payment is still pending, wait a moment and check again
-              setTimeout(() => {
-                router.push(`/payment/success?order_id=${orderId}`)
-              }, 2000)
+              router.push(`/payment/failure?order_id=${orderId}&reason=order_not_found`)
             }
-          } else {
-            router.push(`/payment/failure?order_id=${orderId}&reason=order_not_found`)
+          } catch (error) {
+            // On error, assume success and let success page handle verification
+            router.push(`/payment/success?order_id=${orderId}&from_payment=true`)
           }
-        } catch (error) {
-          router.push(`/payment/failure?order_id=${orderId}&reason=network_error`)
-        }
+        }, 3000) // Wait 3 seconds for webhook to process
       }
     }
 

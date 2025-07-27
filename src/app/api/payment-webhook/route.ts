@@ -50,14 +50,18 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString()
     }
 
-    if (payment_status === 'SUCCESS') {
+    if (payment_status === 'SUCCESS' || order_status === 'PAID') {
       updateData.payment_status = 'completed'
       updateData.status = 'confirmed'
-    } else if (payment_status === 'FAILED') {
+    } else if (payment_status === 'FAILED' || order_status === 'FAILED') {
       updateData.payment_status = 'failed'
       updateData.payment_error = JSON.stringify(body)
     } else if (payment_status === 'PENDING') {
       updateData.payment_status = 'pending'
+    } else {
+      // For any other status, mark as failed to be safe
+      updateData.payment_status = 'failed'
+      updateData.payment_error = JSON.stringify(body)
     }
 
     // Update the order
