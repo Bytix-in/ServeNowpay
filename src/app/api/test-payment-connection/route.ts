@@ -73,8 +73,44 @@ export async function POST(request: NextRequest) {
       : 'https://sandbox.cashfree.com'
 
     try {
-      // For production, we'll use a different approach to test credentials
-      // Let's try to create a test order to validate credentials
+      // For sandbox, use a simpler approach - just test authentication with a basic API call
+      if (paymentSettings.cashfree_environment === 'sandbox') {
+        // Test with a simple authentication check using the orders endpoint with GET
+        const testResponse = await fetch(`${cashfreeBaseUrl}/pg/orders?limit=1`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'x-client-id': paymentSettings.cashfree_client_id,
+            'x-client-secret': clientSecret,
+            'x-api-version': '2023-08-01'
+          }
+        })
+
+        if (testResponse.status === 401) {
+          return NextResponse.json({
+            success: false,
+            error: 'Invalid Cashfree sandbox credentials. Please check your Client ID and Client Secret.'
+          })
+        }
+
+        if (testResponse.status === 403) {
+          return NextResponse.json({
+            success: false,
+            error: 'Access denied. Please ensure your Cashfree sandbox account is properly configured.'
+          })
+        }
+
+        // For sandbox, 200 or 404 (no orders) both indicate valid credentials
+        if (testResponse.ok || testResponse.status === 404) {
+          return NextResponse.json({
+            success: true,
+            message: 'Sandbox connection successful! Your Cashfree sandbox credentials are working.',
+            environment: paymentSettings.cashfree_environment
+          })
+        }
+      }
+
+      // For production, try to create a minimal test order
       const testOrderData = {
         order_id: `test_${Date.now()}`,
         order_amount: 1.00,
