@@ -16,19 +16,6 @@ const supabaseAdmin = createClient(
 )
 
 // Define interfaces for type safety
-interface OrderData {
-  restaurant_id: string;
-  customer_name: string;
-  customer_phone: string;
-  table_number: string;
-  items: any[];
-  total_amount: number;
-  status: string;
-  payment_status?: string;
-  payment_error?: string;
-  payment_gateway_order_id?: string;
-  updated_at?: string;
-}
 
 interface CashfreeOrder {
   order_id: string;
@@ -48,7 +35,7 @@ export async function POST(request: NextRequest) {
       total_amount
     } = body
 
-    console.log('Create payment request:', { restaurant_id, customer_name, total_amount })
+
 
     if (!restaurant_id || !customer_name || !customer_phone || !table_number || !items || !total_amount) {
       return NextResponse.json(
@@ -61,14 +48,11 @@ export async function POST(request: NextRequest) {
     let credentials
     try {
       credentials = await getDecryptedCredentials(restaurant_id)
-      console.log('Credentials check result:', credentials ? 'Found' : 'Not found')
     } catch (credError) {
-      console.error('Error getting credentials:', credError)
       credentials = null
     }
 
     if (!credentials) {
-      console.log('No payment credentials found for restaurant:', restaurant_id)
 
       // Check if restaurant exists and is active
       const { data: restaurantCheck, error: restaurantError } = await supabaseAdmin
@@ -91,29 +75,26 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Create order without payment processing
+      // Create order without payment processing using enhanced validation
       try {
-        const { data: order, error: orderError } = await supabaseAdmin
-          .from('orders')
-          .insert([{
-            restaurant_id,
-            customer_name,
-            customer_phone,
-            table_number,
-            items,
-            total_amount,
-            status: 'pending',
-            payment_status: 'not_configured'
-          }])
-          .select()
-          .single()
+        const { createOrderWithValidation } = await import('@/lib/order-utils')
+        
+        const orderResult = await createOrderWithValidation({
+          restaurant_id,
+          customer_name,
+          customer_phone,
+          table_number,
+          items,
+          total_amount,
+          status: 'pending',
+          payment_status: 'not_configured'
+        })
 
-        if (orderError) {
-          console.error('Order creation error:', orderError)
-          throw new Error(`Failed to create order: ${orderError.message}`)
+        if (!orderResult.success) {
+          throw new Error(orderResult.error || 'Failed to create order')
         }
 
-        console.log('Order created without payment processing:', order.id)
+        const order = orderResult.order
 
         return NextResponse.json({
           success: true,
@@ -123,7 +104,6 @@ export async function POST(request: NextRequest) {
           payment_configured: false
         })
       } catch (fallbackError: any) {
-        console.error('Order creation failed:', fallbackError)
         return NextResponse.json(
           { error: `Failed to create order: ${fallbackError?.message || 'Unknown error'}` },
           { status: 500 }
@@ -131,48 +111,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create order in database first
-    const orderData: OrderData = {
+    // Create order using enhanced validation
+    const { createOrderWithValidation } = await import('@/lib/order-utils')
+    
+    const orderResult = await createOrderWithValidation({
       restaurant_id,
       customer_name,
       customer_phone,
       table_number,
       items,
       total_amount,
-      status: 'pending'
+      status: 'pending',
+      payment_status: 'pending'
+    })
+
+    if (!orderResult.success) {
+      throw new Error(orderResult.error || 'Failed to create order')
     }
 
-    // Try to add payment status if column exists
-    try {
-      orderData.payment_status = 'pending'
-    } catch (e) {
-      console.log('Payment status column might not exist')
-    }
-
-    const { data: order, error: orderError } = await supabaseAdmin
-      .from('orders')
-      .insert([orderData])
-      .select()
-      .single()
-
-    if (orderError) {
-      console.error('Order creation error:', orderError)
-      throw new Error(`Failed to create order: ${orderError.message}`)
-    }
-
-    console.log('Order created:', order.id)
+    const order = orderResult.order
 
     // Create Cashfree order directly (no separate auth needed)
     const baseUrl = credentials.environment === 'production'
       ? 'https://api.cashfree.com'
       : 'https://sandbox.cashfree.com'
-
-    console.log('Creating Cashfree order...')
-    console.log('Using environment:', credentials.environment)
-    console.log('Using base URL:', baseUrl)
-    console.log('Base URL:', baseUrl)
-    console.log('Client ID:', credentials.client_id)
-    console.log('Environment:', credentials.environment)
 
     // Create Cashfree order with more standardized format
     let appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -188,8 +150,6 @@ export async function POST(request: NextRequest) {
         appUrl = appUrl.replace('http://', 'https://');
       }
     }
-
-    console.log('Using app URL for return/notify:', appUrl);
 
     // Format order ID to ensure it meets Cashfree requirements
     // Cashfree requires alphanumeric order IDs with max 50 characters
@@ -208,17 +168,13 @@ export async function POST(request: NextRequest) {
         customer_phone: customer_phone.replace(/[^0-9]/g, '') // Ensure phone is numeric only
       },
       order_meta: {
-        return_url: `https://serrve-testing.vercel.app/payment/success?order_id=${order.id}`,
-        notify_url: `https://serrve-testing.vercel.app/api/payment-webhook`
+        return_url: `${appUrl}/payment/success?order_id=${order.id}`,
+        notify_url: `${appUrl}/api/payment-webhook`
       }
     }
 
-    console.log('Order payload:', JSON.stringify(orderPayload, null, 2))
-
     // Validate credentials before making the API call
     if (!credentials.client_id || !credentials.client_secret) {
-      console.error('Invalid credentials: Missing client ID or secret');
-
       // Update order with error information
       await supabaseAdmin
         .from('orders')
@@ -232,12 +188,9 @@ export async function POST(request: NextRequest) {
       throw new Error('Invalid payment credentials: Missing client ID or secret');
     }
 
-    // Add more detailed logging before making the API call
-    console.log('Making Cashfree API request with:');
-    console.log('- URL:', `${baseUrl}/pg/orders`);
-    console.log('- Client ID length:', credentials.client_id.length);
-    console.log('- Client Secret length:', credentials.client_secret.length);
-    console.log('- Environment:', credentials.environment);
+    // Trim any whitespace from credentials
+    credentials.client_id = credentials.client_id.trim();
+    credentials.client_secret = credentials.client_secret.trim();
 
     // Make the API call
     let createOrderResponse;
@@ -247,24 +200,21 @@ export async function POST(request: NextRequest) {
       createOrderResponse = await fetch(`${baseUrl}/pg/orders`, {
         method: 'POST',
         headers: {
+          'Accept': 'application/json',
           'Content-Type': 'application/json',
           'x-client-id': credentials.client_id,
           'x-client-secret': credentials.client_secret,
-          'x-api-version': '2022-09-01' // Using a stable API version
+          'x-api-version': '2022-09-01' // Using a more stable API version
         },
         body: JSON.stringify(orderPayload)
       });
-
-      console.log('Cashfree order response status:', createOrderResponse.status);
 
       if (!createOrderResponse.ok) {
         let errorData;
         try {
           errorData = await createOrderResponse.json();
-          console.error('Cashfree error response:', JSON.stringify(errorData, null, 2));
         } catch (e) {
           const textResponse = await createOrderResponse.text();
-          console.error('Cashfree error response (text):', textResponse);
           errorData = { message: textResponse };
         }
 
@@ -283,11 +233,8 @@ export async function POST(request: NextRequest) {
 
       // Parse the response
       cashfreeOrder = await createOrderResponse.json();
-      console.log('Cashfree order created successfully:', cashfreeOrder.order_id);
 
     } catch (apiError: any) {
-      console.error('API call error:', apiError);
-
       // Update order with error information
       await supabaseAdmin
         .from('orders')
@@ -333,15 +280,31 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error: any) {
-    console.error('Error creating payment:', error)
-    console.error('Error stack:', error.stack)
+    // Provide more specific error messages based on the error type
+    let userFriendlyMessage = 'Failed to create payment'
+    let statusCode = 500
+    
+    if (error.message?.includes('credentials')) {
+      userFriendlyMessage = 'Payment system not configured. Please contact the restaurant.'
+      statusCode = 400
+    } else if (error.message?.includes('Cashfree')) {
+      userFriendlyMessage = 'Payment gateway error. Please try again or contact support.'
+      statusCode = 502
+    } else if (error.message?.includes('order')) {
+      userFriendlyMessage = 'Failed to create order. Please check your details and try again.'
+      statusCode = 400
+    }
+    
     return NextResponse.json(
       {
-        error: 'Failed to create payment',
+        error: userFriendlyMessage,
         details: error?.message || 'Unknown error',
-        debug: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+        debug: process.env.NODE_ENV === 'development' ? {
+          stack: error?.stack,
+          timestamp: new Date().toISOString()
+        } : undefined
       },
-      { status: 500 }
+      { status: statusCode }
     )
   }
 }

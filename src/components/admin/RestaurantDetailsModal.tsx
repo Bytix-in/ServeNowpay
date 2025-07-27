@@ -219,7 +219,7 @@ export default function RestaurantDetailsModal({
         // Reset copied state for new credentials
         setCredentialsCopied({username: false, password: false})
         // Update the restaurant data with new username
-        setRestaurant(prev => prev ? { ...prev, manager_username: data.username } : null)
+        setRestaurant(prev => prev ? { ...prev, restaurant_username: data.username } : null)
         setSuccessMessage('New manager credentials generated successfully!')
         setTimeout(() => setSuccessMessage(null), 5000)
       } else {

@@ -108,8 +108,8 @@ export async function POST(
     const { data: updatedRestaurant, error: updateError } = await supabaseAdmin
       .from('restaurants')
       .update({
-        manager_username: newUsername,
-        manager_password_hash: passwordHash,
+        restaurant_username: newUsername,
+        restaurant_password_hash: passwordHash,
         updated_at: new Date().toISOString()
       })
       .eq('id', restaurantId)
