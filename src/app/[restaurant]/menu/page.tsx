@@ -149,8 +149,10 @@ export default function PublicMenuPage() {
   }, [dishes, searchQuery, selectedCategory])
 
   // Get unique categories
-  const getCategories = () => {
-    const categories = dishes.map(dish => dish.dish_type).filter(Boolean)
+  const getCategories = (): string[] => {
+    const categories = dishes
+      .map(dish => dish.dish_type)
+      .filter((type): type is string => Boolean(type))
     return ['all', ...Array.from(new Set(categories))]
   }
 
@@ -456,7 +458,7 @@ export default function PublicMenuPage() {
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="pl-10 pr-8 py-2 bg-white/70 border border-orange-200 rounded-lg focus:border-orange-400 focus:ring-2 focus:ring-orange-200 focus:outline-none appearance-none cursor-pointer"
               >
-                {getCategories().map(category => (
+                {getCategories().map((category) => (
                   <option key={category} value={category}>
                     {category === 'all' ? 'All Categories' : category}
                   </option>
