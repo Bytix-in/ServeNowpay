@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import WelcomeScreen from '@/components/customer/WelcomeScreen'
 import { 
   Clock, 
   IndianRupee, 
@@ -18,7 +19,8 @@ import {
   Filter,
   ChefHat,
   Sparkles,
-  Eye
+  Eye,
+  Home
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -48,6 +50,7 @@ export default function PublicMenuPage() {
   const router = useRouter()
   const restaurantSlug = params.restaurant as string
   
+  const [showWelcome, setShowWelcome] = useState(true)
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [dishes, setDishes] = useState<MenuItem[]>([])
   const [filteredDishes, setFilteredDishes] = useState<MenuItem[]>([])
@@ -156,6 +159,103 @@ export default function PublicMenuPage() {
     return ['all', ...Array.from(new Set(categories))]
   }
 
+  // Get icon for category based on dish type
+  const getCategoryIcon = (category: string): string => {
+    const categoryLower = category.toLowerCase();
+    
+    // Common food category icons
+    const iconMap: { [key: string]: string } = {
+      // Main dishes
+      'main': '🍽️',
+      'mains': '🍽️',
+      'main course': '🍽️',
+      'entree': '🍽️',
+      'entrees': '🍽️',
+      
+      // Appetizers
+      'appetizer': '🥗',
+      'appetizers': '🥗',
+      'starter': '🥗',
+      'starters': '🥗',
+      'snacks': '🥨',
+      'snack': '🥨',
+      
+      // Beverages
+      'beverage': '🥤',
+      'beverages': '🥤',
+      'drinks': '🥤',
+      'drink': '🥤',
+      'juice': '🧃',
+      'juices': '🧃',
+      'coffee': '☕',
+      'tea': '🍵',
+      'smoothie': '🥤',
+      'smoothies': '🥤',
+      
+      // Desserts
+      'dessert': '🍰',
+      'desserts': '🍰',
+      'sweet': '🍭',
+      'sweets': '🍭',
+      'cake': '🎂',
+      'cakes': '🎂',
+      'ice cream': '🍦',
+      'pastry': '🥧',
+      'pastries': '🥧',
+      
+      // Specific foods
+      'pizza': '🍕',
+      'pizzas': '🍕',
+      'burger': '🍔',
+      'burgers': '🍔',
+      'pasta': '🍝',
+      'noodles': '🍜',
+      'rice': '🍚',
+      'biryani': '🍛',
+      'curry': '🍛',
+      'curries': '🍛',
+      'soup': '🍲',
+      'soups': '🍲',
+      'salad': '🥗',
+      'salads': '🥗',
+      'sandwich': '🥪',
+      'sandwiches': '🥪',
+      'wrap': '🌯',
+      'wraps': '🌯',
+      'taco': '🌮',
+      'tacos': '🌮',
+      'sushi': '🍣',
+      'ramen': '🍜',
+      'dumplings': '🥟',
+      'bread': '🍞',
+      'eggs': '🥚',
+      'egg': '🥚',
+      'chicken': '🍗',
+      'meat': '🥩',
+      'seafood': '🦐',
+      'fish': '🐟',
+      'vegetarian': '🥬',
+      'vegan': '🌱',
+      'healthy': '🥗',
+      'spicy': '🌶️',
+      'chinese': '🥢',
+      'indian': '🍛',
+      'italian': '🍝',
+      'mexican': '🌮',
+      'japanese': '🍣',
+      'thai': '🍜',
+      'continental': '🍽️',
+      'fast food': '🍔',
+      'street food': '🌭',
+      'breakfast': '🍳',
+      'lunch': '🍽️',
+      'dinner': '🍽️'
+    };
+    
+    // Return specific icon if found, otherwise return a generic food icon
+    return iconMap[categoryLower] || '🍴';
+  };
+
   // Toggle favorite
   const toggleFavorite = (dishId: string) => {
     setFavorites(prev => {
@@ -220,6 +320,10 @@ export default function PublicMenuPage() {
   const viewDishDetails = (dish: MenuItem) => {
     setSelectedDish(dish)
     setShowDishDetails(true)
+  }
+
+  const handleGetStarted = () => {
+    setShowWelcome(false)
   }
 
   // Order placement function with payment integration
@@ -332,26 +436,39 @@ export default function PublicMenuPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading menu...</p>
+      <div className="min-h-screen bg-gradient-to-br from-black via-purple-900 via-violet-800 to-pink-900 flex items-center justify-center relative">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-purple-900/30"></div>
+        <div className="text-center relative z-10">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-pink-500 mx-auto mb-4"></div>
+          <p className="text-white text-lg">Loading restaurant...</p>
         </div>
       </div>
+    )
+  }
+
+  // Show welcome screen first
+  if (showWelcome && restaurant) {
+    return (
+      <WelcomeScreen
+        restaurantName={restaurant.name}
+        restaurantSlug={restaurantSlug}
+        onGetStarted={handleGetStarted}
+      />
     )
   }
 
   // Error state
   if (error || !restaurant) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gradient-to-br from-black via-purple-900 via-violet-800 to-pink-900 flex items-center justify-center relative">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-purple-900/30"></div>
+        <div className="text-center relative z-10">
           <div className="text-6xl mb-4">🍽️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Restaurant Not Found</h1>
-          <p className="text-gray-600 mb-4">
+          <h1 className="text-2xl font-bold text-white mb-2 drop-shadow-lg">Restaurant Not Found</h1>
+          <p className="text-white/80 mb-4">
             {error || 'The restaurant you are looking for does not exist.'}
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-white/60">
             Please check the URL and try again.
           </p>
         </div>
@@ -360,117 +477,156 @@ export default function PublicMenuPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50">
+    <div className="min-h-screen bg-white relative pb-20">
       {/* Modern Header Section */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="bg-white/80 backdrop-blur-md shadow-lg border-b border-orange-100 sticky top-0 z-40"
-      >
-        <div className="container mx-auto px-4 py-4">
-          {/* Top Navigation */}
-          <div className="flex items-center justify-between mb-4">
-            <motion.div 
-              className="flex items-center space-x-3"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            >
-              <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
-                <ChefHat className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                  {restaurant.name}
-                </h1>
-                <p className="text-xs text-gray-500">Digital Menu</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Button
-                onClick={() => router.push('/profile')}
-                variant="outline"
-                size="sm"
-                className="bg-white/50 hover:bg-white/80 border-orange-200 hover:border-orange-300 text-orange-700 hover:text-orange-800 transition-all duration-300"
-              >
-                <User className="w-4 h-4 mr-2" />
-                Login
-              </Button>
-            </motion.div>
-          </div>
-
-          {/* Hero Section */}
+      <div className="bg-white px-4 py-6 sticky top-0 z-40 border-b border-gray-200 shadow-sm">
+        {/* Header with Menu title and profile */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-purple-700">Menu</h1>
           <motion.div 
-            className="text-center py-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
+            className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-purple-200 transition-colors"
+            whileTap={{ scale: 0.95 }}
+            onClick={() => router.push('/auth/user-login')}
           >
-            <motion.div 
-              className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-400 to-red-400 rounded-full mb-4 shadow-lg"
-              animate={{ 
-                rotate: [0, 5, -5, 0],
-                scale: [1, 1.05, 1]
-              }}
-              transition={{ 
-                duration: 3,
-                repeat: Infinity,
-                repeatType: "reverse"
-              }}
-            >
-              <Sparkles className="w-8 h-8 text-white" />
-            </motion.div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              Delicious Menu
-            </h2>
-            <p className="text-gray-600">Discover our carefully crafted dishes</p>
-          </motion.div>
-
-          {/* Search and Filter Bar */}
-          <motion.div 
-            className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-          >
-            {/* Search Input */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search dishes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/70 border-orange-200 focus:border-orange-400 focus:ring-orange-200"
-              />
-            </div>
-
-            {/* Category Filter */}
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="pl-10 pr-8 py-2 bg-white/70 border border-orange-200 rounded-lg focus:border-orange-400 focus:ring-2 focus:ring-orange-200 focus:outline-none appearance-none cursor-pointer"
-              >
-                {getCategories().map((category) => (
-                  <option key={category} value={category}>
-                    {category === 'all' ? 'All Categories' : category}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <User className="w-6 h-6 text-purple-700" />
           </motion.div>
         </div>
-      </motion.div>
+
+        {/* Search Bar */}
+        <div className="relative mb-6">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Search dishes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-12 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          />
+        </div>
+
+        {/* Dynamic Category Icons */}
+        <div className="flex gap-4 overflow-x-auto pb-2 mb-6" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          {/* All Category */}
+          <motion.div
+            className="flex flex-col items-center cursor-pointer flex-shrink-0"
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setSelectedCategory('all')}
+          >
+            <div className={`w-16 h-16 ${selectedCategory === 'all' ? 'bg-purple-600' : 'bg-gray-100 border border-gray-200'} rounded-2xl flex items-center justify-center mb-2 shadow-sm`}>
+              <span className="text-2xl">🍽️</span>
+            </div>
+            <span className={`text-sm font-medium ${selectedCategory === 'all' ? 'text-purple-600 font-semibold' : 'text-gray-600'}`}>
+              All
+            </span>
+          </motion.div>
+
+          {/* Dynamic Categories from Dishes */}
+          {getCategories().filter(cat => cat !== 'all').map((category) => {
+            const categoryIcon = getCategoryIcon(category);
+            const isActive = selectedCategory === category.toLowerCase();
+            
+            return (
+              <motion.div
+                key={category}
+                className="flex flex-col items-center cursor-pointer flex-shrink-0"
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setSelectedCategory(category.toLowerCase())}
+              >
+                <div className={`w-16 h-16 ${isActive ? 'bg-purple-600' : 'bg-gray-100 border border-gray-200'} rounded-2xl flex items-center justify-center mb-2 shadow-sm`}>
+                  <span className="text-2xl">{categoryIcon}</span>
+                </div>
+                <span className={`text-sm font-medium ${isActive ? 'text-purple-600 font-semibold' : 'text-gray-600'} capitalize`}>
+                  {category}
+                </span>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Menu Content */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="px-4 pb-8 relative z-10">
+        {/* Promotions Section */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Promotions</h2>
+          <div className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {/* Offer 1 - Free Fries */}
+            <motion.div
+              className="bg-purple-600 rounded-2xl p-6 relative overflow-hidden shadow-lg border border-purple-200 flex-shrink-0 w-80"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex-1">
+                  <p className="text-white/90 text-sm mb-1">Today's Offer</p>
+                  <h3 className="text-white font-bold text-lg mb-1">Free box of fries</h3>
+                  <p className="text-white/90 text-sm">on all orders above ₹350</p>
+                </div>
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">🍟</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Offer 2 - Discount */}
+            <motion.div
+              className="bg-purple-600 rounded-2xl p-6 relative overflow-hidden shadow-lg border border-purple-200 flex-shrink-0 w-80"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex-1">
+                  <p className="text-white/90 text-sm mb-1">Weekend Special</p>
+                  <h3 className="text-white font-bold text-lg mb-1">20% OFF</h3>
+                  <p className="text-white/90 text-sm">on all beverages</p>
+                </div>
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">🥤</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Offer 3 - Combo Deal */}
+            <motion.div
+              className="bg-purple-600 rounded-2xl p-6 relative overflow-hidden shadow-lg border border-purple-200 flex-shrink-0 w-80"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex-1">
+                  <p className="text-white/90 text-sm mb-1">Combo Deal</p>
+                  <h3 className="text-white font-bold text-lg mb-1">Buy 2 Get 1</h3>
+                  <p className="text-white/90 text-sm">on selected desserts</p>
+                </div>
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">🍰</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Offer 4 - Happy Hour */}
+            <motion.div
+              className="bg-purple-600 rounded-2xl p-6 relative overflow-hidden shadow-lg border border-purple-200 flex-shrink-0 w-80"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex-1">
+                  <p className="text-white/90 text-sm mb-1">Happy Hour</p>
+                  <h3 className="text-white font-bold text-lg mb-1">50% OFF</h3>
+                  <p className="text-white/90 text-sm">4PM - 6PM daily</p>
+                </div>
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">⏰</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Popular Section */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Popular</h2>
         {dishes.length === 0 ? (
           // Empty state
           <motion.div 
@@ -528,212 +684,132 @@ export default function PublicMenuPage() {
           </motion.div>
         ) : (
           // Dishes Grid
-          <div className="max-w-4xl mx-auto">
-            <motion.div 
-              className="grid gap-6 md:gap-8"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <AnimatePresence mode="popLayout">
-                {filteredDishes.map((dish, index) => (
-                  <motion.div
-                    key={dish.id}
-                    layout
-                    initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                    transition={{ 
-                      duration: 0.4,
-                      delay: index * 0.1,
-                      type: "spring",
-                      stiffness: 100
-                    }}
-                    whileHover={{ 
-                      y: -5,
-                      transition: { duration: 0.2 }
-                    }}
-                    className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl hover:border-orange-200 transition-all duration-300 overflow-hidden group"
-                  >
-                    <div className="p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                        {/* Dish Image */}
-                        <motion.div 
-                          className="flex-shrink-0 relative"
-                          whileHover={{ scale: 1.05 }}
-                          transition={{ duration: 0.2 }}
+          <div className="grid grid-cols-2 gap-4">
+            <AnimatePresence mode="popLayout">
+              {filteredDishes.slice(0, 6).map((dish, index) => (
+                <motion.div
+                  key={dish.id}
+                  layout
+                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                  transition={{ 
+                    duration: 0.4,
+                    delay: index * 0.1,
+                    type: "spring",
+                    stiffness: 100
+                  }}
+                  whileHover={{ 
+                    y: -2,
+                    transition: { duration: 0.2 }
+                  }}
+                  className="bg-white rounded-2xl p-4 relative overflow-hidden border border-gray-200 shadow-md"
+                >
+                  {/* Dish Image */}
+                  <div className="w-full h-32 mb-3 relative">
+                    {dish.image_url ? (
+                      <img
+                        src={dish.image_url}
+                        alt={dish.name}
+                        className="w-full h-full object-cover rounded-xl"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center border border-gray-200">
+                        <Utensils className="w-8 h-8 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dish Info */}
+                  <div className="flex-1">
+                    <h3 className="font-bold text-gray-900 text-lg mb-1 leading-tight">
+                      {dish.name}
+                    </h3>
+                    <div className="flex items-center justify-between">
+                      <span className="text-green-600 font-bold text-lg">
+                        ₹{dish.price}
+                      </span>
+                      
+                      {/* Add Button */}
+                      {getCartItemQuantity(dish.id) === 0 ? (
+                        <motion.button
+                          onClick={() => addToCart(dish)}
+                          className="w-8 h-8 bg-purple-600 rounded-full shadow-md flex items-center justify-center"
+                          whileTap={{ scale: 0.95 }}
                         >
-                          {dish.image_url ? (
-                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shadow-md">
-                              <img
-                                src={dish.image_url}
-                                alt={dish.name}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-orange-100 to-red-100 rounded-xl flex items-center justify-center shadow-md">
-                              <Utensils className="w-10 h-10 sm:w-12 sm:h-12 text-orange-600" />
-                            </div>
-                          )}
-                          
-                          {/* Favorite Button */}
+                          <Plus className="w-4 h-4 text-white" />
+                        </motion.button>
+                      ) : (
+                        <div className="flex items-center gap-2">
                           <motion.button
-                            onClick={() => toggleFavorite(dish.id)}
-                            className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center"
-                            whileHover={{ scale: 1.1 }}
+                            onClick={() => removeFromCart(dish.id)}
+                            className="w-6 h-6 bg-purple-600 rounded-full shadow-md flex items-center justify-center"
                             whileTap={{ scale: 0.9 }}
                           >
-                            <Heart 
-                              className={`w-4 h-4 ${
-                                favorites.has(dish.id) 
-                                  ? 'text-red-500 fill-red-500' 
-                                  : 'text-gray-400'
-                              }`} 
-                            />
+                            <Minus className="w-3 h-3 text-white" />
                           </motion.button>
-                        </motion.div>
-
-                        {/* Dish Details */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
-                            <div>
-                              <h3 className="text-xl font-bold text-gray-900 leading-tight mb-1">
-                                {dish.name}
-                              </h3>
-                              {dish.dish_type && (
-                                <span className="inline-block px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
-                                  {dish.dish_type}
-                                </span>
-                              )}
-                            </div>
-                            <motion.div 
-                              className="flex items-center bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold text-lg sm:text-xl px-3 py-1 rounded-full shadow-md"
-                              whileHover={{ scale: 1.05 }}
-                            >
-                              <IndianRupee className="w-4 h-4" />
-                              <span>{dish.price.toFixed(2)}</span>
-                            </motion.div>
-                          </div>
-
-                          <p className="text-gray-600 text-sm sm:text-base mb-4 leading-relaxed">
-                            {dish.description}
-                          </p>
-
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <div className="flex items-center text-gray-500 text-sm">
-                                <Clock className="w-4 h-4 mr-1" />
-                                <span>{dish.preparation_time}min</span>
-                              </div>
-                              <div className="flex items-center text-yellow-500 text-sm">
-                                <Star className="w-4 h-4 mr-1 fill-current" />
-                                <span>4.5</span>
-                              </div>
-                            </div>
-
-                            {/* Add to Cart Controls */}
-                            <div className="flex items-center gap-2">
-                              {getCartItemQuantity(dish.id) === 0 ? (
-                                <div className="flex gap-2">
-                                  <motion.div
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                  >
-                                    <Button
-                                      onClick={() => viewDishDetails(dish)}
-                                      size="sm"
-                                      variant="outline"
-                                      className="border-orange-300 hover:bg-orange-50 text-orange-700"
-                                    >
-                                      <Eye className="w-4 h-4 mr-1" />
-                                      View
-                                    </Button>
-                                  </motion.div>
-                                  <motion.div
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                  >
-                                    <Button
-                                      onClick={() => addToCart(dish)}
-                                      size="sm"
-                                      className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-md"
-                                    >
-                                      <Plus className="w-4 h-4 mr-1" />
-                                      Add
-                                    </Button>
-                                  </motion.div>
-                                </div>
-                              ) : (
-                                <motion.div 
-                                  className="flex items-center gap-2"
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                >
-                                  <motion.div whileTap={{ scale: 0.9 }}>
-                                    <Button
-                                      onClick={() => removeFromCart(dish.id)}
-                                      size="sm"
-                                      variant="outline"
-                                      className="p-1 h-8 w-8 border-orange-300 hover:bg-orange-50"
-                                    >
-                                      <Minus className="w-4 h-4" />
-                                    </Button>
-                                  </motion.div>
-                                  <motion.span 
-                                    className="font-bold text-gray-900 min-w-[2rem] text-center bg-orange-100 px-2 py-1 rounded-lg"
-                                    key={getCartItemQuantity(dish.id)}
-                                    initial={{ scale: 1.2 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ duration: 0.2 }}
-                                  >
-                                    {getCartItemQuantity(dish.id)}
-                                  </motion.span>
-                                  <motion.div whileTap={{ scale: 0.9 }}>
-                                    <Button
-                                      onClick={() => addToCart(dish)}
-                                      size="sm"
-                                      variant="outline"
-                                      className="p-1 h-8 w-8 border-orange-300 hover:bg-orange-50"
-                                    >
-                                      <Plus className="w-4 h-4" />
-                                    </Button>
-                                  </motion.div>
-                                </motion.div>
-                              )}
-                            </div>
-                          </div>
+                          <span className="font-bold text-sm min-w-[1.5rem] text-center text-gray-900">
+                            {getCartItemQuantity(dish.id)}
+                          </span>
+                          <motion.button
+                            onClick={() => addToCart(dish)}
+                            className="w-6 h-6 bg-purple-600 rounded-full shadow-md flex items-center justify-center"
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <Plus className="w-3 h-3 text-white" />
+                          </motion.button>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </motion.div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
+        </div>
 
-        {/* Modern Footer */}
-        <motion.div 
-          className="text-center mt-16 pt-8 border-t border-orange-200"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-        >
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        {/* Bottom Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50 shadow-lg">
+          <div className="flex items-center justify-around max-w-md mx-auto">
+            <motion.button
+              className="flex flex-col items-center p-2"
+              whileTap={{ scale: 0.95 }}
             >
-              <Sparkles className="w-5 h-5 text-orange-500" />
-            </motion.div>
-            <p className="text-gray-600 text-sm">
-              Powered by <span className="font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">ServeNow</span>
-            </p>
+              <Home className="w-6 h-6 text-purple-600" />
+            </motion.button>
+            
+            <motion.button
+              className="flex flex-col items-center p-2"
+              whileTap={{ scale: 0.95 }}
+            >
+              <Search className="w-6 h-6 text-gray-400" />
+            </motion.button>
+            
+            <motion.button
+              className="flex flex-col items-center p-2 relative"
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowCart(true)}
+            >
+              <ShoppingCart className="w-6 h-6 text-gray-400" />
+              {getCartItemCount() > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-purple-600 text-white text-xs rounded-full flex items-center justify-center shadow-lg font-bold">
+                  {getCartItemCount()}
+                </span>
+              )}
+            </motion.button>
+            
+            <motion.button
+              className="flex flex-col items-center p-2"
+              whileTap={{ scale: 0.95 }}
+              onClick={() => router.push('/auth/user-login')}
+            >
+              <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center border border-gray-200 hover:bg-purple-100 hover:border-purple-200 transition-colors">
+                <User className="w-4 h-4 text-gray-600 hover:text-purple-600 transition-colors" />
+              </div>
+            </motion.button>
           </div>
-          <p className="text-xs text-gray-400">Digital dining experience reimagined</p>
-        </motion.div>
+        </div>
       </div>
 
       {/* Floating Cart Button */}
