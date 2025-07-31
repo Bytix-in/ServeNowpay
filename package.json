@@ -10,7 +10,8 @@
         "lint": "next lint",
         "lint:fix": "next lint --fix",
         "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format:check": "prettier --check .",
+        "setup-webhooks": "node setup-webhooks.js"
     },
     "dependencies": {
         "@hookform/resolvers": "^3.3.4",

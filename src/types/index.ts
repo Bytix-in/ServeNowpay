@@ -101,21 +101,17 @@ export type Permission =
   | 'manage_tables'
   | 'process_payments'
   | 'manage_menu'
-  | 'manage_staff'
   | 'view_analytics'
   | 'manage_settings'
   | 'manage_billing'
 
 // Role permissions mapping
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
-  staff: ['take_orders', 'manage_tables'],
-  senior_staff: ['take_orders', 'manage_tables', 'process_payments'],
   restaurant: [
     'take_orders',
     'manage_tables',
     'process_payments',
     'manage_menu',
-    'manage_staff',
     'view_analytics',
     'manage_settings'
   ],
@@ -124,7 +120,6 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     'manage_tables',
     'process_payments',
     'manage_menu',
-    'manage_staff',
     'view_analytics',
     'manage_settings',
     'manage_billing'
@@ -144,11 +139,6 @@ export const STATUS_COLORS = {
   occupied: 'bg-red-100 text-red-800',
   reserved: 'bg-blue-100 text-blue-800',
   cleaning: 'bg-yellow-100 text-yellow-800',
-  
-  // Staff statuses
-  online: 'bg-green-100 text-green-800',
-  offline: 'bg-gray-100 text-gray-800',
-  break: 'bg-yellow-100 text-yellow-800',
   
   // Priority levels
   low: 'bg-green-100 text-green-800',

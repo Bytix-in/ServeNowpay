@@ -15,7 +15,7 @@ export default function ContactPage() {
         transition={{ duration: 0.6 }}
         className="text-center mb-12"
       >
-        <h1 className="text-4xl font-bold mb-6">Contact Us</h1>
+        <h1 className="text-6xl font-bold mb-6" style={{ fontSize: '3.75rem' }}>Contact Us</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           Have questions or need assistance? Our team is here to help you.
           Reach out to us through any of the channels below.

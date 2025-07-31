@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
+import { getRestaurantById, updateRestaurantStatus } from '@/lib/restaurant-service'
 
-// Create Supabase admin client
+// Create a Supabase client with service role key for admin operations
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -14,139 +14,130 @@ const supabaseAdmin = createClient(
   }
 )
 
-// Helper function to get authenticated user from request
-async function getAuthenticatedUser(request: NextRequest) {
-  try {
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null
-    }
-
-    const token = authHeader.substring(7) // Remove 'Bearer ' prefix
-    
-    // Verify the token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token)
-    
-    if (error || !user) {
-      return null
-    }
-
-    // Check if user has admin role
-    const role = user.user_metadata?.role || 'staff'
-    if (role !== 'admin') {
-      return null
-    }
-
-    return {
-      id: user.id,
-      email: user.email || '',
-      name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-      role: role as 'admin'
-    }
-  } catch (error) {
-    console.error('Error getting authenticated user:', error)
-    return null
-  }
-}
-
+// GET - Fetch specific restaurant details
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Check if user is admin
-    const user = await getAuthenticatedUser(request)
-    if (!user) {
+    const { id } = params
+
+    if (!id) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
-        { status: 401 }
+        { error: 'Restaurant ID is required' },
+        { status: 400 }
       )
     }
 
-    const restaurantId = params.id
+    const restaurant = await getRestaurantById(id)
 
-    // Fetch restaurant details from database
-    const { data: restaurant, error } = await supabaseAdmin
-      .from('restaurants')
-      .select('*')
-      .eq('id', restaurantId)
-      .single()
-
-    if (error) {
-      console.error('Database error:', error)
-      return NextResponse.json({ error: 'Failed to fetch restaurant' }, { status: 500 })
-    }
-
-    if (!restaurant) {
-      return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
-    }
-
-    return NextResponse.json({ restaurant })
+    return NextResponse.json({
+      success: true,
+      restaurant: restaurant
+    })
 
   } catch (error) {
-    console.error('API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error fetching restaurant details:', error)
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Failed to fetch restaurant details',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
   }
 }
 
+// PATCH - Update restaurant details
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Check if user is admin
-    const user = await getAuthenticatedUser(request)
-    if (!user) {
+    const { id } = params
+    const body = await request.json()
+
+    if (!id) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
-        { status: 401 }
+        { error: 'Restaurant ID is required' },
+        { status: 400 }
       )
     }
-
-    const restaurantId = params.id
-    const updates = await request.json()
-
-    // Validate and sanitize updates
-    const allowedFields = [
-      'name', 'slug', 'owner_name', 'phone_number', 'email', 
-      'address', 'cuisine_tags', 'seating_capacity'
-    ]
-    
-    const sanitizedUpdates: any = {}
-    for (const [key, value] of Object.entries(updates)) {
-      if (allowedFields.includes(key)) {
-        sanitizedUpdates[key] = value
-      }
-    }
-
-    // Add updated timestamp
-    sanitizedUpdates.updated_at = new Date().toISOString()
 
     // Update restaurant in database
     const { data: restaurant, error } = await supabaseAdmin
       .from('restaurants')
-      .update(sanitizedUpdates)
-      .eq('id', restaurantId)
+      .update({
+        ...body,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
       .select()
       .single()
 
     if (error) {
-      console.error('Database error:', error)
-      return NextResponse.json({ error: 'Failed to update restaurant' }, { status: 500 })
+      console.error('Error updating restaurant:', error)
+      return NextResponse.json(
+        { error: 'Failed to update restaurant' },
+        { status: 500 }
+      )
     }
 
-    if (!restaurant) {
-      return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
-    }
-
-    return NextResponse.json({ 
+    return NextResponse.json({
+      success: true,
       message: 'Restaurant updated successfully',
-      restaurant 
+      restaurant: restaurant
     })
 
   } catch (error) {
-    console.error('API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error updating restaurant:', error)
+    return NextResponse.json(
+      { error: 'Failed to update restaurant' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE - Delete restaurant
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Restaurant ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Delete restaurant from database (this will cascade to related records)
+    const { error } = await supabaseAdmin
+      .from('restaurants')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error deleting restaurant:', error)
+      return NextResponse.json(
+        { error: 'Failed to delete restaurant' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Restaurant deleted successfully'
+    })
+
+  } catch (error) {
+    console.error('Error deleting restaurant:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete restaurant' },
+      { status: 500 }
+    )
   }
 }

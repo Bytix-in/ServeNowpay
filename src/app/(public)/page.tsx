@@ -30,7 +30,7 @@ export default function HomePage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-center max-w-4xl mx-auto"
         >
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-8 leading-tight">
+          <h1 className="text-6xl font-bold text-gray-900 mb-8 leading-tight" style={{ fontSize: '3.75rem' }}>
             The type of Serve You deserve
           </h1>
 
@@ -444,7 +444,7 @@ export default function HomePage() {
                 Easy Management
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Intuitive interface designed specifically for restaurant owners and staff. No technical expertise required.
+                Intuitive interface designed specifically for restaurant owners. No technical expertise required.
               </p>
             </div>
 

@@ -253,49 +253,7 @@ export type Database = {
           updated_at?: string
         }
       }
-      staff: {
-        Row: {
-          id: string
-          restaurant_id: string
-          name: string
-          phone: string
-          role: string
-          status: string
-          email: string | null
-          username: string | null
-          password_hash: string | null
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          restaurant_id: string
-          name: string
-          phone: string
-          role?: string
-          status?: string
-          email?: string | null
-          username?: string | null
-          password_hash?: string | null
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          restaurant_id?: string
-          name?: string
-          phone?: string
-          role?: string
-          status?: string
-          email?: string | null
-          username?: string | null
-          password_hash?: string | null
-          is_active?: boolean
-          updated_at?: string
-        }
-      }
+
     }
   }
 }

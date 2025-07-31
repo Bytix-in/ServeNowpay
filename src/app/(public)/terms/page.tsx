@@ -34,7 +34,7 @@ export default function TermsPage() {
                             <li>Order management and kitchen display systems</li>
                             <li>Customer relationship management tools</li>
                             <li>Analytics and reporting features</li>
-                            <li>Staff management and scheduling tools</li>
+
                         </ul>
                     </section>
 

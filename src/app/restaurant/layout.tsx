@@ -22,55 +22,31 @@ import {
   Menu,
   Users // Add Users icon
 } from 'lucide-react'
+import { RestaurantProtectedRoute } from '@/components/auth/RestaurantProtectedRoute'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function RestaurantLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  return (
+    <RestaurantProtectedRoute>
+      <RestaurantLayoutContent>
+        {children}
+      </RestaurantLayoutContent>
+    </RestaurantProtectedRoute>
+  )
+}
+
+function RestaurantLayoutContent({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const pathname = usePathname()
-  const router = useRouter()
+  const { user, signOut } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    // Check if user is authenticated and has restaurant role
-    const userData = localStorage.getItem('user')
-    if (!userData) {
-      router.push('/auth/restaurant-login')
-      return
-    }
-
-    try {
-      const parsedUser = JSON.parse(userData)
-      if (parsedUser.role !== 'restaurant') {
-        router.push('/auth/restaurant-login')
-        return
-      }
-      setUser(parsedUser)
-    } catch (error) {
-      router.push('/auth/restaurant-login')
-      return
-    } finally {
-      setLoading(false)
-    }
-  }, [router])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-600" />
-          <p className="text-gray-600">Loading restaurant dashboard...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return null
-  }
   
   return (
     <div className="flex min-h-screen bg-gray-100 font-sans">
@@ -139,10 +115,7 @@ export default function RestaurantLayout({
               <CreditCard className="w-5 h-5" />
               {!collapsed && <span className="text-sm font-medium">Payments</span>}
             </Link>
-            <Link href="/restaurant/staff" className="flex items-center gap-3 px-2 py-2 rounded-xl text-gray-600 hover:bg-gray-100 transition cursor-pointer">
-              <Users className="w-5 h-5" />
-              {!collapsed && <span className="text-sm font-medium">Staff</span>}
-            </Link>
+
             <Link 
               href="/restaurant/dish" 
               className={`flex items-center gap-3 px-2 py-2 rounded-xl transition cursor-pointer ${pathname === '/restaurant/dish' ? 'bg-gray-200 text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
@@ -171,10 +144,7 @@ export default function RestaurantLayout({
                 <span className="text-sm font-medium">Settings</span>
               </Link>
               <button 
-                onClick={() => {
-                  localStorage.removeItem('user')
-                  router.push('/auth/restaurant-login')
-                }}
+                onClick={signOut}
                 className="flex items-center gap-3 px-2 py-2 rounded-xl text-red-600 hover:bg-red-50 transition cursor-pointer w-full text-left"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

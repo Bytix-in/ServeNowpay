@@ -1,78 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-// Mock menu data
-let menuItems = [
+// Create a Supabase client with service role key for admin operations
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
   {
-    id: 1,
-    name: 'Classic Burger',
-    description: 'Juicy beef patty with lettuce, tomato, and our special sauce',
-    price: 12.99,
-    category: 'Main Course',
-    image: '/images/burger.jpg',
-    available: true,
-    ingredients: ['beef patty', 'lettuce', 'tomato', 'special sauce', 'bun'],
-    allergens: ['gluten', 'dairy'],
-    calories: 650
-  },
-  {
-    id: 2,
-    name: 'Caesar Salad',
-    description: 'Fresh romaine lettuce with parmesan cheese and croutons',
-    price: 8.99,
-    category: 'Salads',
-    image: '/images/caesar-salad.jpg',
-    available: true,
-    ingredients: ['romaine lettuce', 'parmesan cheese', 'croutons', 'caesar dressing'],
-    allergens: ['dairy', 'gluten'],
-    calories: 320
-  },
-  {
-    id: 3,
-    name: 'Margherita Pizza',
-    description: 'Traditional pizza with tomato sauce, mozzarella, and fresh basil',
-    price: 14.99,
-    category: 'Pizza',
-    image: '/images/margherita-pizza.jpg',
-    available: true,
-    ingredients: ['pizza dough', 'tomato sauce', 'mozzarella', 'fresh basil'],
-    allergens: ['gluten', 'dairy'],
-    calories: 800
-  },
-  {
-    id: 4,
-    name: 'Chocolate Cake',
-    description: 'Rich chocolate cake with chocolate frosting',
-    price: 6.99,
-    category: 'Desserts',
-    image: '/images/chocolate-cake.jpg',
-    available: true,
-    ingredients: ['chocolate', 'flour', 'eggs', 'butter', 'sugar'],
-    allergens: ['gluten', 'dairy', 'eggs'],
-    calories: 450
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
   }
-]
+)
 
 // Get all menu items
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const restaurantId = searchParams.get('restaurant_id')
     const category = searchParams.get('category')
     const available = searchParams.get('available')
 
-    let filteredItems = menuItems
-
-    if (category) {
-      filteredItems = filteredItems.filter(item => 
-        item.category.toLowerCase() === category.toLowerCase()
+    if (!restaurantId) {
+      return NextResponse.json(
+        { error: 'Restaurant ID is required' },
+        { status: 400 }
       )
     }
 
-    if (available === 'true') {
-      filteredItems = filteredItems.filter(item => item.available)
+    let query = supabaseAdmin
+      .from('menu_items')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .order('created_at', { ascending: false })
+
+    if (category) {
+      query = query.eq('dish_type', category)
     }
 
-    return NextResponse.json({ menuItems: filteredItems })
+    const { data: menuItems, error } = await query
+
+    if (error) {
+      console.error('Error fetching menu items:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch menu items' },
+        { status: 500 }
+      )
+    }
+
+    // Filter by availability if requested
+    let filteredItems = menuItems || []
+    if (available === 'true') {
+      // For now, assume all items are available since we don't have an 'available' field
+      // You can add this field to the database schema if needed
+    }
+
+    return NextResponse.json({ 
+      success: true,
+      menuItems: filteredItems 
+    })
   } catch (error) {
+    console.error('Error in GET /api/menu:', error)
     return NextResponse.json(
       { error: 'Failed to fetch menu items' },
       { status: 500 }
@@ -83,21 +71,70 @@ export async function GET(request: NextRequest) {
 // Create new menu item
 export async function POST(request: NextRequest) {
   try {
-    const newItem = await request.json()
+    const body = await request.json()
     
-    const menuItem = {
-      id: menuItems.length + 1,
-      ...newItem,
-      available: true
+    // Validate required fields
+    const requiredFields = ['restaurant_id', 'name', 'description', 'price', 'preparation_time']
+    for (const field of requiredFields) {
+      if (!body[field]) {
+        return NextResponse.json(
+          { error: `${field} is required` },
+          { status: 400 }
+        )
+      }
     }
 
-    menuItems.push(menuItem)
+    // Validate price and preparation_time are numbers
+    if (isNaN(parseFloat(body.price)) || parseFloat(body.price) <= 0) {
+      return NextResponse.json(
+        { error: 'Price must be a positive number' },
+        { status: 400 }
+      )
+    }
+
+    if (isNaN(parseInt(body.preparation_time)) || parseInt(body.preparation_time) <= 0) {
+      return NextResponse.json(
+        { error: 'Preparation time must be a positive number' },
+        { status: 400 }
+      )
+    }
+
+    // Prepare menu item data for database
+    const menuItemData = {
+      restaurant_id: body.restaurant_id,
+      name: body.name.trim(),
+      description: body.description.trim(),
+      price: parseFloat(body.price),
+      preparation_time: parseInt(body.preparation_time),
+      dish_type: body.dish_type || body.category || 'Main Course',
+      ingredients: body.ingredients || '',
+      tags: body.tags || '',
+      image_url: body.image_url || null,
+      image_data: body.image_data || null
+    }
+
+    // Insert into database
+    const { data: menuItem, error } = await supabaseAdmin
+      .from('menu_items')
+      .insert([menuItemData])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error creating menu item:', error)
+      return NextResponse.json(
+        { error: 'Failed to create menu item' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({ 
+      success: true,
       menuItem,
       message: 'Menu item created successfully'
     }, { status: 201 })
   } catch (error) {
+    console.error('Error in POST /api/menu:', error)
     return NextResponse.json(
       { error: 'Failed to create menu item' },
       { status: 500 }
@@ -110,21 +147,48 @@ export async function PUT(request: NextRequest) {
   try {
     const { id, ...updates } = await request.json()
     
-    const itemIndex = menuItems.findIndex(item => item.id === id)
-    if (itemIndex === -1) {
+    if (!id) {
       return NextResponse.json(
-        { error: 'Menu item not found' },
-        { status: 404 }
+        { error: 'Menu item ID is required' },
+        { status: 400 }
       )
     }
 
-    menuItems[itemIndex] = { ...menuItems[itemIndex], ...updates }
+    // Prepare update data
+    const updateData = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    }
+
+    // Remove any undefined or null values
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined || updateData[key] === null) {
+        delete updateData[key]
+      }
+    })
+
+    const { data: menuItem, error } = await supabaseAdmin
+      .from('menu_items')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating menu item:', error)
+      return NextResponse.json(
+        { error: 'Failed to update menu item' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({ 
-      menuItem: menuItems[itemIndex],
+      success: true,
+      menuItem,
       message: 'Menu item updated successfully'
     })
   } catch (error) {
+    console.error('Error in PUT /api/menu:', error)
     return NextResponse.json(
       { error: 'Failed to update menu item' },
       { status: 500 }
@@ -136,20 +200,34 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const id = parseInt(searchParams.get('id') || '0')
+    const id = searchParams.get('id')
 
-    const itemIndex = menuItems.findIndex(item => item.id === id)
-    if (itemIndex === -1) {
+    if (!id) {
       return NextResponse.json(
-        { error: 'Menu item not found' },
-        { status: 404 }
+        { error: 'Menu item ID is required' },
+        { status: 400 }
       )
     }
 
-    menuItems.splice(itemIndex, 1)
+    const { error } = await supabaseAdmin
+      .from('menu_items')
+      .delete()
+      .eq('id', id)
 
-    return NextResponse.json({ message: 'Menu item deleted successfully' })
+    if (error) {
+      console.error('Error deleting menu item:', error)
+      return NextResponse.json(
+        { error: 'Failed to delete menu item' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'Menu item deleted successfully' 
+    })
   } catch (error) {
+    console.error('Error in DELETE /api/menu:', error)
     return NextResponse.json(
       { error: 'Failed to delete menu item' },
       { status: 500 }

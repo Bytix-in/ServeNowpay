@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
@@ -10,7 +10,7 @@ import { Store, Loader2, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
-import { signInRestaurant } from '@/lib/auth'
+import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
 
 const restaurantLoginSchema = z.object({
@@ -25,6 +25,14 @@ export default function RestaurantLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const { signInRestaurant, user, isRestaurant } = useAuth()
+
+  // Redirect if already logged in as restaurant
+  useEffect(() => {
+    if (user && isRestaurant) {
+      router.push('/restaurant')
+    }
+  }, [user, isRestaurant, router])
 
   const {
     register,
@@ -39,10 +47,7 @@ export default function RestaurantLoginPage() {
     setError(null)
 
     try {
-      const user = await signInRestaurant(data.username, data.password)
-      
-      // Store user data in localStorage for persistence
-      localStorage.setItem('user', JSON.stringify(user))
+      await signInRestaurant(data.username, data.password)
       
       // Redirect to restaurant dashboard
       router.push('/restaurant')

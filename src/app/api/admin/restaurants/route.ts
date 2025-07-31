@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createRestaurant, getAllRestaurants, type CreateRestaurantData } from '@/lib/restaurant-service'
-import { supabase } from '@/lib/supabase'
 import { createClient } from '@supabase/supabase-js'
-import bcrypt from 'bcryptjs'
+import { createRestaurant, getAllRestaurants, type CreateRestaurantData } from '@/lib/restaurant-service'
 
-// Create Supabase admin client with service role key
+// Create a Supabase client with service role key for admin operations
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -16,142 +14,194 @@ const supabaseAdmin = createClient(
   }
 )
 
-// Helper function to get authenticated user from request
-async function getAuthenticatedUser(request: NextRequest) {
-  try {
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null
-    }
-
-    const token = authHeader.substring(7) // Remove 'Bearer ' prefix
-    
-    // Verify the token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token)
-    
-    if (error || !user) {
-      return null
-    }
-
-    // Check if user has admin role
-    const role = user.user_metadata?.role || 'staff'
-    if (role !== 'admin') {
-      return null
-    }
-
-    return {
-      id: user.id,
-      email: user.email || '',
-      name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-      role: role as 'admin'
-    }
-  } catch (error) {
-    console.error('Error getting authenticated user:', error)
-    return null
-  }
-}
-
-// GET - Get all restaurants
+// GET - Fetch all restaurants (admin only)
 export async function GET(request: NextRequest) {
   try {
-    // Check if user is admin
-    const user = await getAuthenticatedUser(request)
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
-        { status: 401 }
-      )
-    }
-
     const restaurants = await getAllRestaurants()
-    return NextResponse.json({ restaurants })
+    
+    return NextResponse.json({
+      success: true,
+      data: restaurants,
+      restaurants: restaurants, // Also include for backward compatibility
+      count: restaurants?.length || 0
+    })
   } catch (error) {
     console.error('Error fetching restaurants:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch restaurants' },
+      { 
+        success: false,
+        error: 'Failed to fetch restaurants',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
 }
 
-// POST - Create new restaurant
+// POST - Create new restaurant (admin only)
 export async function POST(request: NextRequest) {
   try {
-    // Check if user is admin
-    const user = await getAuthenticatedUser(request)
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
-        { status: 401 }
-      )
-    }
 
     const body = await request.json()
     
     // Validate required fields
     const requiredFields = ['restaurantName', 'ownerName', 'phoneNumber', 'email', 'address']
     for (const field of requiredFields) {
-      if (!body[field]) {
+      if (!body[field] || body[field].trim() === '') {
         return NextResponse.json(
-          { error: `Missing required field: ${field}` },
+          { error: `${field} is required` },
           { status: 400 }
         )
       }
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(body.email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    // Validate seating capacity if provided
+    if (body.seatingCapacity && (isNaN(parseInt(body.seatingCapacity)) || parseInt(body.seatingCapacity) < 1)) {
+      return NextResponse.json(
+        { error: 'Seating capacity must be a positive number' },
+        { status: 400 }
+      )
+    }
+
+    // Create restaurant data object
     const restaurantData: CreateRestaurantData = {
-      restaurantName: body.restaurantName,
-      ownerName: body.ownerName,
-      phoneNumber: body.phoneNumber,
-      email: body.email,
-      address: body.address,
-      cuisineTags: body.cuisineTags || '',
-      seatingCapacity: body.seatingCapacity || '0'
+      restaurantName: body.restaurantName.trim(),
+      ownerName: body.ownerName.trim(),
+      phoneNumber: body.phoneNumber.trim(),
+      email: body.email.trim(),
+      address: body.address.trim(),
+      cuisineTags: body.cuisineTags?.trim() || '',
+      seatingCapacity: body.seatingCapacity?.trim() || ''
     }
 
+    // Create restaurant using the service
     const credentials = await createRestaurant(restaurantData)
-    
-    // Create manager user in Supabase Auth using admin client
-    try {
-      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: `${credentials.managerUsername}@servenow.local`,
-        password: credentials.managerPassword,
-        user_metadata: {
-          role: 'manager',
-          name: `${restaurantData.restaurantName} Manager`,
-          restaurant_id: credentials.restaurantId,
-          restaurant_name: restaurantData.restaurantName
-        },
-        email_confirm: true
-      })
 
-      if (authError) {
-        console.error('Auth user creation error:', authError)
-        // Clean up the restaurant record if auth user creation fails
-        if (credentials.databaseId) {
-          await supabase.from('restaurants').delete().eq('id', credentials.databaseId)
-        }
-        throw new Error(`Failed to create manager account: ${authError.message}`)
-      }
-    } catch (authError) {
-      console.error('Auth user creation failed:', authError)
-      // Clean up the restaurant record
-      if (credentials.databaseId) {
-        await supabase.from('restaurants').delete().eq('id', credentials.databaseId)
-      }
-      throw new Error('Failed to create manager account')
-    }
-    
     return NextResponse.json({
       success: true,
       message: 'Restaurant created successfully',
-      credentials
+      credentials: credentials
     })
+
   } catch (error) {
     console.error('Error creating restaurant:', error)
+    
+    // Handle specific database errors
+    if (error instanceof Error) {
+      if (error.message.includes('duplicate key')) {
+        return NextResponse.json(
+          { error: 'A restaurant with this information already exists' },
+          { status: 409 }
+        )
+      }
+      
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      )
+    }
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create restaurant' },
+      { error: 'Failed to create restaurant' },
+      { status: 500 }
+    )
+  }
+}
+
+// PUT - Update restaurant (admin only)
+export async function PUT(request: NextRequest) {
+  try {
+
+    const body = await request.json()
+    const { id, ...updateData } = body
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Restaurant ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Update restaurant in database
+    const { data: restaurant, error } = await supabaseAdmin
+      .from('restaurants')
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating restaurant:', error)
+      return NextResponse.json(
+        { error: 'Failed to update restaurant' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Restaurant updated successfully',
+      data: restaurant
+    })
+
+  } catch (error) {
+    console.error('Error updating restaurant:', error)
+    return NextResponse.json(
+      { error: 'Failed to update restaurant' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE - Delete restaurant (admin only)
+export async function DELETE(request: NextRequest) {
+  try {
+
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Restaurant ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Delete restaurant from database (this will cascade to related records)
+    const { error } = await supabaseAdmin
+      .from('restaurants')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error deleting restaurant:', error)
+      return NextResponse.json(
+        { error: 'Failed to delete restaurant' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Restaurant deleted successfully'
+    })
+
+  } catch (error) {
+    console.error('Error deleting restaurant:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete restaurant' },
       { status: 500 }
     )
   }

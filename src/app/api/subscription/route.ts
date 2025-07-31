@@ -15,7 +15,6 @@ let subscriptions = [
     currency: 'usd',
     interval: 'month',
     features: {
-      maxStaff: 25,
       maxTables: 50,
       advancedAnalytics: true,
       prioritySupport: true,
@@ -23,7 +22,6 @@ let subscriptions = [
       apiAccess: true
     },
     usage: {
-      staff: 8,
       tables: 12,
       ordersThisMonth: 1247,
       apiCallsThisMonth: 3456
@@ -48,7 +46,6 @@ const plans = [
     price: 2900, // $29.00 in cents
     interval: 'month',
     features: {
-      maxStaff: 5,
       maxTables: 10,
       advancedAnalytics: false,
       prioritySupport: false,
@@ -62,7 +59,6 @@ const plans = [
     price: 7900, // $79.00 in cents
     interval: 'month',
     features: {
-      maxStaff: 25,
       maxTables: 50,
       advancedAnalytics: true,
       prioritySupport: true,
@@ -76,7 +72,6 @@ const plans = [
     price: 19900, // $199.00 in cents
     interval: 'month',
     features: {
-      maxStaff: -1, // unlimited
       maxTables: -1, // unlimited
       advancedAnalytics: true,
       prioritySupport: true,
@@ -147,7 +142,6 @@ export async function POST(request: NextRequest) {
       interval: plan.interval,
       features: plan.features,
       usage: existingSubIndex >= 0 ? subscriptions[existingSubIndex].usage : {
-        staff: 0,
         tables: 0,
         ordersThisMonth: 0,
         apiCallsThisMonth: 0

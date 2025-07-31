@@ -13,7 +13,7 @@ export default function PricingPage() {
       period: '/month',
       description: 'Perfect for small restaurants getting started',
       features: [
-        { name: 'Up to 5 staff members', included: true },
+        { name: 'Up to 5 users', included: true },
         { name: 'Digital menu & QR ordering', included: true },
         { name: 'Basic analytics & reports', included: true },
         { name: 'Email support', included: true },
@@ -31,7 +31,7 @@ export default function PricingPage() {
       period: '/month',
       description: 'Best for growing restaurant businesses',
       features: [
-        { name: 'Up to 25 staff members', included: true },
+        { name: 'Up to 25 users', included: true },
         { name: 'Advanced menu management', included: true },
         { name: 'Detailed analytics & insights', included: true },
         { name: 'Priority email support', included: true },
@@ -49,7 +49,7 @@ export default function PricingPage() {
       period: '/month',
       description: 'For restaurant chains and large establishments',
       features: [
-        { name: 'Unlimited staff members', included: true },
+        { name: 'Unlimited users', included: true },
         { name: 'Multi-location management', included: true },
         { name: 'Enterprise analytics & reporting', included: true },
         { name: '24/7 phone & email support', included: true },
@@ -72,7 +72,7 @@ export default function PricingPage() {
         transition={{ duration: 0.6 }}
         className="text-center mb-16"
       >
-        <h1 className="text-4xl font-bold mb-6">
+        <h1 className="text-6xl font-bold mb-6" style={{ fontSize: '3.75rem' }}>
           Simple, Transparent Pricing
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">

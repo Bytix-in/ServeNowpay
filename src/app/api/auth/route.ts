@@ -10,8 +10,7 @@ export async function POST(request: NextRequest) {
       // Simulate authentication logic
       // In a real app, you'd verify credentials with Supabase Auth
       const mockUsers = [
-        { email: 'admin@servenow.com', password: 'admin123', role: 'admin' },
-        { email: 'staff@servenow.com', password: 'staff123', role: 'staff' }
+        { email: 'admin@servenow.com', password: 'admin123', role: 'admin' }
       ]
 
       const user = mockUsers.find(u => u.email === email && u.password === password)
@@ -45,7 +44,7 @@ export async function POST(request: NextRequest) {
           id: Math.random().toString(36).substr(2, 9),
           email,
           name,
-          role: 'staff' // Default role
+          role: 'restaurant' // Default role
         },
         message: 'User registered successfully'
       })

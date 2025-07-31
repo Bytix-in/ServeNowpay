@@ -23,6 +23,8 @@ type Restaurant = {
   onboardedDate: string;
   owner: string;
   liveStatus: 'Live' | 'Not Live';
+  webhook_configured?: boolean;
+  webhook_url?: string;
 }
 
 export default function AdminDashboard() {
@@ -112,7 +114,8 @@ export default function AdminDashboard() {
 
         if (response.ok) {
           const data = await response.json()
-          const formattedRestaurants = data.restaurants.map((restaurant: any) => ({
+          const restaurantList = data.data || data.restaurants || []
+          const formattedRestaurants = restaurantList.map((restaurant: any) => ({
             id: restaurant.id,
             name: restaurant.name,
             location: restaurant.address || 'No address provided',
@@ -541,6 +544,20 @@ export default function AdminDashboard() {
                               : 'text-gray-500'
                               }`}>
                               {restaurant.liveStatus}
+                            </span>
+                          </div>
+
+                          {/* Webhook Status Indicator */}
+                          <div className="flex items-center mr-2">
+                            <div className={`w-2 h-2 rounded-full mr-1 ${restaurant.webhook_configured
+                              ? 'bg-blue-500'
+                              : 'bg-orange-400'
+                              }`}></div>
+                            <span className={`text-xs font-medium ${restaurant.webhook_configured
+                              ? 'text-blue-600'
+                              : 'text-orange-600'
+                              }`}>
+                              {restaurant.webhook_configured ? 'Webhook' : 'No Webhook'}
                             </span>
                           </div>
 

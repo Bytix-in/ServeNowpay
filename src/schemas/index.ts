@@ -5,7 +5,7 @@ export const userSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   name: z.string().min(2),
-  role: z.enum(['admin', 'restaurant', 'staff']),
+  role: z.enum(['admin', 'restaurant']),
   avatar: z.string().optional(),
   restaurantId: z.string().optional(),
   restaurantSlug: z.string().optional(),
@@ -14,9 +14,8 @@ export const userSchema = z.object({
 export const createUserSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  role: z.enum(['admin', 'restaurant', 'staff']),
+  role: z.enum(['admin', 'restaurant']),
   phone: z.string().optional(),
-  hourlyRate: z.number().positive().optional(),
 })
 
 // Auth schemas
@@ -95,7 +94,7 @@ export const orderSchema = z.object({
   orderType: z.enum(['dine_in', 'takeout', 'delivery']),
   notes: z.string().optional(),
   estimatedTime: z.number().positive().optional(),
-  assignedStaff: z.string().optional(),
+
 })
 
 export const createOrderSchema = z.object({
@@ -116,7 +115,7 @@ export const tableSchema = z.object({
   capacity: z.number().positive(),
   status: z.enum(['available', 'occupied', 'reserved', 'cleaning']),
   location: z.string(),
-  assignedStaff: z.string().nullable(),
+
   currentOrder: z.number().nullable(),
   reservedBy: z.string().nullable(),
   reservedAt: z.string().nullable(),
@@ -130,26 +129,7 @@ export const createTableSchema = z.object({
   location: z.string().min(2, 'Location is required'),
 })
 
-// Staff schemas
-export const staffSchema = z.object({
-  id: z.string(),
-  name: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string(),
-  role: z.enum(['staff', 'senior_staff', 'restaurant']),
-  status: z.enum(['online', 'offline', 'break']),
-  hourlyRate: z.number().positive(),
-  isActive: z.boolean(),
-})
 
-export const createStaffSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  phone: z.string().min(10, 'Phone number is required'),
-  role: z.enum(['staff', 'senior_staff', 'restaurant']),
-  hourlyRate: z.number().positive('Hourly rate must be positive'),
-  permissions: z.array(z.string()),
-})
 
 // Contact form schema
 export const contactSchema = z.object({
@@ -183,7 +163,6 @@ export type Order = z.infer<typeof orderSchema>
 export type CreateOrderInput = z.infer<typeof createOrderSchema>
 export type Table = z.infer<typeof tableSchema>
 export type CreateTableInput = z.infer<typeof createTableSchema>
-export type Staff = z.infer<typeof staffSchema>
-export type CreateStaffInput = z.infer<typeof createStaffSchema>
+
 export type ContactInput = z.infer<typeof contactSchema>
 export type Subscription = z.infer<typeof subscriptionSchema>

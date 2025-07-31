@@ -7,19 +7,6 @@ import { Button } from '@/components/ui/Button'
 export default function AccessPage() {
   const accessLevels = [
     {
-      icon: Users,
-      title: 'Staff Access',
-      description: 'Access for restaurant staff members (waiters, cooks, etc.)',
-      features: [
-        'Personal dashboard',
-        'Task management',
-        'Order notifications',
-        'Shift tracking',
-        'Communication tools'
-      ],
-      link: '/auth/staff-login'
-    },
-    {
       icon: Settings,
       title: 'Restaurant Access',
       description: 'Complete restaurant management access for restaurant owners and operators',
@@ -27,7 +14,7 @@ export default function AccessPage() {
         'Full restaurant dashboard',
         'Menu and inventory management',
         'Order and payment tracking',
-        'Staff and table management',
+        'Table management',
         'Analytics and reporting'
       ],
       link: '/auth/restaurant-login'

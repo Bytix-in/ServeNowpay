@@ -15,7 +15,7 @@ interface DashboardLayoutProps {
   children: ReactNode
   title: string
   subtitle?: string
-  userRole: 'admin' | 'manager' | 'staff'
+  userRole: 'admin' | 'manager'
 }
 
 export function DashboardLayout({ 
@@ -36,11 +36,6 @@ export function DashboardLayout({
       { icon: Users, label: 'Team', href: '/manager/team' },
       { icon: ClipboardList, label: 'Orders', href: '/manager/orders' },
       { icon: Settings, label: 'Settings', href: '/manager/settings' },
-    ],
-    staff: [
-      { icon: LayoutDashboard, label: 'Dashboard', href: '/staff' },
-      { icon: ClipboardList, label: 'My Orders', href: '/staff/orders' },
-      { icon: Settings, label: 'Profile', href: '/staff/profile' },
     ]
   }
 

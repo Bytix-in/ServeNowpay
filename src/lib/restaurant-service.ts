@@ -1,4 +1,17 @@
-import { supabase } from './supabase'
+import { createClient } from '@supabase/supabase-js'
+import bcrypt from 'bcryptjs'
+
+// Create a Supabase client with service role key for admin operations
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+)
 
 export interface CreateRestaurantData {
   restaurantName: string
@@ -57,13 +70,9 @@ function generatePassword(): string {
   return password
 }
 
-// Simple hash function for passwords (for demo purposes)
-async function simpleHash(password: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(password + 'servenow_salt')
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+// Hash password using bcrypt
+async function hashPassword(password: string): Promise<string> {
+  return await bcrypt.hash(password, 10)
 }
 
 // Generate a UUID v4
@@ -83,7 +92,7 @@ export async function createRestaurant(data: CreateRestaurantData): Promise<Rest
     const customRestaurantId = `REST_${Math.random().toString(36).substr(2, 8).toUpperCase()}`
     const managerUsername = generateManagerUsername(data.restaurantName)
     const managerPassword = generatePassword()
-    const passwordHash = await simpleHash(managerPassword)
+    const passwordHash = await hashPassword(managerPassword)
     
     // Generate unique slug with retry mechanism
     let slug = generateSlug(data.restaurantName)
@@ -92,7 +101,7 @@ export async function createRestaurant(data: CreateRestaurantData): Promise<Rest
     
     // Check if slug already exists and generate a new one if needed
     while (attempts < maxAttempts) {
-      const { data: existingRestaurant } = await supabase
+      const { data: existingRestaurant } = await supabaseAdmin
         .from('restaurants')
         .select('id')
         .eq('slug', slug)
@@ -111,6 +120,7 @@ export async function createRestaurant(data: CreateRestaurantData): Promise<Rest
       id: restaurantId, // Use UUID for database
       name: data.restaurantName,
       slug: slug,
+      owner_id: null, // Will be set later when user account is created
       owner_name: data.ownerName,
       phone_number: data.phoneNumber,
       email: data.email,
@@ -123,7 +133,7 @@ export async function createRestaurant(data: CreateRestaurantData): Promise<Rest
     }
     
     // Insert restaurant into database
-    const { data: restaurant, error: restaurantError } = await supabase
+    const { data: restaurant, error: restaurantError } = await supabaseAdmin
       .from('restaurants')
       .insert(restaurantRecord)
       .select()
@@ -152,7 +162,7 @@ export async function createRestaurant(data: CreateRestaurantData): Promise<Rest
 // Get all restaurants for admin dashboard
 export async function getAllRestaurants() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('restaurants')
       .select('*')
       .order('created_at', { ascending: false })
@@ -171,7 +181,7 @@ export async function getAllRestaurants() {
 // Get restaurant by ID
 export async function getRestaurantById(id: string) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('restaurants')
       .select('*')
       .eq('id', id)
@@ -191,7 +201,7 @@ export async function getRestaurantById(id: string) {
 // Update restaurant status
 export async function updateRestaurantStatus(id: string, status: 'active' | 'inactive') {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('restaurants')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', id)

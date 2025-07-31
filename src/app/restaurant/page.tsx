@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { PaymentSetupBanner, PaymentDisabledBanner } from '@/components/restaurant/PaymentSetupBanner'
+import { PaymentDisabledBanner } from '@/components/restaurant/PaymentSetupBanner'
 import { 
   Users, 
   BarChart3, 
@@ -204,7 +204,6 @@ export default function RestaurantDashboard() {
       </div>
 
       {/* Payment Setup Banners */}
-      <PaymentSetupBanner />
       <PaymentDisabledBanner />
 
       {/* Stats Cards */}
@@ -240,33 +239,7 @@ export default function RestaurantDashboard() {
           </div>
         </div>
       </div>
-      {/* Order Performance */}
-      <div className="bg-white p-6 rounded-3xl shadow border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="font-semibold text-gray-900">Order Performance</h2>
-            <span className="text-xs text-gray-500">vs last month</span>
-          </div>
-          <div className="flex items-center gap-2 border rounded-xl px-2 py-1 cursor-pointer hover:bg-gray-50">
-            <span className="text-sm">{selectedMonth}</span>
-            <ChevronDown className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="flex flex-col md:flex-row justify-between gap-6">
-          {performanceMetrics.map((metric, index) => (
-            <div key={index} className="text-center flex-1">
-              <div className="relative inline-block w-24 h-24">
-                <svg className="w-full h-full" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="16" fill="none" stroke="#e6e6e6" strokeWidth="3" />
-                  <circle cx="18" cy="18" r="16" fill="none" stroke={metric.strokeColor} strokeWidth="3" strokeDasharray={`${metric.percentage} 100`} strokeDashoffset="25" transform="rotate(-90 18 18)" className="drop-shadow-md" />
-                  <text x="18" y="18" dominantBaseline="middle" textAnchor="middle" className="text-xl font-bold" style={{ fill: metric.strokeColor }}>{metric.percentage}%</text>
-                </svg>
-              </div>
-              <p className="text-sm mt-2 text-gray-700">{metric.title}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+
       {/* Charts Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Order Analytics */}

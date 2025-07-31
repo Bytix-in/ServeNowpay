@@ -5,7 +5,7 @@ export interface User {
   id: string
   email: string
   name: string
-  role: 'admin' | 'restaurant' | 'staff'
+  role: 'admin' | 'restaurant'
   avatar?: string
   restaurantId?: string
   restaurantSlug?: string
@@ -70,7 +70,7 @@ export async function signInRestaurant(username: string, password: string): Prom
 
 // Get user with role from Supabase user metadata
 export async function getUserWithRole(supabaseUser: SupabaseUser): Promise<User> {
-  const role = supabaseUser.user_metadata?.role || 'staff'
+  const role = supabaseUser.user_metadata?.role || 'restaurant'
   const name = supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User'
   
   return {
@@ -115,9 +115,8 @@ export function hasRole(user: User | null, requiredRole: string): boolean {
   if (!user) return false
   
   const roleHierarchy = {
-    staff: 1,
-    restaurant: 2,
-    admin: 3
+    restaurant: 1,
+    admin: 2
   }
   
   const userLevel = roleHierarchy[user.role as keyof typeof roleHierarchy] || 0
@@ -201,8 +200,6 @@ export function redirectByRole(user: User): string {
       return '/admin'
     case 'restaurant':
       return '/restaurant'
-    case 'staff':
-      return '/staff'
     default:
       return '/auth/login'
   }

@@ -90,7 +90,17 @@ export async function POST(request: NextRequest) {
       })
 
       if (!response.ok) {
-        throw new Error(`Cashfree API error: ${response.status}`)
+        const errorText = await response.text()
+        console.error(`Cashfree API error: ${response.status} - ${errorText}`)
+        
+        // Return error for proper handling
+        return NextResponse.json({
+          success: false,
+          error: `Cashfree API error: ${response.status}`,
+          details: errorText,
+          payment_status: order.payment_status,
+          order: order
+        }, { status: response.status })
       }
 
       const paymentData = await response.json()
@@ -101,15 +111,17 @@ export async function POST(request: NextRequest) {
 
       if (paymentData.order_status === 'PAID') {
         newPaymentStatus = 'completed'
-        newOrderStatus = 'confirmed'
+        newOrderStatus = 'pending' // Order is placed, waiting for restaurant to accept
       } else if (paymentData.order_status === 'EXPIRED' || paymentData.order_status === 'CANCELLED') {
         newPaymentStatus = 'failed'
+        newOrderStatus = 'cancelled'
       } else if (paymentData.order_status === 'ACTIVE') {
         newPaymentStatus = 'pending'
       }
 
-      // Update order in database if status changed
+      // Update order in database if status changed (this will trigger Supabase Realtime)
       if (newPaymentStatus !== order.payment_status || newOrderStatus !== order.status) {
+        
         const { data: updatedOrder, error: updateError } = await supabaseAdmin
           .from('orders')
           .update({
@@ -121,7 +133,17 @@ export async function POST(request: NextRequest) {
           .select()
           .single()
 
-        if (!updateError && updatedOrder) {
+        if (updateError) {
+          console.error('Database update error:', updateError)
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to update order in database',
+            payment_status: order.payment_status,
+            order: order
+          }, { status: 500 })
+        }
+
+        if (updatedOrder) {
           return NextResponse.json({
             success: true,
             payment_status: newPaymentStatus,
@@ -139,14 +161,15 @@ export async function POST(request: NextRequest) {
       })
 
     } catch (apiError) {
-      // If Cashfree API fails, return current status
+      console.error('Cashfree API error:', apiError)
+      
       return NextResponse.json({
-        success: true,
+        success: false,
+        error: 'Payment verification failed',
+        details: apiError instanceof Error ? apiError.message : 'Unknown error',
         payment_status: order.payment_status,
-        order: order,
-        message: 'Could not verify with payment gateway',
-        error: apiError instanceof Error ? apiError.message : 'API error'
-      })
+        order: order
+      }, { status: 500 })
     }
 
   } catch (error) {

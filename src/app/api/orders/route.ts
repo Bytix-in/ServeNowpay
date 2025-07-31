@@ -23,8 +23,7 @@ let orders = [
     notes: 'No onions on the burger',
     createdAt: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
     updatedAt: new Date().toISOString(),
-    estimatedTime: 15,
-    assignedStaff: 'staff_001'
+    estimatedTime: 15
   },
   {
     id: 1235,
@@ -46,8 +45,7 @@ let orders = [
     notes: '',
     createdAt: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
     updatedAt: new Date(Date.now() - 600000).toISOString(), // 10 minutes ago
-    estimatedTime: 20,
-    assignedStaff: 'staff_002'
+    estimatedTime: 20
   }
 ]
 
@@ -56,17 +54,12 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
-    const staffId = searchParams.get('staffId')
     const limit = parseInt(searchParams.get('limit') || '50')
 
     let filteredOrders = orders
 
     if (status) {
       filteredOrders = filteredOrders.filter(order => order.status === status)
-    }
-
-    if (staffId) {
-      filteredOrders = filteredOrders.filter(order => order.assignedStaff === staffId)
     }
 
     // Sort by creation date (newest first)

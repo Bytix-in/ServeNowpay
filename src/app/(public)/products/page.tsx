@@ -17,7 +17,7 @@ export default function ProductsPage() {
         'Touchscreen interface',
         'Order management',
         'Inventory tracking',
-        'Staff management',
+        'User management',
         'Reporting and analytics',
         'Multi-location support',
         '24/7 technical support'
@@ -105,7 +105,7 @@ export default function ProductsPage() {
       features: [
         'Sales analytics',
         'Menu performance',
-        'Staff productivity',
+        'User productivity',
         'Customer behavior',
         'Customizable dashboards',
         'Scheduled reports',
@@ -126,7 +126,7 @@ export default function ProductsPage() {
       details: [
         'System configuration',
         'Menu setup',
-        'Staff training',
+        'User training',
         'Data migration',
         'Hardware installation',
         'Integration with existing systems',
@@ -136,8 +136,8 @@ export default function ProductsPage() {
     },
     {
       id: 'training',
-      name: 'Staff Training',
-      description: 'Comprehensive training programs for restaurant staff.',
+      name: 'User Training',
+      description: 'Comprehensive training programs for restaurant users.',
       price: '₹15,000',
       type: 'per session',
       details: [
