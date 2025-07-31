@@ -1,24 +1,49 @@
-import { customAlphabet } from 'nanoid'
-
-// Create a custom alphabet that excludes confusing characters
-// Excludes: 0, O, I, 1, L to avoid confusion when reading/spelling
-const alphabet = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'
-const generateUniqueId = customAlphabet(alphabet, 6)
+/**
+ * Utility functions for generating unique order IDs
+ */
 
 /**
- * Generates a unique 6-character order ID that's easy to pronounce and spell
- * Uses only uppercase letters and numbers, excluding confusing characters
+ * Generate a unique 6-character order ID
+ * Format: 2 letters + 4 numbers (e.g., AB1234)
  */
 export function generateUniqueOrderId(): string {
-  return generateUniqueId()
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const numbers = '0123456789';
+  
+  // Generate 2 random letters
+  let result = '';
+  for (let i = 0; i < 2; i++) {
+    result += letters.charAt(Math.floor(Math.random() * letters.length));
+  }
+  
+  // Generate 4 random numbers
+  for (let i = 0; i < 4; i++) {
+    result += numbers.charAt(Math.floor(Math.random() * numbers.length));
+  }
+  
+  return result;
 }
 
 /**
- * Validates if a unique order ID has the correct format
+ * Generate a unique order ID with custom format
  */
-export function isValidUniqueOrderId(id: string): boolean {
-  if (!id || id.length !== 6) return false
+export function generateCustomOrderId(prefix: string = '', length: number = 6): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = prefix;
   
-  // Check if all characters are in our allowed alphabet
-  return id.split('').every(char => alphabet.includes(char))
+  const remainingLength = length - prefix.length;
+  for (let i = 0; i < remainingLength; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  
+  return result;
+}
+
+/**
+ * Validate order ID format
+ */
+export function isValidOrderId(orderId: string): boolean {
+  // Check if it's 6 characters long and contains only letters and numbers
+  const regex = /^[A-Z0-9]{6}$/;
+  return regex.test(orderId);
 }

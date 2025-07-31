@@ -16,7 +16,7 @@ export class OrderNotificationManager {
   private permission: NotificationPermission = 'default';
 
   private constructor() {
-    if ('Notification' in window) {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
       this.permission = Notification.permission;
     }
   }
@@ -30,7 +30,7 @@ export class OrderNotificationManager {
 
   // Request notification permission
   public async requestPermission(): Promise<NotificationPermission> {
-    if ('Notification' in window) {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
       this.permission = await Notification.requestPermission();
       return this.permission;
     }
@@ -39,7 +39,7 @@ export class OrderNotificationManager {
 
   // Check if notifications are supported and permitted
   public isSupported(): boolean {
-    return 'Notification' in window;
+    return typeof window !== 'undefined' && 'Notification' in window;
   }
 
   public isPermitted(): boolean {
@@ -99,6 +99,8 @@ export class OrderNotificationManager {
 
   // Play notification sound
   public playNotificationSound(): void {
+    if (typeof window === 'undefined') return;
+    
     try {
       // Create audio context for notification sound
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
