@@ -4,9 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { PaymentDisabledBanner } from '@/components/restaurant/PaymentSetupBanner'
-import EnhancedRevenueDashboard from '@/components/restaurant/EnhancedRevenueDashboard'
-import PeakHoursAnalysis from '@/components/restaurant/PeakHoursAnalysis'
-import MenuPerformanceRanking from '@/components/restaurant/MenuPerformanceRanking'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import {
@@ -474,8 +471,6 @@ export default function RestaurantDashboard() {
         </motion.div>
       </div>
 
-
-
       {/* Quick Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-6 rounded-3xl border border-orange-200">
@@ -521,21 +516,12 @@ export default function RestaurantDashboard() {
         </div>
       </div>
 
-      {/* Enhanced Revenue Dashboard */}
-      <EnhancedRevenueDashboard />
-
-      {/* Peak Hours Analysis */}
-      <PeakHoursAnalysis />
-
-      {/* Menu Performance Ranking */}
-      <MenuPerformanceRanking />
-
       {/* Charts Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Order Analytics */}
         <div className="bg-white p-6 rounded-3xl shadow border border-gray-200">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="font-semibold text-gray-900">Order Analytics - Period View</h2>
+            <h2 className="font-semibold text-gray-900">Order Analytics</h2>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -561,11 +547,11 @@ export default function RestaurantDashboard() {
             </h3>
             <div className="flex items-center text-xs text-blue-500 bg-blue-50 px-2 py-1 rounded-xl">
               <BarChart3 className="w-3 h-3 mr-1" />
-              <span>Period Orders</span>
+              <span>Total Orders</span>
             </div>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-            {loading ? 'Loading...' : `${periodStats.totalOrders} orders in last ${chartPeriod === '7days' ? '7 days' : chartPeriod === '30days' ? '30 days' : '90 days'} (Avg: ${periodStats.avgOrdersPerDay}/day)`}
+            {loading ? 'Loading...' : `Average ${periodStats.avgOrdersPerDay} orders per day`}
           </p>
           <div className="h-64 relative">
             {loading ? (
@@ -639,11 +625,11 @@ export default function RestaurantDashboard() {
             </h3>
             <div className="flex items-center text-xs text-green-500 bg-green-50 px-2 py-1 rounded-xl">
               <TrendingUp className="w-3 h-3 mr-1" />
-              <span>Period Revenue</span>
+              <span>Period Total</span>
             </div>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-            {loading ? 'Loading...' : `Revenue from ${orderAnalyticsData.reduce((sum, day) => sum + day.completedOrders, 0)} completed orders in last ${chartPeriod === '7days' ? '7 days' : chartPeriod === '30days' ? '30 days' : '90 days'}`}
+            {loading ? 'Loading...' : `Revenue from ${periodStats.totalOrders} completed orders`}
           </p>
           <div className="flex items-center gap-4 mb-4">
             <div className="flex items-center gap-2">

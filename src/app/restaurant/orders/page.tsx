@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { notificationManager } from '@/utils/notifications';
+import OrderDetailsModal from '@/components/restaurant/OrderDetailsModal';
 
 interface Order {
   id: string;
@@ -39,6 +40,8 @@ export default function OrdersManagementPage() {
   const [showAddOrderModal, setShowAddOrderModal] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
   const { user } = useAuth();
 
   // Check notification permission status
@@ -471,7 +474,12 @@ export default function OrdersManagementPage() {
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
-                    <div className="font-mono font-bold text-blue-600">
+                    <div className="font-mono font-bold text-blue-600 cursor-pointer hover:text-blue-800 transition"
+                         onClick={() => {
+                           setSelectedOrderId(order.id);
+                           setShowOrderDetails(true);
+                         }}
+                         title="Click to view details">
                       #{order.unique_order_id}
                     </div>
                     <div className="text-sm text-gray-600">
@@ -520,7 +528,19 @@ export default function OrdersManagementPage() {
                   <div className="text-sm text-gray-500">
                     Order ID: #{order.unique_order_id}
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex items-center space-x-2">
+                    {/* View Details Button */}
+                    <button
+                      onClick={() => {
+                        setSelectedOrderId(order.id);
+                        setShowOrderDetails(true);
+                      }}
+                      className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded hover:bg-blue-100 transition border border-blue-200 flex items-center gap-1"
+                    >
+                      <span>👁️</span>
+                      View Details
+                    </button>
+                    
                     {/* Only show status buttons if payment is completed */}
                     {order.payment_status === 'completed' && (
                       <>
@@ -583,6 +603,18 @@ export default function OrdersManagementPage() {
           onSubmit={createManualOrder}
           isLoading={isCreatingOrder}
           menuItems={menuItems}
+        />
+      )}
+
+      {/* Order Details Modal */}
+      {showOrderDetails && selectedOrderId && (
+        <OrderDetailsModal
+          isOpen={showOrderDetails}
+          onClose={() => {
+            setShowOrderDetails(false);
+            setSelectedOrderId(null);
+          }}
+          orderId={selectedOrderId}
         />
       )}
     </div>
