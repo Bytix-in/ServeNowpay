@@ -8,14 +8,23 @@ export function useMenuItems(restaurantId?: string) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!restaurantId) return
+    if (!restaurantId) {
+      setLoading(false)
+      return
+    }
+
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setError('Request timeout - please try again')
+        setLoading(false)
+      }
+    }, 10000) // 10 second timeout
 
     async function fetchMenuItems() {
       try {
         setLoading(true)
         setError(null)
-        
-
         
         const { data, error: menuError } = await supabase
           .from('menu_items')
@@ -24,20 +33,22 @@ export function useMenuItems(restaurantId?: string) {
           .order('created_at', { ascending: false })
         
         if (menuError) {
-          console.error('Menu items query error:', menuError)
           throw new Error(menuError.message)
         }
-        
         setMenuItems(data || [])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred')
-        console.error('Error fetching menu items:', err)
       } finally {
         setLoading(false)
+        clearTimeout(timeoutId)
       }
     }
 
     fetchMenuItems()
+
+    return () => {
+      clearTimeout(timeoutId)
+    }
   }, [restaurantId])
 
   const addMenuItem = async (values: MenuItemFormValues & { 
@@ -70,7 +81,6 @@ export function useMenuItems(restaurantId?: string) {
         .select('*')
       
       if (insertError) {
-        console.error('Supabase error:', insertError)
         throw new Error(insertError.message)
       }
       
@@ -83,7 +93,6 @@ export function useMenuItems(restaurantId?: string) {
       return null
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
-      console.error('Error adding menu item:', err)
       setError(errorMessage)
       return null
     }
@@ -110,7 +119,6 @@ export function useMenuItems(restaurantId?: string) {
       return null
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
-      console.error(err)
       return null
     }
   }
@@ -129,7 +137,6 @@ export function useMenuItems(restaurantId?: string) {
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
-      console.error(err)
       return false
     }
   }

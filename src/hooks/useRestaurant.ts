@@ -15,24 +15,39 @@ export function useRestaurant() {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setError('Request timeout - please try again')
+        setLoading(false)
+      }
+    }, 10000) // 10 second timeout
+
     async function fetchRestaurant() {
       try {
         setLoading(true)
         setError(null)
         
         // Get restaurant data from localStorage (set during restaurant login)
-        const userData = localStorage.getItem('user')
+        const restaurantSession = localStorage.getItem('restaurant_session')
         
-        if (!userData) {
+        if (!restaurantSession) {
           setError('No restaurant logged in')
           return
         }
 
-        const user = JSON.parse(userData)
+        const session = JSON.parse(restaurantSession)
         
-        if (user.role !== 'restaurant' || !user.restaurantId) {
+        if (!session.restaurantId) {
           setError('Invalid restaurant session')
           return
         }
@@ -41,16 +56,15 @@ export function useRestaurant() {
         let { data, error: restaurantError } = await supabase
           .from('restaurants')
           .select('id, name, slug, owner_id, address, phone_number, email')
-          .eq('id', user.restaurantId)
+          .eq('id', session.restaurantId)
           .single()
 
-        // If restaurant not found with the stored ID, try to find by name/slug as fallback
-        if (restaurantError && user.name) {
-          console.log('Restaurant not found with stored ID, trying by name:', user.name)
+        // If restaurant not found with the stored ID, try to find by username as fallback
+        if (restaurantError && session.username) {
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('restaurants')
             .select('id, name, slug, owner_id, address, phone_number, email')
-            .eq('name', user.name)
+            .eq('restaurant_username', session.username)
             .single()
           
           if (fallbackData && !fallbackError) {
@@ -58,14 +72,12 @@ export function useRestaurant() {
             restaurantError = null
             
             // Update localStorage with correct restaurant ID
-            const updatedUser = { ...user, restaurantId: fallbackData.id }
-            localStorage.setItem('user', JSON.stringify(updatedUser))
-            console.log('Updated localStorage with correct restaurant ID:', fallbackData.id)
+            const updatedSession = { ...session, restaurantId: fallbackData.id }
+            localStorage.setItem('restaurant_session', JSON.stringify(updatedSession))
           }
         }
         
         if (restaurantError) {
-          console.error('Restaurant query error:', restaurantError)
           throw new Error(restaurantError.message)
         }
         
@@ -76,14 +88,18 @@ export function useRestaurant() {
         setRestaurant(data)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred')
-        console.error('Error fetching restaurant:', err)
       } finally {
         setLoading(false)
+        clearTimeout(timeoutId)
       }
     }
 
     fetchRestaurant()
-  }, [])
+
+    return () => {
+      clearTimeout(timeoutId)
+    }
+  }, [mounted])
 
   return { restaurant, loading, error }
 }
