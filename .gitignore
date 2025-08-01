@@ -39,3 +39,5 @@ next-env.d.ts
 database-migration-webhook.sql
 database-schema.sql
 update-order-workflow.sql
+
+/database
