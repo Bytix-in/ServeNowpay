@@ -53,18 +53,21 @@ export class OrderNotificationManager {
   // Show a notification
   public showNotification(options: NotificationOptions): Notification | null {
     if (!this.isSupported() || !this.isPermitted()) {
-      console.warn('Notifications not supported or not permitted');
       return null;
     }
 
     try {
-      const notification = new Notification(options.title, {
+      const notificationOptions = {
         body: options.body,
+        icon: options.icon || '/favicon.ico',
+        badge: options.badge || '/favicon.ico',
         tag: options.tag,
         requireInteraction: options.requireInteraction || false,
         silent: options.silent || false,
         timestamp: options.timestamp || Date.now()
-      });
+      };
+      
+      const notification = new Notification(options.title, notificationOptions);
 
       return notification;
     } catch (error) {
@@ -105,6 +108,11 @@ export class OrderNotificationManager {
       // Create audio context for notification sound
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       
+      // Resume audio context if suspended (required by some browsers)
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      
       // Create a pleasant notification chime
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -123,7 +131,15 @@ export class OrderNotificationManager {
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.6);
     } catch (error) {
-      // Audio not supported, fail silently
+      // Try fallback beep
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+        audio.play().catch(() => {
+          // Silent failure
+        });
+      } catch (fallbackError) {
+        // Silent failure for audio
+      }
     }
   }
 
