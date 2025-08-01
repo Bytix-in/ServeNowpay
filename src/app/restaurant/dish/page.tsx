@@ -1,11 +1,35 @@
 'use client'
 
 import { useState } from 'react'
-import { Pencil, Trash2, Clock, IndianRupee, Utensils } from 'lucide-react'
+import { Pencil, Trash2, Clock, IndianRupee, Utensils, Check, ChevronDown } from 'lucide-react'
+import { Combobox } from '@headlessui/react'
 import { Button } from '@/components/ui/Button'
 import { ImageUpload } from '@/components/ui/ImageUpload'
 import { useRestaurant } from '@/hooks/useRestaurant'
 import { useMenuItems } from '@/hooks/useMenuItems'
+
+const dishTypes = [
+  'Starter',
+  'Main Course',
+  'Biryani',
+  'Bread',
+  'Snacks',
+  'Pizza',
+  'Burger',
+  'Wraps',
+  'South Indian',
+  'Chinese',
+  'Grill',
+  'Seafood',
+  'Egg',
+  'Salad',
+  'Dessert',
+  'Beverage',
+  'Combo',
+  'Breakfast',
+  'Kids',
+  'Healthy'
+]
 
 export default function DishManagementPage() {
   const [form, setForm] = useState({
@@ -17,6 +41,8 @@ export default function DishManagementPage() {
     prepTime: '',
     tags: ''
   })
+  
+  const [query, setQuery] = useState('')
 
   // Use the custom hooks
   const { restaurant, loading: restaurantLoading, error: restaurantError } = useRestaurant()
@@ -28,8 +54,23 @@ export default function DishManagementPage() {
     deleteMenuItem 
   } = useMenuItems(restaurant?.id)
 
+  const filteredDishTypes =
+    query === ''
+      ? dishTypes
+      : dishTypes.filter((dishType) =>
+          dishType
+            .toLowerCase()
+            .replace(/\s+/g, '')
+            .includes(query.toLowerCase().replace(/\s+/g, ''))
+        )
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleDishTypeChange = (value: string) => {
+    setForm({ ...form, type: value })
+    setQuery('') // Clear the search query when a selection is made
   }
 
   const handleImageChange = (base64: string | null) => {
@@ -71,6 +112,7 @@ export default function DishManagementPage() {
           prepTime: '',
           tags: ''
         })
+        setQuery('') // Clear the search query when form is reset
         alert('Dish added successfully!')
       } else {
         alert('Failed to save dish. Please try again.')
@@ -186,34 +228,83 @@ export default function DishManagementPage() {
               <label className="block text-sm font-medium mb-1">
                 Dish Type <span className="text-red-500">*</span>
               </label>
-              <select
-                name="type"
-                value={form.type}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
-              >
-                <option value="">Select dish type</option>
-                <option value="Starter">Starter</option>
-                <option value="Main Course">Main Course</option>
-                <option value="Dessert">Dessert</option>
-                <option value="Beverage">Beverage</option>
-              </select>
+              <Combobox value={form.type} onChange={handleDishTypeChange}>
+                <div className="relative">
+                  <div className="relative w-full cursor-default overflow-hidden rounded border bg-white text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-teal-300 sm:text-sm">
+                    <Combobox.Input
+                      className="w-full border-none py-2 pl-3 pr-10 text-sm leading-5 text-gray-900 focus:ring-0 focus:outline-none"
+                      displayValue={(dishType: string) => dishType}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder="Search or select dish type..."
+                    />
+                    <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
+                      <ChevronDown
+                        className="h-5 w-5 text-gray-400"
+                        aria-hidden="true"
+                      />
+                    </Combobox.Button>
+                  </div>
+                  <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                    {filteredDishTypes.length === 0 && query !== '' ? (
+                      <div className="relative cursor-default select-none py-2 px-4 text-gray-700">
+                        Nothing found.
+                      </div>
+                    ) : (
+                      filteredDishTypes.map((dishType) => (
+                        <Combobox.Option
+                          key={dishType}
+                          className={({ active }) =>
+                            `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                              active ? 'bg-black text-white' : 'text-gray-900'
+                            }`
+                          }
+                          value={dishType}
+                        >
+                          {({ selected, active }) => (
+                            <>
+                              <span
+                                className={`block truncate ${
+                                  selected ? 'font-medium' : 'font-normal'
+                                }`}
+                              >
+                                {dishType}
+                              </span>
+                              {selected ? (
+                                <span
+                                  className={`absolute inset-y-0 left-0 flex items-center pl-3 ${
+                                    active ? 'text-white' : 'text-black'
+                                  }`}
+                                >
+                                  <Check className="h-5 w-5" aria-hidden="true" />
+                                </span>
+                              ) : null}
+                            </>
+                          )}
+                        </Combobox.Option>
+                      ))
+                    )}
+                  </Combobox.Options>
+                </div>
+              </Combobox>
             </div>
             
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">
-                Price ($) <span className="text-red-500">*</span>
+                Price (₹) <span className="text-red-500">*</span>
               </label>
-              <input
-                name="price"
-                value={form.price}
-                onChange={handleChange}
-                type="number"
-                min="0"
-                step="0.01"
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="0.00"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
+                <input
+                  name="price"
+                  value={form.price}
+                  onChange={handleChange}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="w-full border rounded px-3 py-2 pl-8 focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="0.00"
+                />
+              </div>
             </div>
             
             <div className="mb-4">

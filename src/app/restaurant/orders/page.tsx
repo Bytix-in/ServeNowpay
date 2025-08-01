@@ -45,6 +45,20 @@ export default function OrdersManagementPage() {
   const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set());
   const { user } = useAuth();
 
+  // Manual order creation state
+  const [manualOrder, setManualOrder] = useState({
+    customerName: '',
+    customerPhone: '',
+    tableNumber: '',
+    paymentMethod: 'cash' as 'cash' | 'online',
+    items: [] as { menuItem: MenuItem; quantity: number }[]
+  });
+
+  // Payment waiting state
+  const [waitingForPayment, setWaitingForPayment] = useState(false);
+  const [paymentOrderId, setPaymentOrderId] = useState<string | null>(null);
+  const [paymentWindow, setPaymentWindow] = useState<Window | null>(null);
+
   // Use the real-time orders hook with activity feed integration
   const {
     orders,
@@ -60,7 +74,18 @@ export default function OrdersManagementPage() {
   } = useRealTimeOrders({
     restaurantId: user?.restaurantId || '', 
    onNewOrder: (order) => {
-      console.log('New order received:', order);
+      // Show notification for all new orders
+      if (notificationPermission === 'granted') {
+        notificationManager.showOrderNotification({
+          id: order.id,
+          unique_order_id: order.unique_order_id,
+          customer_name: order.customer_name,
+          table_number: order.table_number,
+          total_amount: order.total_amount
+        });
+        notificationManager.playNotificationSound();
+      }
+      
       // Add to activity feed
       if ((window as any).addOrderActivity) {
         (window as any).addOrderActivity({
@@ -72,7 +97,20 @@ export default function OrdersManagementPage() {
       }
     },
     onOrderUpdate: (updatedOrder, oldOrder) => {
-      console.log('Order updated:', updatedOrder);
+      // Show notification if payment status changed to completed
+      if (oldOrder.payment_status !== 'completed' && updatedOrder.payment_status === 'completed') {
+        if (notificationPermission === 'granted') {
+          notificationManager.showOrderNotification({
+            id: updatedOrder.id,
+            unique_order_id: updatedOrder.unique_order_id,
+            customer_name: updatedOrder.customer_name,
+            table_number: updatedOrder.table_number,
+            total_amount: updatedOrder.total_amount
+          });
+          notificationManager.playNotificationSound();
+        }
+      }
+      
       // Add to activity feed if status changed
       if (oldOrder.status !== updatedOrder.status) {
         if ((window as any).addOrderActivity) {
@@ -98,7 +136,7 @@ export default function OrdersManagementPage() {
       }
     },
     onOrderDelete: (orderId) => {
-      console.log('Order deleted:', orderId);
+      // Handle order deletion if needed
     }
   });
 
@@ -173,12 +211,318 @@ export default function OrdersManagementPage() {
 
   // Function to request notification permission
   const requestNotificationPermission = async () => {
-    const permission = await notificationManager.requestPermission();
-    setNotificationPermission(permission);
-    
-    if (permission === 'granted') {
-      notificationManager.showTestNotification();
+    try {
+      const permission = await notificationManager.requestPermission();
+      setNotificationPermission(permission);
+      
+      if (permission === 'granted') {
+        notificationManager.showTestNotification();
+      } else if (permission === 'denied') {
+        alert('Notifications are blocked. Please enable them in your browser settings to receive order alerts.');
+      }
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+      alert('Failed to request notification permission. Please check your browser settings.');
     }
+  };
+
+  // Function to monitor payment status
+  const monitorPaymentStatus = async (orderId: string) => {
+    const maxAttempts = 60; // Monitor for 5 minutes (60 attempts * 5 seconds)
+    let attempts = 0;
+
+    const checkPaymentStatus = async (): Promise<boolean> => {
+      try {
+        const { data: order, error } = await supabase
+          .from('orders')
+          .select('payment_status, status')
+          .eq('id', orderId)
+          .single();
+
+        if (error) {
+          console.error('Error checking payment status:', error);
+          return false;
+        }
+
+        return order.payment_status === 'completed';
+      } catch (error) {
+        console.error('Error monitoring payment:', error);
+        return false;
+      }
+    };
+
+    return new Promise<boolean>((resolve) => {
+      const interval = setInterval(async () => {
+        attempts++;
+        
+        // Check if payment window is closed
+        if (paymentWindow && paymentWindow.closed) {
+          clearInterval(interval);
+          setWaitingForPayment(false);
+          setPaymentWindow(null);
+          resolve(false);
+          return;
+        }
+
+        const isCompleted = await checkPaymentStatus();
+        
+        if (isCompleted) {
+          clearInterval(interval);
+          setWaitingForPayment(false);
+          if (paymentWindow) {
+            paymentWindow.close();
+            setPaymentWindow(null);
+          }
+          resolve(true);
+          return;
+        }
+
+        if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          setWaitingForPayment(false);
+          if (paymentWindow) {
+            paymentWindow.close();
+            setPaymentWindow(null);
+          }
+          resolve(false);
+        }
+      }, 5000); // Check every 5 seconds
+    });
+  };
+
+  // Manual order creation function
+  const createManualOrder = async () => {
+    if (!user?.restaurantId || !manualOrder.customerName || !manualOrder.customerPhone || !manualOrder.tableNumber || manualOrder.items.length === 0) {
+      alert('Please fill in all required fields and add at least one item.');
+      return;
+    }
+
+    try {
+      setIsCreatingOrder(true);
+
+      // Calculate total amount
+      const totalAmount = manualOrder.items.reduce((total, item) => 
+        total + (item.menuItem.price * item.quantity), 0
+      );
+
+      if (manualOrder.paymentMethod === 'cash') {
+        // Handle cash payment - create order directly in database
+        const uniqueOrderId = `MAN${Date.now()}`;
+
+        // Prepare order data for cash payment
+        const orderData = {
+          restaurant_id: user.restaurantId,
+          customer_name: manualOrder.customerName,
+          customer_phone: manualOrder.customerPhone,
+          table_number: manualOrder.tableNumber,
+          payment_method: 'cash', // Cash payment method
+          items: manualOrder.items.map(item => ({
+            dish_id: item.menuItem.id,
+            dish_name: item.menuItem.name,
+            quantity: item.quantity,
+            price: item.menuItem.price,
+            total: item.menuItem.price * item.quantity
+          })),
+          total_amount: totalAmount,
+          status: 'pending',
+          payment_status: 'completed', // Cash orders are paid immediately
+          unique_order_id: uniqueOrderId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        // Insert cash order into database
+        const { data, error } = await supabase
+          .from('orders')
+          .insert([orderData])
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Database error:', error);
+          throw new Error(`Failed to create cash order: ${error.message}`);
+        }
+
+        // Reset form and close modal
+        setManualOrder({
+          customerName: '',
+          customerPhone: '',
+          tableNumber: '',
+          paymentMethod: 'cash',
+          items: []
+        });
+        setShowAddOrderModal(false);
+
+        // Show success message
+        alert('Manual order created successfully! Payment marked as completed (Cash).');
+
+        // Refresh orders
+        refreshOrders();
+
+      } else {
+        // Handle online payment - open payment gateway in new tab
+        const paymentData = {
+          restaurant_id: user.restaurantId,
+          customer_name: manualOrder.customerName,
+          customer_phone: manualOrder.customerPhone,
+          table_number: manualOrder.tableNumber,
+          payment_method: 'online', // Online payment method
+          items: manualOrder.items.map(item => ({
+            dish_id: item.menuItem.id,
+            dish_name: item.menuItem.name,
+            quantity: item.quantity,
+            price: item.menuItem.price,
+            total: item.menuItem.price * item.quantity
+          })),
+          total_amount: totalAmount
+        };
+
+        // Create payment through API
+        const response = await fetch('/api/create-payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(paymentData)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('Payment API error:', result);
+          let errorMessage = result.error || 'Failed to create payment';
+          
+          // Provide more specific error messages
+          if (result.error?.includes('credentials')) {
+            errorMessage = 'Payment gateway not configured. Please contact administrator.';
+          } else if (result.error?.includes('Cashfree')) {
+            errorMessage = 'Payment gateway error. Please try again or contact support.';
+          }
+          
+          throw new Error(errorMessage);
+        }
+
+        if (result.success) {
+          if (result.payment_configured === false) {
+            // Payment not configured, order created without payment
+            setManualOrder({
+              customerName: '',
+              customerPhone: '',
+              tableNumber: '',
+              paymentMethod: 'cash',
+              items: []
+            });
+            setShowAddOrderModal(false);
+            alert('Order created successfully! Payment system not configured - customer will pay manually.');
+            refreshOrders();
+          } else {
+            // Open payment gateway in new tab and wait for confirmation
+            setPaymentOrderId(result.order_id);
+            setWaitingForPayment(true);
+            
+            // Create payment URL for new tab
+            const paymentUrl = `/payment?session_id=${result.payment_session_id}&order_id=${result.order_id}&environment=${result.environment}`;
+            
+            // Open payment in new tab
+            const newWindow = window.open(paymentUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+            setPaymentWindow(newWindow);
+
+            if (!newWindow) {
+              alert('Please allow popups to complete the payment.');
+              setWaitingForPayment(false);
+              return;
+            }
+
+            // Reset form but keep modal open to show waiting state
+            setManualOrder({
+              customerName: '',
+              customerPhone: '',
+              tableNumber: '',
+              paymentMethod: 'cash',
+              items: []
+            });
+
+            // Monitor payment status
+            const paymentCompleted = await monitorPaymentStatus(result.order_id);
+            
+            if (paymentCompleted) {
+              setShowAddOrderModal(false);
+              alert('Payment completed successfully! Order has been confirmed.');
+              refreshOrders();
+            } else {
+              alert('Payment was not completed or timed out. Please check the order status manually.');
+              setShowAddOrderModal(false);
+              refreshOrders();
+            }
+            
+            setPaymentOrderId(null);
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('Error creating manual order:', error);
+      
+      let userMessage = 'Unknown error';
+      if (error instanceof Error) {
+        userMessage = error.message;
+      }
+      
+      alert(`Failed to create order: ${userMessage}`);
+    } finally {
+      setIsCreatingOrder(false);
+    }
+  };
+
+  // Add item to manual order
+  const addItemToManualOrder = (menuItem: MenuItem) => {
+    setManualOrder(prev => {
+      const existingItem = prev.items.find(item => item.menuItem.id === menuItem.id);
+      if (existingItem) {
+        return {
+          ...prev,
+          items: prev.items.map(item =>
+            item.menuItem.id === menuItem.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          )
+        };
+      } else {
+        return {
+          ...prev,
+          items: [...prev.items, { menuItem, quantity: 1 }]
+        };
+      }
+    });
+  };
+
+  // Remove item from manual order
+  const removeItemFromManualOrder = (menuItemId: string) => {
+    setManualOrder(prev => {
+      const existingItem = prev.items.find(item => item.menuItem.id === menuItemId);
+      if (existingItem && existingItem.quantity > 1) {
+        return {
+          ...prev,
+          items: prev.items.map(item =>
+            item.menuItem.id === menuItemId
+              ? { ...item, quantity: item.quantity - 1 }
+              : item
+          )
+        };
+      } else {
+        return {
+          ...prev,
+          items: prev.items.filter(item => item.menuItem.id !== menuItemId)
+        };
+      }
+    });
+  };
+
+  // Get manual order total
+  const getManualOrderTotal = () => {
+    return manualOrder.items.reduce((total, item) => 
+      total + (item.menuItem.price * item.quantity), 0
+    );
   };
 
   // Update order status with optimistic updates and state tracking
@@ -424,9 +768,21 @@ export default function OrdersManagementPage() {
 
           {/* Notification Status */}
           {notificationPermission === 'granted' ? (
-            <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-2 rounded-lg border border-green-200">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium">Notifications ON</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-2 rounded-lg border border-green-200">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium">Notifications ON</span>
+              </div>
+              <button
+                onClick={() => {
+                  notificationManager.showTestNotification();
+                  notificationManager.playNotificationSound();
+                }}
+                className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100 transition text-xs"
+                title="Test notification"
+              >
+                🔔 Test
+              </button>
             </div>
           ) : notificationPermission === 'denied' ? (
             <div className="flex items-center gap-2 bg-red-50 text-red-700 px-3 py-2 rounded-lg border border-red-200">
@@ -764,6 +1120,302 @@ export default function OrdersManagementPage() {
           }}
           orderId={selectedOrderId}
         />
+      )}
+
+      {/* Add Order Modal */}
+      {showAddOrderModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-semibold text-gray-900">Create Manual Order</h2>
+              <button
+                onClick={() => setShowAddOrderModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <span className="text-2xl">×</span>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* Payment Waiting State */}
+              {waitingForPayment && (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Waiting for Payment</h3>
+                  <p className="text-gray-600 mb-4">
+                    Payment gateway opened in new tab. Please complete the payment to confirm the order.
+                  </p>
+                  <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                    <div className="flex items-center justify-center gap-2 text-blue-700">
+                      <span className="text-2xl">💳</span>
+                      <span className="font-medium">Payment in Progress</span>
+                    </div>
+                    <p className="text-sm text-blue-600 mt-2">
+                      Order ID: {paymentOrderId}
+                    </p>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    <p>• Complete payment in the new tab</p>
+                    <p>• This window will update automatically</p>
+                    <p>• Do not close this window until payment is complete</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setWaitingForPayment(false);
+                      setPaymentOrderId(null);
+                      if (paymentWindow) {
+                        paymentWindow.close();
+                        setPaymentWindow(null);
+                      }
+                    }}
+                    className="mt-4 px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                  >
+                    Cancel Payment
+                  </button>
+                </div>
+              )}
+
+              {/* Regular Form Content - Hidden during payment waiting */}
+              {!waitingForPayment && (
+                <>
+              {/* Customer Information */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Customer Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={manualOrder.customerName}
+                    onChange={(e) => setManualOrder(prev => ({ ...prev, customerName: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter customer name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    value={manualOrder.customerPhone}
+                    onChange={(e) => setManualOrder(prev => ({ ...prev, customerPhone: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter phone number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Table Number *
+                  </label>
+                  <input
+                    type="text"
+                    value={manualOrder.tableNumber}
+                    onChange={(e) => setManualOrder(prev => ({ ...prev, tableNumber: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter table number"
+                  />
+                </div>
+              </div>
+
+              {/* Payment Method Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Payment Method *
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div
+                    onClick={() => setManualOrder(prev => ({ ...prev, paymentMethod: 'cash' }))}
+                    className={`cursor-pointer border-2 rounded-lg p-4 transition-all ${
+                      manualOrder.paymentMethod === 'cash'
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center mb-2">
+                      <span className="text-3xl">💵</span>
+                    </div>
+                    <div className="text-center">
+                      <h3 className="font-medium text-gray-900">Cash Payment</h3>
+                      <p className="text-sm text-gray-600 mt-1">Customer pays in cash</p>
+                      {manualOrder.paymentMethod === 'cash' && (
+                        <div className="mt-2 flex items-center justify-center">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                          <span className="text-xs text-purple-600 ml-1 font-medium">Selected</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div
+                    onClick={() => setManualOrder(prev => ({ ...prev, paymentMethod: 'online' }))}
+                    className={`cursor-pointer border-2 rounded-lg p-4 transition-all ${
+                      manualOrder.paymentMethod === 'online'
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center mb-2">
+                      <span className="text-3xl">💳</span>
+                    </div>
+                    <div className="text-center">
+                      <h3 className="font-medium text-gray-900">Online Payment</h3>
+                      <p className="text-sm text-gray-600 mt-1">UPI, Card, or Digital wallet</p>
+                      {manualOrder.paymentMethod === 'online' && (
+                        <div className="mt-2 flex items-center justify-center">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                          <span className="text-xs text-purple-600 ml-1 font-medium">Selected</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Payment Method Info */}
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                  {manualOrder.paymentMethod === 'cash' ? (
+                    <div className="flex items-start gap-2">
+                      <span className="text-green-600 mt-0.5">✅</span>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Cash Payment Selected</p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Order will be marked as paid immediately. Collect cash from customer when serving.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">ℹ️</span>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Online Payment Selected</p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Customer will need to complete payment online. Order will be pending until payment is confirmed.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Menu Items Selection */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Select Menu Items</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto">
+                  {menuItems.map((item) => (
+                    <div key={item.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{item.name}</h4>
+                          <p className="text-sm text-gray-600">₹{item.price.toFixed(2)}</p>
+                          {item.dish_type && (
+                            <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full mt-1">
+                              {item.dish_type}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => removeItemFromManualOrder(item.id)}
+                            className="w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center hover:bg-red-200 transition-colors"
+                            disabled={!manualOrder.items.find(orderItem => orderItem.menuItem.id === item.id)}
+                          >
+                            -
+                          </button>
+                          <span className="w-8 text-center font-medium">
+                            {manualOrder.items.find(orderItem => orderItem.menuItem.id === item.id)?.quantity || 0}
+                          </span>
+                          <button
+                            onClick={() => addItemToManualOrder(item)}
+                            className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center hover:bg-green-200 transition-colors"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Order Summary */}
+              {manualOrder.items.length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Order Summary</h3>
+                  <div className="space-y-2">
+                    {manualOrder.items.map((item) => (
+                      <div key={item.menuItem.id} className="flex justify-between text-sm">
+                        <span>{item.menuItem.name} x{item.quantity}</span>
+                        <span>₹{(item.menuItem.price * item.quantity).toFixed(2)}</span>
+                      </div>
+                    ))}
+                    <div className="border-t pt-2 mt-2">
+                      <div className="flex justify-between font-semibold">
+                        <span>Total:</span>
+                        <span>₹{getManualOrderTotal().toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-gray-600 mt-1">
+                        <span>Payment Method:</span>
+                        <span className="flex items-center gap-1">
+                          {manualOrder.paymentMethod === 'cash' ? (
+                            <>
+                              <span>💵</span>
+                              <span>Cash</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>💳</span>
+                              <span>Online</span>
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+                </>
+              )} {/* Close the conditional div for regular form content */}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t bg-gray-50">
+              {waitingForPayment ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-blue-600">
+                    <div className="animate-pulse w-2 h-2 bg-blue-600 rounded-full"></div>
+                    <span className="text-sm font-medium">Waiting for payment confirmation...</span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setShowAddOrderModal(false)}
+                    className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={createManualOrder}
+                    disabled={isCreatingOrder || !manualOrder.customerName || !manualOrder.customerPhone || !manualOrder.tableNumber || manualOrder.items.length === 0}
+                    className={`px-6 py-2 text-white rounded-md transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed ${
+                      manualOrder.paymentMethod === 'cash' 
+                        ? 'bg-green-600 hover:bg-green-700' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                  >
+                    {isCreatingOrder ? (
+                      manualOrder.paymentMethod === 'cash' ? 'Creating Order...' : 'Processing Payment...'
+                    ) : (
+                      manualOrder.paymentMethod === 'cash' ? 'Create Order (Cash)' : 'Create Order & Pay Online'
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

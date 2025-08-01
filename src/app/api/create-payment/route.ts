@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
       customer_phone,
       table_number,
       items,
-      total_amount
+      total_amount,
+      payment_method = 'online' // Default to online for payment API
     } = body
 
 
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
           customer_name,
           customer_phone,
           table_number,
+          payment_method,
           items,
           total_amount,
           status: 'pending',
@@ -119,6 +121,7 @@ export async function POST(request: NextRequest) {
       customer_name,
       customer_phone,
       table_number,
+      payment_method,
       items,
       total_amount,
       status: 'pending',

@@ -1,84 +1,126 @@
-'use client'
+"use client";
 
-import { useEffect, useState, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
-
-function PaymentContent() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const [status, setStatus] = useState('Processing...')
-
-  const sessionId = searchParams.get('session_id')
-  const orderId = searchParams.get('order_id')
+export default function PaymentPage() {
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get('session_id');
+  const orderId = searchParams.get('order_id');
+  const environment = searchParams.get('environment');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (sessionId && orderId) {
-      initializePayment()
-    } else {
-      setStatus('Invalid payment session')
-      setTimeout(() => {
-        router.push('/')
-      }, 3000)
+    if (!sessionId || !orderId) {
+      setError('Missing payment session information');
+      setLoading(false);
+      return;
     }
-  }, [sessionId, orderId])
 
-  const initializePayment = () => {
-    if (typeof window !== 'undefined' && (window as any).Cashfree) {
-      setStatus('Initializing payment...')
-      
-      const cashfree = (window as any).Cashfree({
-        mode: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox'
-      })
+    // Load Cashfree SDK
+    const script = document.createElement('script');
+    script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+    script.async = true;
+    
+    script.onload = () => {
+      initializePayment();
+    };
+    
+    script.onerror = () => {
+      setError('Failed to load payment gateway');
+      setLoading(false);
+    };
 
-      const checkoutOptions = {
-        paymentSessionId: sessionId,
-        returnUrl: `${window.location.origin}/payment/success?order_id=${orderId}`,
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, [sessionId, orderId, environment]);
+
+  const initializePayment = async () => {
+    try {
+      if (typeof window !== 'undefined' && (window as any).Cashfree) {
+        const cashfree = new (window as any).Cashfree({
+          mode: environment === 'production' ? 'production' : 'sandbox'
+        });
+
+        const checkoutOptions = {
+          paymentSessionId: sessionId,
+          redirectTarget: '_self'
+        };
+
+        setLoading(false);
+
+        // Initialize payment
+        await cashfree.checkout(checkoutOptions);
+        
+      } else {
+        throw new Error('Cashfree SDK not loaded');
       }
-
-      cashfree.checkout(checkoutOptions).then((result: any) => {
-        if (result.error) {
-          console.error('Payment failed:', result.error)
-          router.push(`/payment/failure?order_id=${orderId}&reason=payment_failed`)
-        }
-      }).catch((error: any) => {
-        console.error('Payment error:', error)
-        router.push(`/payment/failure?order_id=${orderId}&reason=network_error`)
-      })
-    } else {
-      setStatus('Payment system not available')
-      setTimeout(() => {
-        router.push(`/payment/failure?order_id=${orderId}&reason=system_error`)
-      }, 3000)
+    } catch (error) {
+      console.error('Payment initialization failed:', error);
+      setError('Failed to initialize payment. Please try again.');
+      setLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    initializePayment();
+  };
+
+  const handleClose = () => {
+    window.close();
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Initializing Payment</h2>
+          <p className="text-gray-600">Please wait while we set up your payment...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Payment Error</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <div className="space-x-4">
+            <button
+              onClick={handleRetry}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={handleClose}
+              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Processing Payment</h1>
-        <p className="text-gray-600">{status}</p>
-        <p className="text-sm text-gray-500 mt-4">Please do not close this window...</p>
+        <div className="text-blue-500 text-6xl mb-4">💳</div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Payment Gateway</h2>
+        <p className="text-gray-600">Complete your payment to confirm the order</p>
       </div>
     </div>
-  )
-}
-
-export default function PaymentPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading payment...</p>
-        </div>
-      </div>
-    }>
-      <PaymentContent />
-    </Suspense>
-  )
+  );
 }

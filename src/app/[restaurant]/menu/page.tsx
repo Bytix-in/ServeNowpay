@@ -10,7 +10,7 @@ import {
   Utensils, 
   Plus, 
   Minus, 
-  ShoppingCart, 
+  ShoppingCart,
   X, 
   User,
   Star,
@@ -700,10 +700,15 @@ export default function PublicMenuPage() {
                     stiffness: 100
                   }}
                   whileHover={{ 
-                    y: -2,
+                    y: -4,
+                    scale: 1.02,
                     transition: { duration: 0.2 }
                   }}
-                  className="bg-white rounded-2xl p-4 relative overflow-hidden border border-gray-200 shadow-md"
+                  className="bg-white rounded-2xl p-4 relative overflow-hidden border border-gray-200 shadow-md cursor-pointer hover:shadow-lg hover:border-purple-200 transition-all duration-200"
+                  onClick={() => {
+                    setSelectedDish(dish)
+                    setShowDishDetails(true)
+                  }}
                 >
                   {/* Dish Image */}
                   <div className="w-full h-32 mb-3 relative">
@@ -726,14 +731,17 @@ export default function PublicMenuPage() {
                       {dish.name}
                     </h3>
                     <div className="flex items-center justify-between">
-                      <span className="text-green-600 font-bold text-lg">
+                      <span className="text-purple-600 font-bold text-lg">
                         ₹{dish.price}
                       </span>
                       
                       {/* Add Button */}
                       {getCartItemQuantity(dish.id) === 0 ? (
                         <motion.button
-                          onClick={() => addToCart(dish)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            addToCart(dish)
+                          }}
                           className="w-8 h-8 bg-purple-600 rounded-full shadow-md flex items-center justify-center"
                           whileTap={{ scale: 0.95 }}
                         >
@@ -742,7 +750,10 @@ export default function PublicMenuPage() {
                       ) : (
                         <div className="flex items-center gap-2">
                           <motion.button
-                            onClick={() => removeFromCart(dish.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              removeFromCart(dish.id)
+                            }}
                             className="w-6 h-6 bg-purple-600 rounded-full shadow-md flex items-center justify-center"
                             whileTap={{ scale: 0.9 }}
                           >
@@ -752,7 +763,10 @@ export default function PublicMenuPage() {
                             {getCartItemQuantity(dish.id)}
                           </span>
                           <motion.button
-                            onClick={() => addToCart(dish)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              addToCart(dish)
+                            }}
                             className="w-6 h-6 bg-purple-600 rounded-full shadow-md flex items-center justify-center"
                             whileTap={{ scale: 0.9 }}
                           >
@@ -812,48 +826,7 @@ export default function PublicMenuPage() {
         </div>
       </div>
 
-      {/* Floating Cart Button */}
-      <AnimatePresence>
-        {cart.length > 0 && (
-          <motion.div 
-            className="fixed bottom-6 right-6 z-50"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-          >
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              animate={{ 
-                y: [0, -5, 0],
-                rotate: [0, 5, -5, 0]
-              }}
-              transition={{ 
-                duration: 2,
-                repeat: Infinity,
-                repeatType: "reverse"
-              }}
-            >
-              <Button
-                onClick={() => setShowCart(true)}
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-full p-4 shadow-2xl relative"
-              >
-                <ShoppingCart className="w-6 h-6" />
-                <motion.span 
-                  className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold shadow-lg"
-                  key={getCartItemCount()}
-                  initial={{ scale: 1.5 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                >
-                  {getCartItemCount()}
-                </motion.span>
-              </Button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       {/* Cart Modal */}
       {showCart && (
@@ -878,7 +851,7 @@ export default function PublicMenuPage() {
                 <div key={item.dish.id} className="flex items-center justify-between py-3 border-b last:border-b-0">
                   <div className="flex-1">
                     <h3 className="font-medium text-gray-900">{item.dish.name}</h3>
-                    <div className="flex items-center text-green-600 text-sm">
+                    <div className="flex items-center text-purple-600 text-sm">
                       <IndianRupee className="w-4 h-4" />
                       <span>{item.dish.price.toFixed(2)}</span>
                     </div>
@@ -913,7 +886,7 @@ export default function PublicMenuPage() {
             <div className="p-4 border-t bg-gray-50">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-lg font-semibold">Total:</span>
-                <div className="flex items-center text-green-600 font-bold text-xl">
+                <div className="flex items-center text-purple-600 font-bold text-xl">
                   <IndianRupee className="w-5 h-5" />
                   <span>{getCartTotal().toFixed(2)}</span>
                 </div>
@@ -932,7 +905,7 @@ export default function PublicMenuPage() {
                     setShowCart(false)
                     setShowCheckout(true)
                   }}
-                  className="flex-1 bg-orange-600 hover:bg-orange-700"
+                  className="flex-1 bg-purple-600 hover:bg-purple-700"
                 >
                   Checkout
                 </Button>
@@ -1008,7 +981,7 @@ export default function PublicMenuPage() {
                 ))}
                 <div className="border-t pt-2 mt-2 flex justify-between font-semibold">
                   <span>Total:</span>
-                  <div className="flex items-center text-green-600">
+                  <div className="flex items-center text-purple-600">
                     <IndianRupee className="w-4 h-4" />
                     <span>{getCartTotal().toFixed(2)}</span>
                   </div>
@@ -1032,7 +1005,7 @@ export default function PublicMenuPage() {
                 <Button
                   onClick={placeOrder}
                   disabled={!customerInfo.name || !customerInfo.phone || !customerInfo.tableNumber || orderLoading}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  className="flex-1 bg-purple-600 hover:bg-purple-700"
                 >
                   {orderLoading ? 'Placing Order...' : 'Place Order'}
                 </Button>
@@ -1078,7 +1051,7 @@ export default function PublicMenuPage() {
                 </div>
               )}
               <div className="absolute top-2 right-2">
-                <span className="inline-block px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-full shadow-md">
+                <span className="inline-block px-3 py-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold rounded-full shadow-md">
                   <IndianRupee className="w-3 h-3 inline-block mr-1" />
                   {selectedDish.price.toFixed(2)}
                 </span>
