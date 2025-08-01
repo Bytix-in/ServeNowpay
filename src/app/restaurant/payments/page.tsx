@@ -35,7 +35,7 @@ export default function PaymentSettingsPage() {
   const [testingConnection, setTestingConnection] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState<'success' | 'error' | null>(null)
 
-  const { restaurant, loading: restaurantLoading } = useRestaurant()
+  const { restaurant, loading: restaurantLoading, error: restaurantError } = useRestaurant()
 
   const {
     register,
@@ -197,6 +197,33 @@ export default function PaymentSettingsPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading payment settings...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (restaurantError) {
+    const isAuthError = restaurantError?.includes('logged in') || restaurantError?.includes('session')
+    
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-2">
+            {isAuthError ? 'Authentication Required' : 'Error'}
+          </h1>
+          <p className="text-gray-600">{restaurantError}</p>
+          <div className="mt-4 space-x-4">
+            {isAuthError ? (
+              <Button onClick={() => window.location.href = '/auth/restaurant-login'}>
+                Go to Login
+              </Button>
+            ) : (
+              <Button onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     )

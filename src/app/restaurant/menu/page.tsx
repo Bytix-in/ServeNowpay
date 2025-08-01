@@ -1,21 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Clock, IndianRupee, ExternalLink, QrCode, Download, Utensils } from 'lucide-react'
 import QRCodeComponent from 'react-qr-code'
 import { Button } from '@/components/ui/Button'
 import { useRestaurant } from '@/hooks/useRestaurant'
 import { useMenuItems } from '@/hooks/useMenuItems'
 
+
 export default function MenuDisplayPage() {
   const [showQRCode, setShowQRCode] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   
   // Use the custom hooks
   const { restaurant, loading: restaurantLoading, error: restaurantError } = useRestaurant()
   const { 
     menuItems, 
-    loading: menuLoading
+    loading: menuLoading,
+    error: menuError
   } = useMenuItems(restaurant?.id)
+
+
   
   // Get dynamic base URL
   const getBaseUrl = () => {
@@ -60,7 +69,7 @@ export default function MenuDisplayPage() {
     }
   }
 
-  // Loading state
+  // Loading state with timeout
   if (restaurantLoading || menuLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -73,12 +82,27 @@ export default function MenuDisplayPage() {
   }
 
   // Error state
-  if (restaurantError) {
+  if (restaurantError || menuError) {
+    const isAuthError = restaurantError?.includes('logged in') || restaurantError?.includes('session')
+    
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-2">Error</h1>
-          <p className="text-gray-600">{restaurantError}</p>
+          <h1 className="text-2xl font-bold text-red-600 mb-2">
+            {isAuthError ? 'Authentication Required' : 'Error'}
+          </h1>
+          <p className="text-gray-600">{restaurantError || menuError}</p>
+          <div className="mt-4 space-x-4">
+            {isAuthError ? (
+              <Button onClick={() => window.location.href = '/auth/restaurant-login'}>
+                Go to Login
+              </Button>
+            ) : (
+              <Button onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     )

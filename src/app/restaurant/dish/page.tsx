@@ -23,6 +23,7 @@ export default function DishManagementPage() {
   const { 
     menuItems, 
     loading: menuLoading, 
+    error: menuError,
     addMenuItem, 
     deleteMenuItem 
   } = useMenuItems(restaurant?.id)
@@ -81,8 +82,8 @@ export default function DishManagementPage() {
   }
 
   const handleEdit = (dish: any) => {
-    console.log('Edit dish:', dish)
-    // TODO: Implement edit functionality
+    // Edit functionality to be implemented
+    alert('Edit functionality coming soon!')
   }
 
   const handleDelete = async (dishId: string) => {
@@ -117,12 +118,28 @@ export default function DishManagementPage() {
   }
 
   // Error state
-  if (restaurantError) {
+  if (restaurantError || menuError) {
+    const error = restaurantError || menuError
+    const isAuthError = error?.includes('logged in') || error?.includes('session')
+    
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-2">Error</h1>
-          <p className="text-gray-600">{restaurantError}</p>
+          <h1 className="text-2xl font-bold text-red-600 mb-2">
+            {isAuthError ? 'Authentication Required' : 'Error'}
+          </h1>
+          <p className="text-gray-600">{error}</p>
+          <div className="mt-4 space-x-4">
+            {isAuthError ? (
+              <Button onClick={() => window.location.href = '/auth/restaurant-login'}>
+                Go to Login
+              </Button>
+            ) : (
+              <Button onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     )
