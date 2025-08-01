@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #8b5cf6;
+            margin: 0;
+            font-size: 2.5em;
+        }
+        
+        .restaurant-info {
+            margin-bottom: 30px;
+        }
+        
+        .restaurant-info h2 {
+            color: #333;
+            margin: 0 0 10px 0;
+            font-size: 1.8em;
+        }
+        
+        .restaurant-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+        
+        .invoice-details {
+            display: table;
+            width: 100%;
+            margin-bottom: 30px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .invoice-details > div {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 20px;
+        }
+        
+        .invoice-details h3 {
+            margin: 0 0 10px 0;
+            color: #8b5cf6;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        
+        .invoice-details p {
+            margin: 5px 0;
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px;
+        }
+        
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 12px 8px; 
+            text-align: left; 
+        }
+        
+        th { 
+            background-color: #8b5cf6; 
+            color: white;
+            font-weight: bold;
+        }
+        
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .amount-cell {
+            text-align: right;
+            font-weight: bold;
+        }
+        
+        .tax-summary {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .tax-summary p {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .tax-summary .total-row {
+            border-top: 2px solid #333;
+            padding-top: 10px;
+            margin-top: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #8b5cf6;
+        }
+        
+        .footer-note {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
+        
+        .status-badges {
+            margin: 20px 0;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: white;
+            margin-right: 10px;
+        }
+        
+        .status-completed { background-color: #28a745; }
+        .status-pending { background-color: #ffc107; color: #333; }
+        .status-failed { background-color: #dc3545; }
+        .status-in-progress { background-color: #007bff; }
+        
+        @media print {
+            body { margin: 0; padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>INVOICE</h1>
+        <p>Tax Invoice</p>
+    </div>
+    
+    <div class="restaurant-info">
+        <h2>{{restaurantName}}</h2>
+        <p>{{restaurantAddress}}</p>
+        <p>Phone: {{restaurantPhone}} | GSTIN: {{restaurantGST}}</p>
+    </div>
+    
+    <div class="invoice-details">
+        <div>
+            <h3>Invoice Details</h3>
+            <p><strong>Invoice #:</strong> {{invoiceNumber}}</p>
+            <p><strong>Date:</strong> {{date}}</p>
+            <p><strong>Table:</strong> {{tableNumber}}</p>
+        </div>
+        <div>
+            <h3>Customer Details</h3>
+            <p><strong>Name:</strong> {{customerName}}</p>
+            <p><strong>Phone:</strong> {{customerPhone}}</p>
+        </div>
+    </div>
+    
+    <div class="status-badges">
+        <span class="status-badge {{orderStatusClass}}">Order: {{orderStatus}}</span>
+        <span class="status-badge {{paymentStatusClass}}">Payment: {{paymentStatus}}</span>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Rate (Rs.)</th>
+                <th>Total (Rs.)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{items}}
+        </tbody>
+    </table>
+    
+    <div class="tax-summary">
+        <p><span>Subtotal:</span> <span class="amount-cell">Rs. {{subtotal}}</span></p>
+        <p><span>CGST @2.5%:</span> <span class="amount-cell">Rs. {{cgst}}</span></p>
+        <p><span>SGST @2.5%:</span> <span class="amount-cell">Rs. {{sgst}}</span></p>
+        <p class="total-row"><span>Total Amount:</span> <span class="amount-cell">Rs. {{total}}</span></p>
+    </div>
+    
+    <div class="footer-note">
+        <p><strong>ServeNowPay</strong> - Digital Restaurant Ordering System</p>
+        <p>This is a computer-generated invoice. No signature required.</p>
+        <p>Generated on: {{generatedDate}}</p>
+    </div>
+</body>
+</html>

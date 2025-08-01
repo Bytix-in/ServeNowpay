@@ -16,7 +16,8 @@ import {
   MapPin,
   Clock,
   Receipt,
-  CheckCircle
+  CheckCircle,
+  Download
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { supabase } from '@/lib/supabase'
@@ -40,6 +41,8 @@ interface RecentOrder {
   payment_status: string
   created_at: string
   table_number: string
+  invoice_base64?: string
+  invoice_generated?: boolean
 }
 
 export default function UserDashboard() {
@@ -56,6 +59,7 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [selectedOrder, setSelectedOrder] = useState<RecentOrder | null>(null)
+  const [downloadingPDF, setDownloadingPDF] = useState(false)
   const router = useRouter()
 
   // Fetch user data and statistics
@@ -75,6 +79,8 @@ export default function UserDashboard() {
           created_at,
           table_number,
           items,
+          invoice_base64,
+          invoice_generated,
           restaurants (
             name,
             address
@@ -96,7 +102,9 @@ export default function UserDashboard() {
         status: order.status,
         payment_status: order.payment_status,
         created_at: order.created_at,
-        table_number: order.table_number
+        table_number: order.table_number,
+        invoice_base64: order.invoice_base64,
+        invoice_generated: order.invoice_generated
       })) || []
 
       // Calculate statistics
@@ -269,6 +277,84 @@ export default function UserDashboard() {
       minute: '2-digit',
       hour12: true
     })
+  }
+
+  // Download invoice from base64 data
+  const downloadInvoice = async (order: RecentOrder) => {
+    try {
+      setDownloadingPDF(true)
+      
+      // Check if invoice exists in the order data
+      if (!order.invoice_base64) {
+        // If no invoice exists, try to generate one
+        const response = await fetch('/api/auto-generate-invoice', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: order.id
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to generate invoice')
+        }
+
+        const result = await response.json()
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to generate invoice')
+        }
+
+        // Refresh the order data to get the new invoice
+        await fetchUserData(userPhone)
+        alert('Invoice generated! Please try downloading again.')
+        return
+      }
+
+      // Convert base64 to blob
+      const base64Data = order.invoice_base64
+      const byteCharacters = atob(base64Data)
+      const byteNumbers = new Array(byteCharacters.length)
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers)
+      
+      // Determine content type based on the data
+      let contentType = 'text/html'
+      let fileExtension = 'html'
+      
+      // Check if it's actually a PDF (starts with PDF signature)
+      if (base64Data.startsWith('JVBERi0')) {
+        contentType = 'application/pdf'
+        fileExtension = 'pdf'
+      }
+      
+      const blob = new Blob([byteArray], { type: contentType })
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `invoice-${order.unique_order_id || order.id.slice(-8)}.${fileExtension}`
+      
+      // Trigger download
+      document.body.appendChild(link)
+      link.click()
+      
+      // Cleanup
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+    } catch (error) {
+      console.error('Error downloading invoice:', error)
+      alert('Failed to download invoice. Please try again.')
+    } finally {
+      setDownloadingPDF(false)
+    }
   }
 
   if (!userPhone) {
@@ -471,6 +557,20 @@ export default function UserDashboard() {
                       <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
                         {getStatusLabel(order.status)}
                       </span>
+                      {order.payment_status === 'completed' && (
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            downloadInvoice(order)
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                          disabled={downloadingPDF}
+                        >
+                          <Download className="w-3 h-3" />
+                        </Button>
+                      )}
                       <ChevronRight className="w-4 h-4 text-gray-400" />
                     </div>
                   </div>
@@ -618,23 +718,47 @@ export default function UserDashboard() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-2">
-                <Button
-                  onClick={() => setSelectedOrder(null)}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Close
-                </Button>
-                <Button
-                  onClick={() => {
-                    setSelectedOrder(null)
-                    router.push('/user/orders')
-                  }}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700"
-                >
-                  View All Orders
-                </Button>
+              <div className="space-y-3 pt-2">
+                {/* Invoice Download Button */}
+                {selectedOrder.payment_status === 'completed' && (
+                  <Button
+                    onClick={() => downloadInvoice(selectedOrder)}
+                    disabled={downloadingPDF}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {downloadingPDF ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        {selectedOrder.invoice_generated ? 'Downloading...' : 'Generating Invoice...'}
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        {selectedOrder.invoice_generated ? 'Download Invoice' : 'Generate & Download Invoice'}
+                      </>
+                    )}
+                  </Button>
+                )}
+                
+                {/* Other Action Buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => setSelectedOrder(null)}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setSelectedOrder(null)
+                      router.push('/user/orders')
+                    }}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700"
+                  >
+                    View All Orders
+                  </Button>
+                </div>
               </div>
             </div>
           </motion.div>

@@ -29,7 +29,8 @@ import {
   ArrowUp,
   ArrowDown,
   Menu,
-  RefreshCw
+  RefreshCw,
+  Download
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
@@ -70,6 +71,8 @@ interface RecentOrder {
   payment_status: string
   created_at: string
   items: any[]
+  invoice_base64?: string
+  invoice_generated?: boolean
 }
 
 interface ChartDataPoint {
@@ -106,6 +109,7 @@ export default function RestaurantDashboard() {
   const [orderAnalyticsData, setOrderAnalyticsData] = useState<ChartDataPoint[]>([])
   const [revenueProfileData, setRevenueProfileData] = useState<ChartDataPoint[]>([])
   const [chartPeriod, setChartPeriod] = useState<'7days' | '30days' | '90days'>('30days')
+  const [downloadingInvoice, setDownloadingInvoice] = useState<string | null>(null)
 
   // Generate chart data from orders
   const generateChartData = (orders: RecentOrder[], period: '7days' | '30days' | '90days') => {
@@ -152,7 +156,7 @@ export default function RestaurantDashboard() {
       // Get all orders for the restaurant
       const { data: orders, error } = await supabase
         .from('orders')
-        .select('*')
+        .select('*, invoice_base64, invoice_generated')
         .eq('restaurant_id', user.restaurantId)
         .order('created_at', { ascending: false })
 
@@ -285,6 +289,84 @@ export default function RestaurantDashboard() {
       case 'served': return 'Served'
       case 'cancelled': return 'Cancelled'
       default: return status
+    }
+  }
+
+  // Download invoice from base64 data
+  const downloadInvoice = async (order: RecentOrder) => {
+    try {
+      setDownloadingInvoice(order.id)
+      
+      // Check if invoice exists in the order data
+      if (!order.invoice_base64) {
+        // If no invoice exists, try to generate one
+        const response = await fetch('/api/auto-generate-invoice', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: order.id
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to generate invoice')
+        }
+
+        const result = await response.json()
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to generate invoice')
+        }
+
+        // Refresh the dashboard data to get the new invoice
+        await fetchDashboardStats()
+        alert('Invoice generated! Please try downloading again.')
+        return
+      }
+
+      // Convert base64 to blob
+      const base64Data = order.invoice_base64
+      const byteCharacters = atob(base64Data)
+      const byteNumbers = new Array(byteCharacters.length)
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers)
+      
+      // Determine content type based on the data
+      let contentType = 'text/html'
+      let fileExtension = 'html'
+      
+      // Check if it's actually a PDF (starts with PDF signature)
+      if (base64Data.startsWith('JVBERi0')) {
+        contentType = 'application/pdf'
+        fileExtension = 'pdf'
+      }
+      
+      const blob = new Blob([byteArray], { type: contentType })
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `invoice-${order.unique_order_id || order.id.slice(-8)}.${fileExtension}`
+      
+      // Trigger download
+      document.body.appendChild(link)
+      link.click()
+      
+      // Cleanup
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+    } catch (error) {
+      console.error('Error downloading invoice:', error)
+      alert('Failed to download invoice. Please try again.')
+    } finally {
+      setDownloadingInvoice(null)
     }
   }
 
@@ -743,7 +825,7 @@ export default function RestaurantDashboard() {
           <>
             {/* Table Header */}
             <div className="px-6 py-3 border-b bg-gray-50">
-              <div className="grid grid-cols-6 gap-4">
+              <div className="grid grid-cols-7 gap-4">
                 <div className="flex items-center">
                   <span className="text-sm font-medium text-gray-700">Order ID</span>
                 </div>
@@ -762,6 +844,9 @@ export default function RestaurantDashboard() {
                 <div className="flex items-center">
                   <span className="text-sm font-medium text-gray-700">Status</span>
                 </div>
+                <div className="flex items-center">
+                  <span className="text-sm font-medium text-gray-700">Invoice</span>
+                </div>
               </div>
             </div>
 
@@ -776,7 +861,7 @@ export default function RestaurantDashboard() {
                   className="px-6 py-4 border-b last:border-b-0 hover:bg-gray-50 transition cursor-pointer"
                   onClick={() => router.push('/restaurant/orders')}
                 >
-                  <div className="grid grid-cols-6 gap-4 items-center">
+                  <div className="grid grid-cols-7 gap-4 items-center">
                     <div>
                       <span className="text-sm font-mono font-medium text-blue-600">
                         #{order.unique_order_id}
@@ -813,6 +898,31 @@ export default function RestaurantDashboard() {
                       <div className="text-xs text-gray-500 mt-1">
                         {order.items?.length || 0} items
                       </div>
+                    </div>
+                    <div>
+                      {order.payment_status === 'completed' ? (
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            downloadInvoice(order)
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                          disabled={downloadingInvoice === order.id}
+                        >
+                          {downloadingInvoice === order.id ? (
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <>
+                              <Download className="w-3 h-3 mr-1" />
+                              {order.invoice_generated ? 'Download' : 'Generate'}
+                            </>
+                          )}
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-gray-400">Payment pending</span>
+                      )}
                     </div>
                   </div>
                 </motion.div>

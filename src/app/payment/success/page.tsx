@@ -328,8 +328,67 @@ function PaymentSuccessContent() {
     router.push('/profile')
   }
 
-  const printInvoice = () => {
-    window.print()
+  const printInvoice = async () => {
+    if (!order) return;
+
+    try {
+      // Show loading state
+      setLoading(true);
+
+      // Generate invoice HTML for printing
+      const response = await fetch('/api/download-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: order.id,
+          customerPhone: order.customer_phone
+        })
+      });
+
+      if (response.ok) {
+        const contentType = response.headers.get('content-type');
+        
+        // Always get the content as HTML for better printing compatibility
+        const htmlContent = await response.text();
+        
+        // Open HTML in new window for printing
+        const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+        if (printWindow) {
+          // Write the HTML content
+          printWindow.document.open();
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+          
+          // Wait for content and images to load, then print
+          printWindow.onload = () => {
+            setTimeout(() => {
+              printWindow.print();
+            }, 500);
+          };
+          
+          // Fallback print trigger for older browsers
+          setTimeout(() => {
+            if (printWindow && !printWindow.closed) {
+              printWindow.print();
+            }
+          }, 2000);
+        } else {
+          alert('Please allow popups to print the invoice.');
+        }
+        
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Failed to generate invoice: ${errorText}`);
+      }
+
+    } catch (error) {
+      console.error('Error printing invoice:', error);
+      alert('❌ Failed to print invoice. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (loading) {
@@ -640,10 +699,11 @@ function PaymentSuccessContent() {
           {order.payment_status === 'completed' ? (
             <Button
               onClick={printInvoice}
-              className="flex-1 bg-green-600 hover:bg-green-700"
+              disabled={loading}
+              className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-50"
             >
               <Printer className="h-4 w-4 mr-2" />
-              Print Invoice
+              {loading ? 'Preparing Invoice...' : 'Print Invoice'}
             </Button>
           ) : (order.payment_status === 'pending' || order.payment_status === 'verifying') && !noPayment ? (
             <Button
@@ -670,10 +730,11 @@ function PaymentSuccessContent() {
           ) : (
             <Button
               onClick={printInvoice}
-              className="flex-1 bg-green-600 hover:bg-green-700"
+              disabled={loading}
+              className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-50"
             >
               <Printer className="h-4 w-4 mr-2" />
-              Print Invoice
+              {loading ? 'Preparing Invoice...' : 'Print Invoice'}
             </Button>
           )}
         </motion.div>

@@ -70,10 +70,8 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }: OrderDet
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR'
-    }).format(amount);
+    // Use simple formatting to avoid encoding issues
+    return `Rs. ${amount.toFixed(2)}`;
   };
 
   const formatDateTime = (timestamp: string) => {
@@ -131,6 +129,280 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }: OrderDet
     }
   };
 
+  // Print invoice function
+  const printInvoice = async (order: OrderDetails) => {
+    try {
+      // Show loading state
+      const button = document.querySelector('button[disabled]') as HTMLButtonElement;
+      const originalText = button?.textContent;
+      if (button) {
+        button.textContent = 'Preparing Invoice...';
+        button.disabled = true;
+      }
+
+      // Generate invoice for printing
+      const response = await fetch('/api/download-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: order.id,
+          customerPhone: order.customer_phone
+        })
+      });
+
+      if (response.ok) {
+        const contentType = response.headers.get('content-type');
+        
+        // Always get the content as HTML for better printing compatibility
+        const htmlContent = await response.text();
+        
+        // Open HTML in new window for printing
+        const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+        if (printWindow) {
+          // Write the HTML content
+          printWindow.document.open();
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+          
+          // Wait for content and images to load, then print
+          printWindow.onload = () => {
+            setTimeout(() => {
+              printWindow.print();
+            }, 500);
+          };
+          
+          // Fallback print trigger for older browsers
+          setTimeout(() => {
+            if (printWindow && !printWindow.closed) {
+              printWindow.print();
+            }
+          }, 2000);
+        } else {
+          alert('Please allow popups to print the invoice.');
+        }
+        
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Failed to generate invoice: ${errorText}`);
+      }
+
+    } catch (error) {
+      console.error('Error printing invoice:', error);
+      alert('❌ Failed to print invoice. Please try again.');
+    } finally {
+      // Reset button state
+      const button = document.querySelector('button[disabled]') as HTMLButtonElement;
+      if (button) {
+        button.textContent = 'Print Invoice';
+        button.disabled = order?.payment_status !== 'completed';
+      }
+    }
+  };
+
+  // Generate simple invoice HTML as fallback
+  const generateSimpleInvoice = (order: OrderDetails) => {
+    const formatCurrency = (amount: number) => {
+      // Use simple formatting to avoid encoding issues
+      return `Rs. ${amount.toFixed(2)}`;
+    };
+
+    const formatDate = (dateString: string) => {
+      return new Date(dateString).toLocaleString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    };
+
+    // Calculate GST
+    const totalAmount = order.total_amount;
+    const subtotal = Math.round((totalAmount / 1.05) * 100) / 100;
+    const cgst = Math.round(((subtotal * 0.025) * 100)) / 100;
+    const sgst = Math.round(((subtotal * 0.025) * 100)) / 100;
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Invoice - ${order.unique_order_id}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 3px solid #8b5cf6;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+          }
+          .header h1 {
+            color: #8b5cf6;
+            font-size: 2.5em;
+            margin: 0;
+          }
+          .invoice-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+          }
+          .info-section h3 {
+            color: #8b5cf6;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+          }
+          .info-section p {
+            margin: 5px 0;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 12px 8px;
+            text-align: left;
+          }
+          th {
+            background-color: #8b5cf6;
+            color: white;
+            font-weight: bold;
+          }
+          tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+          }
+          .total-section {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+          }
+          .total-section h3 {
+            margin: 0 0 10px 0;
+          }
+          .total-amount {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+            color: #666;
+          }
+          .tax-breakdown {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+          }
+          .tax-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+          }
+          .tax-total {
+            border-top: 2px solid #333;
+            padding-top: 10px;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 1.2em;
+          }
+          @media print {
+            body { margin: 0; padding: 15px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>INVOICE</h1>
+          <p>Order #${order.unique_order_id}</p>
+        </div>
+
+        <div class="invoice-info">
+          <div class="info-section">
+            <h3>Restaurant Details</h3>
+            <p><strong>Name:</strong> Restaurant</p>
+            <p><strong>Address:</strong> Restaurant Address</p>
+            <p><strong>Phone:</strong> Restaurant Phone</p>
+          </div>
+          
+          <div class="info-section">
+            <h3>Customer Details</h3>
+            <p><strong>Name:</strong> ${order.customer_name}</p>
+            <p><strong>Phone:</strong> +91 ${order.customer_phone}</p>
+            <p><strong>Table:</strong> ${order.table_number}</p>
+            <p><strong>Date:</strong> ${formatDate(order.created_at)}</p>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Item Name</th>
+              <th>Quantity</th>
+              <th>Unit Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.items.map(item => `
+              <tr>
+                <td>${item.dish_name || item.name}</td>
+                <td>${item.quantity}</td>
+                <td>${formatCurrency(item.price || 0)}</td>
+                <td>${formatCurrency(item.total || (item.price * item.quantity) || 0)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="tax-breakdown">
+          <div class="tax-row">
+            <span>Subtotal:</span>
+            <span>${formatCurrency(subtotal)}</span>
+          </div>
+          <div class="tax-row">
+            <span>CGST @2.5%:</span>
+            <span>${formatCurrency(cgst)}</span>
+          </div>
+          <div class="tax-row">
+            <span>SGST @2.5%:</span>
+            <span>${formatCurrency(sgst)}</span>
+          </div>
+          <div class="tax-row tax-total">
+            <span>Total Amount:</span>
+            <span>${formatCurrency(totalAmount)}</span>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p><strong>ServeNowPay</strong> - Digital Restaurant Ordering System</p>
+          <p>This is a computer-generated invoice.</p>
+          <p>Generated on: ${new Date().toLocaleString('en-IN')}</p>
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -178,11 +450,12 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }: OrderDet
               {refreshing ? 'Refreshing...' : 'Refresh'}
             </button>
             <button
-              onClick={() => window.print()}
-              className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center gap-2 text-sm"
+              onClick={() => printInvoice(order)}
+              disabled={order?.payment_status !== 'completed'}
+              className="px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span>🖨️</span>
-              Print
+              {order?.payment_status === 'completed' ? 'Print Invoice' : 'Payment Required'}
             </button>
             <button
               onClick={onClose}
@@ -357,22 +630,43 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }: OrderDet
                       <div className="space-y-3">
                         <div className="bg-gray-50 rounded-lg p-4">
                           <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Items Total:</span>
-                              <span className="text-gray-900">{formatCurrency(order.total_amount)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Taxes & Fees:</span>
-                              <span className="text-gray-900">₹0.00</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Discount:</span>
-                              <span className="text-gray-900">₹0.00</span>
-                            </div>
-                            <div className="flex justify-between font-semibold text-lg pt-2 border-t border-gray-300">
-                              <span className="text-gray-900">Final Amount:</span>
-                              <span className="text-green-600">{formatCurrency(order.total_amount)}</span>
-                            </div>
+                            {(() => {
+                              // Calculate GST breakdown (same as invoice)
+                              const totalAmount = order.total_amount;
+                              const subtotal = Math.round((totalAmount / 1.05) * 100) / 100;
+                              const cgst = Math.round(((subtotal * 0.025) * 100)) / 100;
+                              const sgst = Math.round(((subtotal * 0.025) * 100)) / 100;
+                              const totalTax = cgst + sgst;
+                              
+                              return (
+                                <>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Subtotal (before tax):</span>
+                                    <span className="text-gray-900">{formatCurrency(subtotal)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">CGST @2.5%:</span>
+                                    <span className="text-gray-900">{formatCurrency(cgst)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">SGST @2.5%:</span>
+                                    <span className="text-gray-900">{formatCurrency(sgst)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Total Tax (5%):</span>
+                                    <span className="text-gray-900">{formatCurrency(totalTax)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">Discount:</span>
+                                    <span className="text-gray-900">₹0.00</span>
+                                  </div>
+                                  <div className="flex justify-between font-semibold text-lg pt-2 border-t border-gray-300">
+                                    <span className="text-gray-900">Final Amount:</span>
+                                    <span className="text-green-600">{formatCurrency(totalAmount)}</span>
+                                  </div>
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                         
