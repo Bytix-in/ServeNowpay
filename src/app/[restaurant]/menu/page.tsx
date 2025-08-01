@@ -10,7 +10,6 @@ import {
   Utensils, 
   Plus, 
   Minus, 
-  ShoppingCart, 
   X, 
   User,
   Star,
@@ -786,18 +785,7 @@ export default function PublicMenuPage() {
               <Search className="w-6 h-6 text-gray-400" />
             </motion.button>
             
-            <motion.button
-              className="flex flex-col items-center p-2 relative"
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowCart(true)}
-            >
-              <ShoppingCart className="w-6 h-6 text-gray-400" />
-              {getCartItemCount() > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-purple-600 text-white text-xs rounded-full flex items-center justify-center shadow-lg font-bold">
-                  {getCartItemCount()}
-                </span>
-              )}
-            </motion.button>
+
             
             <motion.button
               className="flex flex-col items-center p-2"
@@ -812,48 +800,7 @@ export default function PublicMenuPage() {
         </div>
       </div>
 
-      {/* Floating Cart Button */}
-      <AnimatePresence>
-        {cart.length > 0 && (
-          <motion.div 
-            className="fixed bottom-6 right-6 z-50"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-          >
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              animate={{ 
-                y: [0, -5, 0],
-                rotate: [0, 5, -5, 0]
-              }}
-              transition={{ 
-                duration: 2,
-                repeat: Infinity,
-                repeatType: "reverse"
-              }}
-            >
-              <Button
-                onClick={() => setShowCart(true)}
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-full p-4 shadow-2xl relative"
-              >
-                <ShoppingCart className="w-6 h-6" />
-                <motion.span 
-                  className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold shadow-lg"
-                  key={getCartItemCount()}
-                  initial={{ scale: 1.5 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                >
-                  {getCartItemCount()}
-                </motion.span>
-              </Button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       {/* Cart Modal */}
       {showCart && (
