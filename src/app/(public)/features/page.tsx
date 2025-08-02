@@ -2,37 +2,46 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { ArrowRight, Check, Menu, QrCode, BarChart3, Users, Shield, Clock } from 'lucide-react'
+import { ArrowRight, Check, Menu, QrCode, BarChart3, Users, Shield, Clock, Smartphone, Cloud, Zap, Star, TrendingUp, RotateCcw } from 'lucide-react'
+import HyperspeedEffect from '@/components/HyperspeedEffect'
+import { hyperspeedPresets } from '@/components/hyperspeedPresets'
 
 export default function FeaturesPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-black">
+      {/* Fixed Hyperspeed Background */}
+      <div className="fixed inset-0 -top-20 z-0 h-screen w-screen">
+        <HyperspeedEffect
+          effectOptions={hyperspeedPresets.one}
+          className="opacity-30"
+        />
+      </div>
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20">
+      <section className="relative container mx-auto px-4 py-20 pt-32 z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="text-center max-w-4xl mx-auto"
         >
-          <h1 className="text-6xl font-bold text-black mb-6 leading-tight" style={{ fontSize: '3.75rem' }}>
+          <h1 className="text-6xl font-bold text-white mb-6 leading-tight drop-shadow-lg" style={{ fontSize: '3.75rem' }}>
             Powerful Features for Modern Restaurants
           </h1>
           
-          <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+          <p className="text-xl text-gray-200 mb-8 leading-relaxed drop-shadow-md">
             Everything you need to run a successful restaurant, all in one comprehensive platform. Designed by restaurant experts, built for the future.
           </p>
 
           {/* Feature Count Badge */}
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium mb-8">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-medium mb-8 border border-white/20">
             <Check className="w-4 h-4 mr-2" />
             50+ Features Included
           </div>
         </motion.div>
       </section>
 
-      {/* Core Features Section */}
-      <section className="bg-white py-20">
+      {/* Core Features Section - Bento Grid */}
+      <section className="relative bg-black/20 backdrop-blur-md py-20 z-10">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -40,246 +49,171 @@ export default function FeaturesPage() {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl font-bold text-black mb-6">Core Features</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <h2 className="text-4xl font-bold text-white mb-6">Core Features</h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
               Comprehensive tools designed to streamline every aspect of your restaurant operations.
             </p>
           </motion.div>
 
-          {/* Feature Cards Grid */}
+          {/* Bento Grid Layout */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto"
+            className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 max-w-7xl mx-auto"
           >
-            {/* Advanced Menu Management */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
-              <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center mb-6">
-                <Menu className="w-6 h-6 text-white" />
+            {/* Advanced Menu Management - Large Card */}
+            <div className="md:col-span-2 lg:col-span-2 md:row-span-2 bg-black/80 backdrop-blur-lg p-8 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-16 h-16 bg-blue-500/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 border border-blue-500/30 group-hover:bg-blue-500/30 transition-all duration-300">
+                <Menu className="w-8 h-8 text-blue-400" />
               </div>
-              <h3 className="text-xl font-bold text-black mb-4">Advanced Menu Management</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                Create, edit, and organize your restaurant menu with our intuitive drag-and-drop interface. Add photos, descriptions, pricing, and manage availability in real-time.
+              <h3 className="text-2xl font-bold text-white mb-4">Advanced Menu Management</h3>
+              <p className="text-sm text-gray-400 mb-4">Drag & drop interface</p>
+              <p className="text-gray-300 leading-relaxed mb-6">
+                Create, edit, and organize your restaurant menu with our intuitive interface. Real-time updates across all platforms.
               </p>
-              <ul className="space-y-3">
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Drag & drop menu builder
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Real-time updates across all platforms
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
+              <div className="space-y-2">
+                <div className="flex items-center text-xs text-gray-400">
+                  <Check className="w-3 h-3 text-green-400 mr-2 flex-shrink-0" />
                   Multi-language support
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Nutritional information tracking
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Seasonal menu scheduling
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Bulk import/export capabilities
-                </li>
-              </ul>
+                </div>
+                <div className="flex items-center text-xs text-gray-400">
+                  <Check className="w-3 h-3 text-green-400 mr-2 flex-shrink-0" />
+                  Seasonal scheduling
+                </div>
+                <div className="flex items-center text-xs text-gray-400">
+                  <Check className="w-3 h-3 text-green-400 mr-2 flex-shrink-0" />
+                  Bulk import/export
+                </div>
+              </div>
             </div>
 
-            {/* Smart QR Code Ordering */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
-              <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center mb-6">
-                <QrCode className="w-6 h-6 text-white" />
+            {/* Smart QR Code Ordering - Medium Card */}
+            <div className="md:col-span-2 lg:col-span-2 bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-12 h-12 bg-green-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-green-500/30 group-hover:bg-green-500/30 transition-all duration-300">
+                <QrCode className="w-6 h-6 text-green-400" />
               </div>
-              <h3 className="text-xl font-bold text-black mb-4">Smart QR Code Ordering</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                Generate custom QR codes for contactless ordering. Customers can scan and order directly from their phones with a seamless, branded experience.
+              <h3 className="text-xl font-bold text-white mb-2">Smart QR Ordering</h3>
+              <p className="text-sm text-gray-400 mb-3">Contactless experience</p>
+              <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                Generate custom QR codes for seamless contactless ordering with branded experience.
               </p>
-              <ul className="space-y-3">
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Contactless ordering experience
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Instant QR generation
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Table-specific codes
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Custom branding options
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Order customization
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Payment integration
-                </li>
-              </ul>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white/5 p-2 rounded-lg border border-white/10 text-center">
+                  <div className="text-xs text-gray-400">Instant QR</div>
+                </div>
+                <div className="bg-white/5 p-2 rounded-lg border border-white/10 text-center">
+                  <div className="text-xs text-gray-400">Table-specific</div>
+                </div>
+              </div>
             </div>
 
-            {/* Comprehensive Analytics */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
-              <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center mb-6">
-                <BarChart3 className="w-6 h-6 text-white" />
+            {/* Comprehensive Analytics - Tall Card */}
+            <div className="md:col-span-2 lg:col-span-2 md:row-span-3 bg-black/80 backdrop-blur-lg p-8 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-14 h-14 bg-purple-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-6 border border-purple-500/30 group-hover:bg-purple-500/30 transition-all duration-300">
+                <BarChart3 className="w-7 h-7 text-purple-400" />
               </div>
-              <h3 className="text-xl font-bold text-black mb-4">Comprehensive Analytics</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                Get detailed insights into your restaurant's performance with real-time analytics, sales tracking, and predictive reporting.
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Real-time sales tracking
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Popular items analysis
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Customer behavior insights
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Revenue forecasting
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Peak hours analysis
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Inventory optimization
-                </li>
-              </ul>
+              <h3 className="text-2xl font-bold text-white mb-6">Analytics Dashboard</h3>
+              <p className="text-sm text-gray-400 mb-6">Real-time insights</p>
+              <div className="space-y-4">
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white text-sm font-medium">Sales Tracking</span>
+                    <span className="text-green-400 text-xs">+25%</span>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-2">
+                    <div className="bg-green-400 h-2 rounded-full w-3/4"></div>
+                  </div>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white text-sm font-medium">Popular Items</span>
+                    <span className="text-blue-400 text-xs">Live</span>
+                  </div>
+                  <div className="text-xs text-gray-400">Customer behavior insights</div>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white text-sm font-medium">Revenue Forecast</span>
+                    <span className="text-purple-400 text-xs">AI</span>
+                  </div>
+                  <div className="text-xs text-gray-400">Predictive reporting</div>
+                </div>
+              </div>
             </div>
 
-            {/* User Management System */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
-              <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center mb-6">
-                <Users className="w-6 h-6 text-white" />
+            {/* User Management - Wide Card */}
+            <div className="md:col-span-4 lg:col-span-3 bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <div className="w-12 h-12 bg-orange-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-orange-500/30 group-hover:bg-orange-500/30 transition-all duration-300">
+                    <Users className="w-6 h-6 text-orange-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">User Management System</h3>
+                  <p className="text-sm text-gray-400">Role-based access control</p>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
+                    <div className="text-lg font-bold text-white">👨‍💼</div>
+                    <p className="text-xs text-gray-400 mt-1">Manager</p>
+                  </div>
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
+                    <div className="text-lg font-bold text-white">👨‍🍳</div>
+                    <p className="text-xs text-gray-400 mt-1">Chef</p>
+                  </div>
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
+                    <div className="text-lg font-bold text-white">🧑‍💼</div>
+                    <p className="text-xs text-gray-400 mt-1">Staff</p>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-black mb-4">User Management System</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                Manage your restaurant users efficiently with role-based access and user tracking.
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Role-based access control
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  User scheduling tools
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
+              <div className="grid grid-cols-3 gap-4 text-xs text-gray-400">
+                <div className="flex items-center">
+                  <Check className="w-3 h-3 text-green-400 mr-2" />
+                  Scheduling tools
+                </div>
+                <div className="flex items-center">
+                  <Check className="w-3 h-3 text-green-400 mr-2" />
                   Performance tracking
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Communication hub
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
+                </div>
+                <div className="flex items-center">
+                  <Check className="w-3 h-3 text-green-400 mr-2" />
                   Training modules
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Payroll integration
-                </li>
-              </ul>
+                </div>
+              </div>
             </div>
 
-            {/* Enterprise Security */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
-              <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center mb-6">
-                <Shield className="w-6 h-6 text-white" />
+            {/* Enterprise Security - Small Card */}
+            <div className="md:col-span-2 lg:col-span-1 bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-10 h-10 bg-red-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 border border-red-500/30 group-hover:bg-red-500/30 transition-all duration-300">
+                <Shield className="w-5 h-5 text-red-400" />
               </div>
-              <h3 className="text-xl font-bold text-black mb-4">Enterprise Security</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                Bank-level security with data encryption, compliance standards, and regular security audits to protect your business.
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  256-bit data encryption
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  GDPR & PCI compliant
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Regular security audits
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Secure payment processing
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Data backup & recovery
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Access logging
-                </li>
-              </ul>
+              <h3 className="text-lg font-bold text-white mb-2">Security</h3>
+              <p className="text-xs text-gray-400 mb-3">Bank-level protection</p>
+              <div className="space-y-2">
+                <div className="text-xs text-gray-400">256-bit encryption</div>
+                <div className="text-xs text-gray-400">GDPR compliant</div>
+              </div>
             </div>
 
-            {/* Real-time Order Management */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
-              <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center mb-6">
-                <Clock className="w-6 h-6 text-white" />
+            {/* Real-time Order Management - Small Card */}
+            <div className="md:col-span-2 lg:col-span-1 bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-10 h-10 bg-yellow-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 border border-yellow-500/30 group-hover:bg-yellow-500/30 transition-all duration-300">
+                <Clock className="w-5 h-5 text-yellow-400" />
               </div>
-              <h3 className="text-xl font-bold text-black mb-4">Real-time Order Management</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                Receive and manage orders in real-time with instant notifications, order tracking, and kitchen display integration.
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Live order tracking
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Push notifications
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Kitchen display system
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Order history
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Status updates
-                </li>
-                <li className="flex items-center text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
-                  Customer communication
-                </li>
-              </ul>
+              <h3 className="text-lg font-bold text-white mb-2">Real-time Orders</h3>
+              <p className="text-xs text-gray-400 mb-3">Live tracking</p>
+              <div className="space-y-2">
+                <div className="text-xs text-gray-400">Push notifications</div>
+                <div className="text-xs text-gray-400">Kitchen display</div>
+              </div>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Additional Features Section */}
-      <section className="bg-black py-20">
+      {/* Additional Features Section - Bento Grid */}
+      <section className="relative bg-black/20 backdrop-blur-md py-20 z-10">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -292,84 +226,138 @@ export default function FeaturesPage() {
             </h2>
           </motion.div>
 
-          {/* Additional Features Grid */}
+          {/* Bento Additional Features Grid */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto"
+            className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 max-w-7xl mx-auto"
           >
-            {/* Mobile Optimized */}
-            <div className="bg-black border border-gray-800 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
+            {/* Mobile Optimized - Large Card */}
+            <div className="md:col-span-2 lg:col-span-2 md:row-span-2 bg-black/80 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-16 h-16 bg-blue-500/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 border border-blue-500/30 group-hover:bg-blue-500/30 transition-all duration-300">
+                <Smartphone className="w-8 h-8 text-blue-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-4">Mobile Optimized</h3>
-              <p className="text-gray-300">Perfect experience on all devices and screen sizes</p>
+              <h3 className="text-2xl font-bold text-white mb-4">Mobile Optimized</h3>
+              <p className="text-sm text-gray-400 mb-4">Perfect on all devices</p>
+              <p className="text-gray-300 leading-relaxed mb-6">
+                Responsive design that works flawlessly on smartphones, tablets, and desktops with touch-optimized interfaces.
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
+                  <div className="text-lg">📱</div>
+                  <p className="text-xs text-gray-400 mt-1">Phone</p>
+                </div>
+                <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
+                  <div className="text-lg">💻</div>
+                  <p className="text-xs text-gray-400 mt-1">Desktop</p>
+                </div>
+                <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
+                  <div className="text-lg">📟</div>
+                  <p className="text-xs text-gray-400 mt-1">Tablet</p>
+                </div>
+              </div>
             </div>
 
-            {/* Cloud-Based Platform */}
-            <div className="bg-black border border-gray-800 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-                </svg>
+            {/* Cloud-Based Platform - Medium Card */}
+            <div className="md:col-span-1 lg:col-span-1 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-12 h-12 bg-cyan-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-cyan-500/30 group-hover:bg-cyan-500/30 transition-all duration-300">
+                <Cloud className="w-6 h-6 text-cyan-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-4">Cloud-Based Platform</h3>
-              <p className="text-gray-300">Access from anywhere with automatic updates</p>
+              <h3 className="text-lg font-bold text-white mb-2">Cloud Platform</h3>
+              <p className="text-xs text-gray-400 mb-3">Access anywhere</p>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Automatic updates and backups with 99.9% uptime guarantee.
+              </p>
             </div>
 
-            {/* Lightning Fast Performance */}
-            <div className="bg-black border border-gray-800 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+            {/* Lightning Fast Performance - Tall Card */}
+            <div className="md:col-span-2 lg:col-span-2 md:row-span-3 bg-black/80 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-14 h-14 bg-yellow-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-6 border border-yellow-500/30 group-hover:bg-yellow-500/30 transition-all duration-300">
+                <Zap className="w-7 h-7 text-yellow-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-4">Lightning Fast Performance</h3>
-              <p className="text-gray-300">Optimized for speed with sub-second load times</p>
+              <h3 className="text-2xl font-bold text-white mb-6">Lightning Fast</h3>
+              <p className="text-sm text-gray-400 mb-6">Sub-second load times</p>
+              <div className="space-y-4">
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white text-sm font-medium">Page Load</span>
+                    <span className="text-green-400 text-xs">0.3s</span>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-2">
+                    <div className="bg-green-400 h-2 rounded-full w-full"></div>
+                  </div>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white text-sm font-medium">Order Processing</span>
+                    <span className="text-blue-400 text-xs">0.1s</span>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-2">
+                    <div className="bg-blue-400 h-2 rounded-full w-full"></div>
+                  </div>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white text-sm font-medium">Data Sync</span>
+                    <span className="text-purple-400 text-xs">Real-time</span>
+                  </div>
+                  <div className="text-xs text-gray-400">Instant updates</div>
+                </div>
+              </div>
             </div>
 
-            {/* Customer Review System */}
-            <div className="bg-black border border-gray-800 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
+            {/* Customer Review System - Wide Card */}
+            <div className="md:col-span-3 lg:col-span-3 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="w-12 h-12 bg-pink-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-pink-500/30 group-hover:bg-pink-500/30 transition-all duration-300">
+                    <Star className="w-6 h-6 text-pink-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Customer Review System</h3>
+                  <p className="text-sm text-gray-400">Seamless feedback collection</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-400">4.8</div>
+                    <div className="flex text-yellow-400 text-sm">★★★★★</div>
+                    <p className="text-xs text-gray-400">Average rating</p>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-white mb-4">Customer Review System</h3>
-              <p className="text-gray-300">Collect and manage customer feedback seamlessly</p>
             </div>
 
-            {/* Growth & Marketing Tools */}
-            <div className="bg-black border border-gray-800 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
+            {/* Growth & Marketing Tools - Small Card */}
+            <div className="md:col-span-1 lg:col-span-1 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-10 h-10 bg-green-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 border border-green-500/30 group-hover:bg-green-500/30 transition-all duration-300">
+                <TrendingUp className="w-5 h-5 text-green-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-4">Growth & Marketing Tools</h3>
-              <p className="text-gray-300">Built-in promotion and loyalty features</p>
+              <h3 className="text-lg font-bold text-white mb-2">Marketing</h3>
+              <p className="text-xs text-gray-400 mb-3">Growth tools</p>
+              <div className="space-y-2">
+                <div className="text-xs text-gray-400">Promotions</div>
+                <div className="text-xs text-gray-400">Loyalty program</div>
+              </div>
             </div>
 
-            {/* Easy Setup & Migration */}
-            <div className="bg-black border border-gray-800 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
+            {/* Easy Setup & Migration - Small Card */}
+            <div className="md:col-span-1 lg:col-span-1 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-10 h-10 bg-indigo-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 border border-indigo-500/30 group-hover:bg-indigo-500/30 transition-all duration-300">
+                <RotateCcw className="w-5 h-5 text-indigo-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-4">Easy Setup & Migration</h3>
-              <p className="text-gray-300">Get started in minutes with guided setup</p>
+              <h3 className="text-lg font-bold text-white mb-2">Easy Setup</h3>
+              <p className="text-xs text-gray-400 mb-3">Quick migration</p>
+              <div className="space-y-2">
+                <div className="text-xs text-gray-400">5-min setup</div>
+                <div className="text-xs text-gray-400">Guided process</div>
+              </div>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Seamless Integrations Section */}
-      <section className="bg-white py-20">
+      {/* Seamless Integrations Section - Bento Grid */}
+      <section className="relative bg-black/20 backdrop-blur-md py-20 z-10">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -377,90 +365,158 @@ export default function FeaturesPage() {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl font-bold text-black mb-6">Seamless Integrations</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <h2 className="text-4xl font-bold text-white mb-6">Seamless Integrations</h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
               Connect with your existing tools and services. ServeNow integrates with all major restaurant technology platforms.
             </p>
           </motion.div>
 
-          {/* Integration Cards Grid */}
+          {/* Bento Integration Grid */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto"
+            className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 max-w-7xl mx-auto"
           >
-            {/* Point of Sale (POS) Systems */}
-            <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-black rounded-lg flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            {/* Point of Sale Systems - Large Card */}
+            <div className="md:col-span-2 lg:col-span-2 md:row-span-2 bg-black/80 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-16 h-16 bg-emerald-500/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 border border-emerald-500/30 group-hover:bg-emerald-500/30 transition-all duration-300">
+                <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-black mb-4">Point of Sale (POS) Systems</h3>
-              <p className="text-gray-600">Seamless Integration available</p>
+              <h3 className="text-2xl font-bold text-white mb-4">POS Systems</h3>
+              <p className="text-sm text-gray-400 mb-4">Point of Sale integration</p>
+              <p className="text-gray-300 leading-relaxed mb-6">
+                Connect with major POS systems for seamless order processing and inventory sync.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
+                  <div className="text-sm font-medium text-white">Square</div>
+                </div>
+                <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
+                  <div className="text-sm font-medium text-white">Toast</div>
+                </div>
+              </div>
             </div>
 
-            {/* Payment Processors */}
-            <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-black rounded-lg flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            {/* Payment Processors - Medium Card */}
+            <div className="md:col-span-2 lg:col-span-2 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-12 h-12 bg-blue-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-blue-500/30 group-hover:bg-blue-500/30 transition-all duration-300">
+                <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-black mb-4">Payment Processors</h3>
-              <p className="text-gray-600">Seamless Integration available</p>
+              <h3 className="text-xl font-bold text-white mb-2">Payment Processors</h3>
+              <p className="text-sm text-gray-400 mb-3">Secure transactions</p>
+              <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                Support for all major payment methods and processors.
+              </p>
+              <div className="flex space-x-2">
+                <div className="bg-white/5 px-3 py-1 rounded-lg border border-white/10">
+                  <div className="text-xs text-gray-400">Stripe</div>
+                </div>
+                <div className="bg-white/5 px-3 py-1 rounded-lg border border-white/10">
+                  <div className="text-xs text-gray-400">PayPal</div>
+                </div>
+              </div>
             </div>
 
-            {/* Delivery Platforms */}
-            <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-black rounded-lg flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            {/* Delivery Platforms - Tall Card */}
+            <div className="md:col-span-2 lg:col-span-2 md:row-span-3 bg-black/80 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-14 h-14 bg-orange-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-6 border border-orange-500/30 group-hover:bg-orange-500/30 transition-all duration-300">
+                <svg className="w-7 h-7 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-black mb-4">Delivery Platforms</h3>
-              <p className="text-gray-600">Seamless Integration available</p>
+              <h3 className="text-2xl font-bold text-white mb-6">Delivery Platforms</h3>
+              <p className="text-sm text-gray-400 mb-6">Third-party delivery</p>
+              <div className="space-y-4">
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white text-sm font-medium">UberEats</span>
+                    <span className="text-green-400 text-xs">✓ Connected</span>
+                  </div>
+                  <div className="text-xs text-gray-400">Auto menu sync</div>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white text-sm font-medium">DoorDash</span>
+                    <span className="text-green-400 text-xs">✓ Connected</span>
+                  </div>
+                  <div className="text-xs text-gray-400">Order management</div>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white text-sm font-medium">Grubhub</span>
+                    <span className="text-green-400 text-xs">✓ Connected</span>
+                  </div>
+                  <div className="text-xs text-gray-400">Real-time updates</div>
+                </div>
+              </div>
             </div>
 
-            {/* Accounting Software */}
-            <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-black rounded-lg flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
+            {/* Accounting Software - Wide Card */}
+            <div className="md:col-span-4 lg:col-span-4 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="w-12 h-12 bg-purple-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-purple-500/30 group-hover:bg-purple-500/30 transition-all duration-300">
+                    <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Accounting Software</h3>
+                  <p className="text-sm text-gray-400">Financial management integration</p>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
+                    <div className="text-sm font-medium text-white">QuickBooks</div>
+                  </div>
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
+                    <div className="text-sm font-medium text-white">Xero</div>
+                  </div>
+                  <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
+                    <div className="text-sm font-medium text-white">FreshBooks</div>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-black mb-4">Accounting Software</h3>
-              <p className="text-gray-600">Seamless Integration available</p>
             </div>
 
-            {/* Inventory Management */}
-            <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-black rounded-lg flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            {/* Inventory Management - Small Card */}
+            <div className="md:col-span-2 lg:col-span-1 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-10 h-10 bg-teal-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 border border-teal-500/30 group-hover:bg-teal-500/30 transition-all duration-300">
+                <svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-black mb-4">Inventory Management</h3>
-              <p className="text-gray-600">Seamless Integration available</p>
+              <h3 className="text-lg font-bold text-white mb-2">Inventory</h3>
+              <p className="text-xs text-gray-400 mb-3">Stock management</p>
+              <div className="space-y-2">
+                <div className="text-xs text-gray-400">Auto tracking</div>
+                <div className="text-xs text-gray-400">Low stock alerts</div>
+              </div>
             </div>
 
-            {/* Marketing Tools */}
-            <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-black rounded-lg flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            {/* Marketing Tools - Small Card */}
+            <div className="md:col-span-2 lg:col-span-1 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-10 h-10 bg-pink-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 border border-pink-500/30 group-hover:bg-pink-500/30 transition-all duration-300">
+                <svg className="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-black mb-4">Marketing Tools</h3>
-              <p className="text-gray-600">Seamless Integration available</p>
+              <h3 className="text-lg font-bold text-white mb-2">Marketing</h3>
+              <p className="text-xs text-gray-400 mb-3">Campaign tools</p>
+              <div className="space-y-2">
+                <div className="text-xs text-gray-400">Email campaigns</div>
+                <div className="text-xs text-gray-400">Social media</div>
+              </div>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Platform Overview Section */}
-      <section className="bg-black py-20">
+      {/* Platform Overview Section - Bento Grid */}
+      <section className="relative bg-black/20 backdrop-blur-md py-20 z-10">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -473,28 +529,28 @@ export default function FeaturesPage() {
             </h2>
           </motion.div>
 
-          {/* Statistics */}
+          {/* Bento Statistics Grid */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto mb-12"
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-6xl mx-auto mb-12"
           >
-            <div className="text-center">
-              <div className="text-4xl font-bold text-white mb-2">50+</div>
-              <div className="text-gray-300">Features Included</div>
+            <div className="bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 text-center group">
+              <div className="text-4xl font-bold text-green-400 mb-2 group-hover:scale-110 transition-transform duration-300">50+</div>
+              <div className="text-gray-300 text-sm">Features Included</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-white mb-2">99.9%</div>
-              <div className="text-gray-300">Uptime Guarantee</div>
+            <div className="bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 text-center group">
+              <div className="text-4xl font-bold text-blue-400 mb-2 group-hover:scale-110 transition-transform duration-300">99.9%</div>
+              <div className="text-gray-300 text-sm">Uptime Guarantee</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-white mb-2">24/7</div>
-              <div className="text-gray-300">Support Available</div>
+            <div className="bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 text-center group">
+              <div className="text-4xl font-bold text-purple-400 mb-2 group-hover:scale-110 transition-transform duration-300">24/7</div>
+              <div className="text-gray-300 text-sm">Support Available</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-white mb-2">500+</div>
-              <div className="text-gray-300">Happy Restaurants</div>
+            <div className="bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 text-center group">
+              <div className="text-4xl font-bold text-orange-400 mb-2 group-hover:scale-110 transition-transform duration-300">500+</div>
+              <div className="text-gray-300 text-sm">Happy Restaurants</div>
             </div>
           </motion.div>
 
@@ -505,7 +561,7 @@ export default function FeaturesPage() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-center"
           >
-            <Link href="/contact" className="inline-flex items-center bg-white text-black px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors">
+            <Link href="/contact" className="inline-flex items-center bg-white/10 backdrop-blur-sm text-white px-8 py-4 rounded-2xl font-semibold text-lg border border-white/20 hover:bg-white/20 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-300">
               See All Features in Action
               <ArrowRight className="ml-3 h-5 w-5" />
             </Link>
@@ -514,27 +570,27 @@ export default function FeaturesPage() {
       </section>
       
       {/* CTA Section */}
-      <section className="bg-white py-20">
+      <section className="relative bg-black/20 backdrop-blur-md py-20 z-10">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="bg-white rounded-2xl shadow-lg p-12 border border-gray-200"
+              className="bg-black/80 backdrop-blur-lg rounded-3xl shadow-2xl p-12 border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500"
             >
-              <h2 className="text-3xl font-bold text-black mb-6">Ready to Transform Your Restaurant?</h2>
-              <p className="text-lg text-gray-600 mb-8">
+              <h2 className="text-3xl font-bold text-white mb-6">Ready to Transform Your Restaurant?</h2>
+              <p className="text-lg text-gray-300 mb-8">
                 Join thousands of restaurants already using ServeNow to streamline their operations and delight customers.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/contact" className="inline-flex items-center bg-black text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-800 transition-colors">
+                <Link href="/contact" className="inline-flex items-center bg-white/10 backdrop-blur-sm text-white px-8 py-4 rounded-2xl font-semibold text-lg border border-white/20 hover:bg-white/20 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all duration-300">
                   Start Free Trial
                   <ArrowRight className="ml-3 h-5 w-5" />
                 </Link>
-                <Link href="/contact" className="inline-flex items-center bg-white text-black px-8 py-4 rounded-lg font-semibold text-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors">
+                <Link href="/contact" className="inline-flex items-center bg-transparent text-white px-8 py-4 rounded-2xl font-semibold text-lg border-2 border-white/30 hover:bg-white/10 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all duration-300">
                   Schedule Demo
-            </Link>
+                </Link>
               </div>
             </motion.div>
           </div>
