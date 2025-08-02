@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Comfortaa } from 'next/font/google'
 import './globals.css'
 import { ReactQueryProvider } from '@/lib/react-query'
 import { Providers } from '@/components/providers/Providers'
 
 const inter = Inter({ subsets: ['latin'] })
+const comfortaa = Comfortaa({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'ServeNow - Restaurant Management SaaS',

@@ -14,7 +14,6 @@
         "setup-webhooks": "node setup-webhooks.js"
     },
     "dependencies": {
-        "@headlessui/react": "^2.2.7",
         "@hookform/resolvers": "^3.3.4",
         "@radix-ui/react-dialog": "^1.0.5",
         "@radix-ui/react-label": "^2.0.2",
@@ -32,7 +31,7 @@
         "lucide-react": "^0.363.0",
         "nanoid": "^5.1.5",
         "next": "14.2.5",
-        "puppeteer": "^24.15.0",
+        "postprocessing": "^6.37.6",
         "react": "^18",
         "react-dom": "^18",
         "react-hook-form": "^7.51.1",
@@ -40,6 +39,7 @@
         "recharts": "^3.1.0",
         "tailwind-merge": "^2.2.2",
         "tailwindcss-animate": "^1.0.7",
+        "three": "^0.179.0",
         "zod": "^3.22.4"
     },
     "devDependencies": {
