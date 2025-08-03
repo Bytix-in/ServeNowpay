@@ -68,8 +68,7 @@ export default function RestaurantDetailsModal({
   const [generatingCredentials, setGeneratingCredentials] = useState(false)
   const [newCredentials, setNewCredentials] = useState<{username: string, password: string} | null>(null)
   const [credentialsCopied, setCredentialsCopied] = useState<{username: boolean, password: boolean}>({username: false, password: false})
-  const [configuringWebhook, setConfiguringWebhook] = useState(false)
-  const [webhookStatus, setWebhookStatus] = useState<{configured: boolean, url?: string}>({configured: false})
+
 
   useEffect(() => {
     if (isOpen && restaurantId) {
@@ -112,11 +111,7 @@ export default function RestaurantDetailsModal({
       if (response.ok) {
         const data = await response.json()
         setRestaurant(data.restaurant)
-        // Set webhook status from restaurant data
-        setWebhookStatus({
-          configured: data.restaurant.webhook_configured || false,
-          url: data.restaurant.webhook_url
-        })
+
       } else {
         console.error('Failed to fetch restaurant details')
       }
@@ -229,7 +224,7 @@ export default function RestaurantDetailsModal({
         setCredentialsCopied({username: false, password: false})
         // Update the restaurant data with new username
         setRestaurant(prev => prev ? { ...prev, restaurant_username: data.username } : null)
-        setSuccessMessage('New manager credentials generated successfully!')
+        setSuccessMessage('New restaurant credentials generated successfully!')
         setTimeout(() => setSuccessMessage(null), 5000)
       } else {
         console.error('Failed to generate credentials')
@@ -255,44 +250,7 @@ export default function RestaurantDetailsModal({
     }
   }
 
-  const configureWebhook = async () => {
-    if (!restaurant) return
-    
-    setConfiguringWebhook(true)
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
 
-      const response = await fetch(`/api/admin/restaurants/${restaurant.id}/webhook-config`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setWebhookStatus({
-          configured: true,
-          url: data.webhook_url
-        })
-        setSuccessMessage('Webhook configured successfully! Real-time payment updates are now enabled.')
-        setTimeout(() => setSuccessMessage(null), 5000)
-      } else {
-        const errorData = await response.json()
-        console.error('Failed to configure webhook:', errorData)
-        setSuccessMessage(`Failed to configure webhook: ${errorData.error}`)
-        setTimeout(() => setSuccessMessage(null), 5000)
-      }
-    } catch (error) {
-      console.error('Error configuring webhook:', error)
-      setSuccessMessage('Error configuring webhook. Please try again.')
-      setTimeout(() => setSuccessMessage(null), 5000)
-    } finally {
-      setConfiguringWebhook(false)
-    }
-  }
 
   const renderEditableField = (
     field: keyof RestaurantDetails,
@@ -629,12 +587,12 @@ export default function RestaurantDetailsModal({
                   </div>
                 </div>
 
-                {/* Manager Access */}
+                {/* Restaurant Access */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-md font-medium text-gray-900 flex items-center">
                       <Key className="h-4 w-4 mr-2 text-gray-600" />
-                      Manager Access
+                      Restaurant Access
                     </h4>
                     <Button
                       onClick={handleGenerateCredentials}
@@ -664,7 +622,7 @@ export default function RestaurantDetailsModal({
                         <div className="space-y-2">
                           <div className="flex items-center justify-between bg-white p-2 rounded border">
                             <div className="text-sm">
-                              <span className="font-medium text-gray-700">Username:</span>
+                              <span className="font-medium text-gray-700">Restaurant Username:</span>
                               {credentialsCopied.username ? (
                                 <span className="ml-2 text-gray-500 italic">*** Copied and Hidden ***</span>
                               ) : (
@@ -688,7 +646,7 @@ export default function RestaurantDetailsModal({
                           
                           <div className="flex items-center justify-between bg-white p-2 rounded border">
                             <div className="text-sm">
-                              <span className="font-medium text-gray-700">Password:</span>
+                              <span className="font-medium text-gray-700">Restaurant Password:</span>
                               {credentialsCopied.password ? (
                                 <span className="ml-2 text-gray-500 italic">*** Copied and Hidden ***</span>
                               ) : (
@@ -759,14 +717,14 @@ export default function RestaurantDetailsModal({
                         </div>
                         
                         <div className="text-xs text-gray-500">
-                          Manager can log in using their credentials at this URL to access the restaurant portal.
+                          Restaurant can log in using their credentials at this URL to access the restaurant portal.
                         </div>
                       </div>
 
                       {/* Instructions */}
                       <div className="bg-yellow-50 border border-yellow-200 p-3 rounded">
                         <div className="text-xs text-yellow-800">
-                          <strong>Instructions for Manager:</strong>
+                          <strong>Instructions for Restaurant:</strong>
                           <ul className="mt-1 ml-4 list-disc space-y-1">
                             <li>Use the provided username and password to log in</li>
                             <li>Access the restaurant management portal</li>
@@ -808,84 +766,7 @@ export default function RestaurantDetailsModal({
                   )}
                 </div>
 
-                {/* Webhook Configuration */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-md font-medium text-gray-900 flex items-center">
-                      <ExternalLink className="h-4 w-4 mr-2 text-gray-600" />
-                      Payment Webhooks
-                    </h4>
-                    <Button
-                      onClick={configureWebhook}
-                      disabled={configuringWebhook || webhookStatus.configured}
-                      size="sm"
-                      variant="outline"
-                      className="text-xs"
-                    >
-                      {configuringWebhook ? (
-                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                      ) : webhookStatus.configured ? (
-                        <CheckCircle className="h-3 w-3 mr-1 text-green-600" />
-                      ) : (
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                      )}
-                      {webhookStatus.configured ? 'Configured' : 'Configure'}
-                    </Button>
-                  </div>
 
-                  <div className={`p-4 rounded-lg border ${
-                    webhookStatus.configured 
-                      ? 'bg-green-50 border-green-200' 
-                      : 'bg-yellow-50 border-yellow-200'
-                  }`}>
-                    <div className="flex items-center mb-2">
-                      {webhookStatus.configured ? (
-                        <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-yellow-600 mr-2" />
-                      )}
-                      <span className={`text-sm font-medium ${
-                        webhookStatus.configured ? 'text-green-800' : 'text-yellow-800'
-                      }`}>
-                        {webhookStatus.configured ? 'Webhooks Configured' : 'Webhooks Not Configured'}
-                      </span>
-                    </div>
-                    
-                    {webhookStatus.configured ? (
-                      <div className="space-y-2">
-                        <div className="text-xs text-green-700">
-                          ✅ Real-time payment updates are enabled
-                        </div>
-                        <div className="text-xs text-green-700">
-                          ✅ Automatic order status updates
-                        </div>
-                        <div className="text-xs text-green-700">
-                          ✅ No manual payment verification needed
-                        </div>
-                        {webhookStatus.url && (
-                          <div className="text-xs text-gray-600 mt-2">
-                            <strong>Webhook URL:</strong> {webhookStatus.url}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="text-xs text-yellow-700">
-                          ⚠️ Manual payment verification required
-                        </div>
-                        <div className="text-xs text-yellow-700">
-                          ⚠️ Delayed order status updates
-                        </div>
-                        <div className="text-xs text-yellow-700">
-                          ⚠️ Multiple API requests for payment status
-                        </div>
-                        <div className="text-xs text-gray-600 mt-2">
-                          Configure webhooks to enable real-time payment updates and improve performance.
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
 
                 {/* Timestamps */}
                 <div>

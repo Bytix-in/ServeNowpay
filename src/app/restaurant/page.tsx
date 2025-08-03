@@ -446,20 +446,20 @@ export default function RestaurantDashboard() {
   }
 
   return (
-    <div className="flex flex-col gap-6 font-sans">
+    <div className="flex flex-col gap-4 sm:gap-6 font-sans p-4 sm:p-0">
       {/* Welcome Header with Real-time Indicator */}
-      <div className="bg-white p-6 rounded-3xl shadow border border-gray-200">
-        <div className="flex items-center justify-between">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">
               Welcome back, {user.name}!
             </h1>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               Here's your restaurant dashboard overview for today.
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span>Live Data</span>
             </div>
@@ -468,8 +468,8 @@ export default function RestaurantDashboard() {
               disabled={loading}
               className="flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition disabled:opacity-50"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span className="text-sm">Refresh</span>
+              <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="text-xs sm:text-sm">Refresh</span>
             </button>
           </div>
         </div>
@@ -482,75 +482,75 @@ export default function RestaurantDashboard() {
       <PaymentDisabledBanner />
 
       {/* Real-time Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <motion.div
-          className="bg-white p-6 rounded-3xl shadow border border-gray-200"
+          className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow border border-gray-200"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Total Orders</h3>
+          <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Total Orders</h3>
           <div className="flex items-center justify-between">
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">
               {loading ? '...' : dashboardStats.totalOrders}
             </p>
             <div className="flex items-center text-xs text-blue-500">
               <ShoppingBag className="w-3 h-3 mr-1" />
-              <span>All time</span>
+              <span className="hidden sm:inline">All time</span>
             </div>
           </div>
         </motion.div>
 
         <motion.div
-          className="bg-white p-6 rounded-3xl shadow border border-gray-200"
+          className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow border border-gray-200"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Total Revenue</h3>
+          <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Total Revenue</h3>
           <div className="flex items-center justify-between">
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-lg sm:text-2xl font-bold text-gray-900">
               {loading ? '...' : formatCurrency(dashboardStats.totalRevenue)}
             </p>
             <div className="flex items-center text-xs text-green-500">
               <TrendingUp className="w-3 h-3 mr-1" />
-              <span>Paid orders</span>
+              <span className="hidden sm:inline">Paid orders</span>
             </div>
           </div>
         </motion.div>
 
         <motion.div
-          className="bg-white p-6 rounded-3xl shadow border border-gray-200"
+          className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow border border-gray-200"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Today's Orders</h3>
+          <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Today's Orders</h3>
           <div className="flex items-center justify-between">
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">
               {loading ? '...' : dashboardStats.todayOrders}
             </p>
             <div className="flex items-center text-xs text-orange-500">
               <Bell className="w-3 h-3 mr-1" />
-              <span>Today</span>
+              <span className="hidden sm:inline">Today</span>
             </div>
           </div>
         </motion.div>
 
         <motion.div
-          className="bg-white p-6 rounded-3xl shadow border border-gray-200"
+          className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow border border-gray-200"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Unique Customers</h3>
+          <h3 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Unique Customers</h3>
           <div className="flex items-center justify-between">
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">
               {loading ? '...' : dashboardStats.newCustomers}
             </p>
             <div className="flex items-center text-xs text-purple-500">
               <Users className="w-3 h-3 mr-1" />
-              <span>Total</span>
+              <span className="hidden sm:inline">Total</span>
             </div>
           </div>
         </motion.div>
@@ -559,45 +559,45 @@ export default function RestaurantDashboard() {
 
 
       {/* Quick Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-6 rounded-3xl border border-orange-200">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-orange-200">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-orange-700 mb-1">Pending Orders</h3>
-              <p className="text-2xl font-bold text-orange-900">
+              <h3 className="text-xs sm:text-sm font-medium text-orange-700 mb-1">Pending Orders</h3>
+              <p className="text-xl sm:text-2xl font-bold text-orange-900">
                 {loading ? '...' : dashboardStats.pendingOrders}
               </p>
             </div>
-            <div className="w-12 h-12 bg-orange-200 rounded-full flex items-center justify-center">
-              <Bell className="w-6 h-6 text-orange-600" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-200 rounded-full flex items-center justify-center">
+              <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 rounded-3xl border border-green-200">
+        <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-green-200">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-green-700 mb-1">Completed Orders</h3>
-              <p className="text-2xl font-bold text-green-900">
+              <h3 className="text-xs sm:text-sm font-medium text-green-700 mb-1">Completed Orders</h3>
+              <p className="text-xl sm:text-2xl font-bold text-green-900">
                 {loading ? '...' : dashboardStats.completedOrders}
               </p>
             </div>
-            <div className="w-12 h-12 bg-green-200 rounded-full flex items-center justify-center">
-              <ShoppingBag className="w-6 h-6 text-green-600" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-200 rounded-full flex items-center justify-center">
+              <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-3xl border border-blue-200">
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-blue-200 sm:col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-blue-700 mb-1">Today's Revenue</h3>
-              <p className="text-2xl font-bold text-blue-900">
+              <h3 className="text-xs sm:text-sm font-medium text-blue-700 mb-1">Today's Revenue</h3>
+              <p className="text-xl sm:text-2xl font-bold text-blue-900">
                 {loading ? '...' : formatCurrency(dashboardStats.todayRevenue)}
               </p>
             </div>
-            <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-blue-600" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-200 rounded-full flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
           </div>
         </div>
@@ -613,22 +613,22 @@ export default function RestaurantDashboard() {
       <MenuPerformanceRanking />
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
         {/* Order Analytics */}
-        <div className="bg-white p-6 rounded-3xl shadow border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-semibold text-gray-900">Order Analytics - Period View</h2>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-gray-500">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow border border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Order Analytics - Period View</h2>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span>Real-time</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Period:</span>
+                <span className="text-xs sm:text-sm text-gray-500">Period:</span>
                 <select
                   value={chartPeriod}
                   onChange={(e) => setChartPeriod(e.target.value as any)}
-                  className="text-sm border rounded-xl px-2 py-1 cursor-pointer hover:bg-gray-50"
+                  className="text-xs sm:text-sm border rounded-xl px-2 py-1 cursor-pointer hover:bg-gray-50"
                 >
                   <option value="7days">7 Days</option>
                   <option value="30days">30 Days</option>
@@ -707,27 +707,28 @@ export default function RestaurantDashboard() {
           </div>
         </div>
         {/* Revenue Profile */}
-        <div className="bg-white p-6 rounded-3xl shadow border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-semibold text-gray-900">Revenue Profile</h2>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow border border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Revenue Profile</h2>
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span>Live Revenue</span>
             </div>
           </div>
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-2xl font-bold text-gray-900">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
               {loading ? '...' : formatCurrency(periodStats.totalRevenue)}
             </h3>
             <div className="flex items-center text-xs text-green-500 bg-green-50 px-2 py-1 rounded-xl">
               <TrendingUp className="w-3 h-3 mr-1" />
-              <span>Period Revenue</span>
+              <span className="hidden sm:inline">Period Revenue</span>
+              <span className="sm:hidden">Revenue</span>
             </div>
           </div>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-xs sm:text-sm text-gray-600 mb-4">
             {loading ? 'Loading...' : `Revenue from ${orderAnalyticsData.reduce((sum, day) => sum + day.completedOrders, 0)} completed orders in last ${chartPeriod === '7days' ? '7 days' : chartPeriod === '30days' ? '30 days' : '90 days'}`}
           </p>
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-3 sm:gap-4 mb-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
               <span className="text-xs">Daily Revenue</span>
@@ -737,7 +738,7 @@ export default function RestaurantDashboard() {
               <span className="text-xs">Trend</span>
             </div>
           </div>
-          <div className="h-64">
+          <div className="h-48 sm:h-64">
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -789,21 +790,21 @@ export default function RestaurantDashboard() {
         </div>
       </div>
       {/* Recent Order Activities */}
-      <div className="bg-white rounded-3xl shadow border border-gray-200">
-        <div className="p-6 border-b">
-          <div className="flex items-center justify-between">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow border border-gray-200">
+        <div className="p-4 sm:p-6 border-b">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold text-gray-900">Recent Order Activities</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Recent Order Activities</h2>
               <p className="text-xs text-gray-500">Real-time order updates from your restaurant</p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span>Live Updates</span>
               </div>
               <Link
                 href="/restaurant/orders"
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium"
               >
                 View All Orders →
               </Link>
@@ -812,19 +813,19 @@ export default function RestaurantDashboard() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="flex items-center justify-center py-8 sm:py-12">
+            <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
           </div>
         ) : recentOrders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <ShoppingBag className="w-12 h-12 text-gray-300 mb-4" />
-            <p className="text-gray-500 font-medium">No orders yet</p>
-            <p className="text-gray-400 text-sm">Orders will appear here when customers place them</p>
+          <div className="flex flex-col items-center justify-center py-8 sm:py-12">
+            <ShoppingBag className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mb-3 sm:mb-4" />
+            <p className="text-gray-500 font-medium text-sm sm:text-base">No orders yet</p>
+            <p className="text-gray-400 text-xs sm:text-sm">Orders will appear here when customers place them</p>
           </div>
         ) : (
           <>
-            {/* Table Header */}
-            <div className="px-6 py-3 border-b bg-gray-50">
+            {/* Desktop Table Header - Hidden on mobile */}
+            <div className="hidden lg:block px-4 sm:px-6 py-3 border-b bg-gray-50">
               <div className="grid grid-cols-7 gap-4">
                 <div className="flex items-center">
                   <span className="text-sm font-medium text-gray-700">Order ID</span>
@@ -850,7 +851,7 @@ export default function RestaurantDashboard() {
               </div>
             </div>
 
-            {/* Table Body */}
+            {/* Orders List */}
             <div className="max-h-96 overflow-y-auto">
               {recentOrders.map((order, index) => (
                 <motion.div
@@ -858,10 +859,80 @@ export default function RestaurantDashboard() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="px-6 py-4 border-b last:border-b-0 hover:bg-gray-50 transition cursor-pointer"
+                  className="px-3 sm:px-6 py-3 sm:py-4 border-b last:border-b-0 hover:bg-gray-50 transition cursor-pointer"
                   onClick={() => router.push('/restaurant/orders')}
                 >
-                  <div className="grid grid-cols-7 gap-4 items-center">
+                  {/* Mobile Card Layout */}
+                  <div className="lg:hidden space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-mono font-medium text-blue-600">
+                        #{order.unique_order_id}
+                      </span>
+                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        order.status === 'pending' ? 'bg-orange-100 text-orange-700' :
+                        order.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                        order.status === 'completed' ? 'bg-green-100 text-green-700' :
+                        order.status === 'served' ? 'bg-gray-100 text-gray-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {getStatusLabel(order.status)}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{order.customer_name}</p>
+                        <p className="text-xs text-gray-500">{order.customer_phone}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-gray-900">
+                          {formatCurrency(order.total_amount)}
+                        </p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <div className={`w-2 h-2 rounded-full ${
+                            order.payment_status === 'completed' ? 'bg-green-500' :
+                            order.payment_status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}></div>
+                          <span className="text-xs text-gray-500">
+                            {order.payment_status === 'completed' ? 'Paid' :
+                              order.payment_status === 'pending' ? 'Pending' : 'Failed'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>Table {order.table_number} • {order.items?.length || 0} items</span>
+                      <span>{formatDateTime(order.created_at)}</span>
+                    </div>
+
+                    {order.payment_status === 'completed' && (
+                      <div className="flex justify-end">
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            downloadInvoice(order)
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 text-xs"
+                          disabled={downloadingInvoice === order.id}
+                        >
+                          {downloadingInvoice === order.id ? (
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <>
+                              <Download className="w-3 h-3 mr-1" />
+                              {order.invoice_generated ? 'Download' : 'Generate'}
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Desktop Table Layout */}
+                  <div className="hidden lg:grid grid-cols-7 gap-4 items-center">
                     <div>
                       <span className="text-sm font-mono font-medium text-blue-600">
                         #{order.unique_order_id}
@@ -882,9 +953,10 @@ export default function RestaurantDashboard() {
                         {formatCurrency(order.total_amount)}
                       </span>
                       <div className="flex items-center gap-1 mt-1">
-                        <div className={`w-2 h-2 rounded-full ${order.payment_status === 'completed' ? 'bg-green-500' :
+                        <div className={`w-2 h-2 rounded-full ${
+                          order.payment_status === 'completed' ? 'bg-green-500' :
                           order.payment_status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}></div>
+                        }`}></div>
                         <span className="text-xs text-gray-500">
                           {order.payment_status === 'completed' ? 'Paid' :
                             order.payment_status === 'pending' ? 'Pending' : 'Failed'}
