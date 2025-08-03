@@ -165,24 +165,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      // If it's a restaurant user, call the logout API
-      if (user?.role === 'restaurant' && user.restaurantId) {
-        try {
-          await fetch('/api/auth/restaurant/logout', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-              restaurantId: user.restaurantId 
-            })
-          })
-        } catch (logoutError) {
-          console.error('Restaurant logout API error:', logoutError)
-          // Continue with local logout even if API fails
-        }
-      }
-
       // Clear restaurant session
       localStorage.removeItem('restaurant_session')
       
