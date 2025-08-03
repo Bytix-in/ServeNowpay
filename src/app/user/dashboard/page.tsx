@@ -493,7 +493,14 @@ export default function UserDashboard() {
                   <span className="text-xs text-gray-500">Real-time updates</span>
                 </div>
               </div>
-
+              <Button
+                onClick={() => router.push('/user/orders')}
+                variant="ghost"
+                size="sm"
+                className="text-purple-600"
+              >
+                View All
+              </Button>
             </div>
           </div>
           

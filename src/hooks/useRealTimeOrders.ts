@@ -18,7 +18,6 @@ interface Order {
 
 interface UseRealTimeOrdersProps {
   restaurantId: string;
-  notificationPermission?: NotificationPermission;
   onNewOrder?: (order: Order) => void;
   onOrderUpdate?: (order: Order, oldOrder: Order) => void;
   onOrderDelete?: (orderId: string) => void;
@@ -26,7 +25,6 @@ interface UseRealTimeOrdersProps {
 
 export function useRealTimeOrders({ 
   restaurantId, 
-  notificationPermission,
   onNewOrder, 
   onOrderUpdate, 
   onOrderDelete 
@@ -64,20 +62,6 @@ export function useRealTimeOrders({
 
   // Show notification for new orders
   const showOrderNotification = useCallback((order: Order) => {
-    console.log('🔔 showOrderNotification called:', {
-      orderId: order.unique_order_id,
-      customerName: order.customer_name,
-      paymentStatus: order.payment_status,
-      notificationPermission
-    });
-
-    // Only show notification if permission is granted
-    if (notificationPermission !== 'granted') {
-      console.log('❌ Notification permission not granted:', notificationPermission);
-      return;
-    }
-
-    console.log('✅ Attempting to show notification...');
     const notification = notificationManager.showOrderNotification({
       id: order.id,
       unique_order_id: order.unique_order_id,
@@ -87,7 +71,6 @@ export function useRealTimeOrders({
     });
 
     if (notification) {
-      console.log('✅ Notification created successfully');
       // Auto close notification after 15 seconds
       setTimeout(() => {
         notification.close();
@@ -103,14 +86,11 @@ export function useRealTimeOrders({
           orderElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       };
-    } else {
-      console.log('❌ Failed to create notification');
     }
 
     // Play notification sound
-    console.log('🔊 Playing notification sound...');
     notificationManager.playNotificationSound();
-  }, [notificationPermission]);
+  }, []);
 
   // Reset new orders count
   const resetNewOrdersCount = useCallback(() => {
@@ -151,18 +131,9 @@ export function useRealTimeOrders({
             // Call custom handler
             onNewOrder?.(newOrder);
             
-            // Show notification for all new orders with completed payment
-            console.log('📥 New order received:', {
-              orderId: newOrder.unique_order_id,
-              paymentStatus: newOrder.payment_status,
-              customerName: newOrder.customer_name
-            });
-            
+            // Show notification only if payment is completed
             if (newOrder.payment_status === 'completed') {
-              console.log('💰 Payment completed - showing notification');
               showOrderNotification(newOrder);
-            } else {
-              console.log('⏳ Payment not completed yet:', newOrder.payment_status);
             }
             
           } else if (payload.eventType === 'UPDATE') {
@@ -177,14 +148,7 @@ export function useRealTimeOrders({
             onOrderUpdate?.(updatedOrder, oldOrder);
             
             // Show notification if payment status changed to completed
-            console.log('🔄 Order updated:', {
-              orderId: updatedOrder.unique_order_id,
-              oldPaymentStatus: oldOrder.payment_status,
-              newPaymentStatus: updatedOrder.payment_status
-            });
-            
             if (oldOrder.payment_status !== 'completed' && updatedOrder.payment_status === 'completed') {
-              console.log('💰 Payment status changed to completed - showing notification');
               showOrderNotification(updatedOrder);
               setNewOrdersCount(prev => prev + 1);
             }

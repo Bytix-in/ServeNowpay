@@ -23,6 +23,8 @@ type Restaurant = {
   onboardedDate: string;
   owner: string;
   liveStatus: 'Live' | 'Not Live';
+  webhook_configured?: boolean;
+  webhook_url?: string;
 }
 
 export default function AdminDashboard() {
@@ -156,12 +158,10 @@ export default function AdminDashboard() {
 
         if (response.ok) {
           const data = await response.json()
-          console.log('🔍 Admin Dashboard - Active Sessions Data:', data)
           setLoggedInCount(data.activeCount)
           setLastUpdated(data.lastUpdated)
           // Update active restaurant IDs
           const activeIds = new Set<string>(data.activeRestaurants.map((r: any) => r.id as string))
-          console.log('🔍 Admin Dashboard - Active Restaurant IDs:', Array.from(activeIds))
           setActiveRestaurantIds(activeIds)
         } else {
           console.error('Failed to fetch active sessions:', response.statusText)
@@ -356,11 +356,11 @@ export default function AdminDashboard() {
   const inactiveRestaurants = restaurants.filter(r => r.status === 'Inactive').length
 
   return (
-    <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 min-h-screen">
       {/* Session Warning Banner */}
       {showSessionWarning && (
-        <div className="mb-4 sm:mb-6 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-3 sm:p-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="mb-6 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4 shadow-sm">
+          <div className="flex items-center justify-between">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-4 h-4 bg-yellow-400 rounded-full animate-pulse"></div>
@@ -369,17 +369,17 @@ export default function AdminDashboard() {
                 <h3 className="text-sm font-semibold text-yellow-800">
                   Session Expiring Soon
                 </h3>
-                <p className="text-xs sm:text-sm text-yellow-700 mt-1">
+                <p className="text-sm text-yellow-700 mt-1">
                   Your admin session will expire in <span className="font-medium">{sessionTimeLeft} minute{sessionTimeLeft !== 1 ? 's' : ''}</span>.
                   Extend your session to continue working.
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="flex items-center space-x-3">
               <Button
                 onClick={handleExtendSession}
                 size="sm"
-                className="bg-yellow-600 hover:bg-yellow-700 text-white font-medium text-xs sm:text-sm"
+                className="bg-yellow-600 hover:bg-yellow-700 text-white font-medium"
               >
                 Extend Session
               </Button>
@@ -387,7 +387,7 @@ export default function AdminDashboard() {
                 onClick={handleLogout}
                 size="sm"
                 variant="outline"
-                className="border-yellow-300 text-yellow-700 hover:bg-yellow-100 text-xs sm:text-sm"
+                className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
               >
                 Logout
               </Button>
@@ -397,21 +397,21 @@ export default function AdminDashboard() {
       )}
 
       {/* Header */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">Admin Dashboard</h1>
-            <p className="text-sm sm:text-base text-gray-600">Welcome back! Here's an overview of your restaurant management system.</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+            <p className="text-gray-600">Welcome back! Here's an overview of your restaurant management system.</p>
           </div>
           {user && (
-            <div className="text-left sm:text-right">
-              <p className="text-xs sm:text-sm text-gray-500">Logged in as</p>
+            <div className="text-right">
+              <p className="text-sm text-gray-500">Logged in as</p>
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
               <Button
                 onClick={handleLogout}
                 size="sm"
                 variant="ghost"
-                className="text-xs text-gray-500 hover:text-gray-700 mt-1 p-0 h-auto"
+                className="text-xs text-gray-500 hover:text-gray-700 mt-1"
               >
                 Logout
               </Button>
@@ -421,13 +421,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* System Overview */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-3">
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 mr-2" />
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900">System Overview</h2>
+            <ChevronDown className="h-5 w-5 text-gray-500 mr-2" />
+            <h2 className="text-lg font-semibold text-gray-900">System Overview</h2>
           </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+          <div className="flex items-center space-x-3">
             {lastUpdated && (
               <span className="text-xs text-gray-500">
                 Last updated: {new Date(lastUpdated).toLocaleTimeString()}
@@ -445,45 +445,44 @@ export default function AdminDashboard() {
               ) : (
                 <RefreshCw className="h-3 w-3 mr-1" />
               )}
-              <span className="hidden sm:inline">Refresh</span>
-              <span className="sm:hidden">↻</span>
+              Refresh
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-          <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border text-center">
-            <div className="text-xl sm:text-3xl font-bold text-gray-900 mb-1">
+        <div className="grid grid-cols-4 gap-6">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-gray-900 mb-1">
               {restaurantsLoading ? '...' : totalRestaurants}
             </div>
-            <div className="text-xs sm:text-sm text-gray-500">Total Restaurants</div>
+            <div className="text-sm text-gray-500">Total Restaurants</div>
           </div>
-          <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border text-center">
-            <div className="text-xl sm:text-3xl font-bold text-green-600 mb-1">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-green-600 mb-1">
               {restaurantsLoading ? '...' : activeRestaurants}
             </div>
-            <div className="text-xs sm:text-sm text-gray-500">Active Now</div>
+            <div className="text-sm text-gray-500">Active Now</div>
           </div>
-          <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border text-center">
-            <div className="text-xl sm:text-3xl font-bold text-gray-900 mb-1">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-gray-900 mb-1">
               {restaurantsLoading ? '...' : inactiveRestaurants}
             </div>
-            <div className="text-xs sm:text-sm text-gray-500">Inactive</div>
+            <div className="text-sm text-gray-500">Inactive</div>
           </div>
-          <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border text-center relative">
-            <div className="text-xl sm:text-3xl font-bold text-blue-600 mb-1 flex items-center justify-center">
+          <div className="text-center relative">
+            <div className="text-3xl font-bold text-blue-600 mb-1 flex items-center justify-center">
               {loggedInLoading ? (
-                <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
+                <Loader2 className="h-6 w-6 animate-spin" />
               ) : (
                 <>
                   {loggedInCount}
                   {loggedInCount > 0 && (
-                    <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                   )}
                 </>
               )}
             </div>
-            <div className="text-xs sm:text-sm text-gray-500">Currently Logged In</div>
+            <div className="text-sm text-gray-500">Currently Logged In</div>
             {loggedInCount > 0 && (
               <div className="text-xs text-green-600 mt-1">● Active Sessions</div>
             )}
@@ -492,137 +491,101 @@ export default function AdminDashboard() {
       </div>
 
       {/* All Restaurants */}
-      <div className="bg-white rounded-lg border shadow-sm">
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b">
+      <div className="bg-white rounded-lg border">
+        <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center">
-            <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-900 rounded flex items-center justify-center mr-2 sm:mr-3">
-              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-white rounded"></div>
+            <div className="w-6 h-6 bg-gray-900 rounded flex items-center justify-center mr-3">
+              <div className="w-3 h-3 bg-white rounded"></div>
             </div>
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900">All Restaurants</h2>
+            <h2 className="text-lg font-semibold text-gray-900">All Restaurants</h2>
           </div>
-          <div className="bg-gray-900 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs sm:text-sm font-medium">
+          <div className="bg-gray-900 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium">
             {restaurants.length}
           </div>
         </div>
 
-        <div className="max-h-80 sm:max-h-96 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto">
           <div className="divide-y">
             {restaurantsLoading ? (
-              <div className="p-6 sm:p-8 text-center">
-                <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin mx-auto mb-3 sm:mb-4 text-gray-400" />
-                <p className="text-sm sm:text-base text-gray-500">Loading restaurants...</p>
+              <div className="p-8 text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-500">Loading restaurants...</p>
               </div>
             ) : restaurants.length === 0 ? (
-              <div className="p-6 sm:p-8 text-center">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-400 rounded"></div>
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-8 h-8 bg-gray-400 rounded"></div>
                 </div>
-                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No restaurants yet</h3>
-                <p className="text-sm sm:text-base text-gray-500 mb-4">Get started by adding your first restaurant to the platform.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No restaurants yet</h3>
+                <p className="text-gray-500 mb-4">Get started by adding your first restaurant to the platform.</p>
                 <Button
                   onClick={() => router.push('/admin/add-restaurant')}
-                  className="bg-black hover:bg-gray-800 text-white text-sm"
+                  className="bg-black hover:bg-gray-800 text-white"
                 >
                   Add Restaurant
                 </Button>
               </div>
             ) : (
               restaurants.map((restaurant) => (
-                <div key={restaurant.id} className="p-3 sm:p-4 hover:bg-gray-50 transition-colors">
-                  {/* Mobile Layout */}
-                  <div className="sm:hidden">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium text-gray-900 text-sm">{restaurant.name}</h3>
-                      <div className="flex items-center gap-2">
-                        {/* Live Status Indicator */}
+                <div key={restaurant.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium text-gray-900">{restaurant.name}</h3>
                         <div className="flex items-center">
-                          <div className={`w-2 h-2 rounded-full mr-1 ${restaurant.liveStatus === 'Live'
-                            ? 'bg-green-500 animate-pulse'
-                            : 'bg-gray-400'
-                            }`}></div>
-                          <span className={`text-xs font-medium ${restaurant.liveStatus === 'Live'
-                            ? 'text-green-600'
-                            : 'text-gray-500'
-                            }`}>
-                            {restaurant.liveStatus}
-                          </span>
-                        </div>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${restaurant.status === 'Active'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                          }`}>
-                          {restaurant.status}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-500 mb-1">
-                      ID: {restaurant.id}
-                    </div>
-                    <div className="text-xs text-gray-500 mb-2">
-                      {restaurant.location}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs text-gray-500">
-                        Created: {restaurant.onboardedDate}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-gray-500 hover:text-gray-700 text-xs p-1 h-auto"
-                        onClick={() => handleViewDetails(restaurant.id)}
-                      >
-                        <Eye className="h-3 w-3 mr-1" />
-                        View
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Desktop Layout */}
-                  <div className="hidden sm:block">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-medium text-gray-900">{restaurant.name}</h3>
-                          <div className="flex items-center">
-                            {/* Live Status Indicator */}
-                            <div className="flex items-center mr-2">
-                              <div className={`w-2 h-2 rounded-full mr-1 ${restaurant.liveStatus === 'Live'
-                                ? 'bg-green-500 animate-pulse'
-                                : 'bg-gray-400'
-                                }`}></div>
-                              <span className={`text-xs font-medium ${restaurant.liveStatus === 'Live'
-                                ? 'text-green-600'
-                                : 'text-gray-500'
-                                }`}>
-                                {restaurant.liveStatus}
-                              </span>
-                            </div>
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mr-3 ${restaurant.status === 'Active'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
+                          {/* Live Status Indicator */}
+                          <div className="flex items-center mr-2">
+                            <div className={`w-2 h-2 rounded-full mr-1 ${restaurant.liveStatus === 'Live'
+                              ? 'bg-green-500 animate-pulse'
+                              : 'bg-gray-400'
+                              }`}></div>
+                            <span className={`text-xs font-medium ${restaurant.liveStatus === 'Live'
+                              ? 'text-green-600'
+                              : 'text-gray-500'
                               }`}>
-                              {restaurant.status}
+                              {restaurant.liveStatus}
                             </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-gray-500 hover:text-gray-700"
-                              onClick={() => handleViewDetails(restaurant.id)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View Details
-                            </Button>
                           </div>
+
+                          {/* Webhook Status Indicator */}
+                          <div className="flex items-center mr-2">
+                            <div className={`w-2 h-2 rounded-full mr-1 ${restaurant.webhook_configured
+                              ? 'bg-blue-500'
+                              : 'bg-orange-400'
+                              }`}></div>
+                            <span className={`text-xs font-medium ${restaurant.webhook_configured
+                              ? 'text-blue-600'
+                              : 'text-orange-600'
+                              }`}>
+                              {restaurant.webhook_configured ? 'Webhook' : 'No Webhook'}
+                            </span>
+                          </div>
+
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mr-3 ${restaurant.status === 'Active'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                            }`}>
+                            {restaurant.status}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-gray-500 hover:text-gray-700"
+                            onClick={() => handleViewDetails(restaurant.id)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View Details
+                          </Button>
                         </div>
-                        <div className="text-sm text-gray-500 mb-1">
-                          ID: {restaurant.id}
-                        </div>
-                        <div className="text-sm text-gray-500 mb-1">
-                          {restaurant.location}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          Created: {restaurant.onboardedDate}
-                        </div>
+                      </div>
+                      <div className="text-sm text-gray-500 mb-1">
+                        ID: {restaurant.id}
+                      </div>
+                      <div className="text-sm text-gray-500 mb-1">
+                        {restaurant.location}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Created: {restaurant.onboardedDate}
                       </div>
                     </div>
                   </div>

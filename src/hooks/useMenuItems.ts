@@ -98,27 +98,11 @@ export function useMenuItems(restaurantId?: string) {
     }
   }
 
-  const updateMenuItem = async (id: string, values: MenuItemFormValues & { 
-    image_url?: string | null, 
-    dish_type?: string, 
-    ingredients?: string, 
-    tags?: string 
-  }) => {
+  const updateMenuItem = async (id: string, values: Partial<MenuItemFormValues>) => {
     try {
-      const updateData = {
-        name: values.name,
-        price: values.price,
-        description: values.description,
-        preparation_time: values.preparation_time,
-        image_url: values.image_url || null,
-        dish_type: values.dish_type || 'Main Course',
-        ingredients: values.ingredients || '',
-        tags: values.tags || ''
-      }
-      
       const { data, error: updateError } = await supabase
         .from('menu_items')
-        .update(updateData)
+        .update(values)
         .eq('id', id)
         .select()
       

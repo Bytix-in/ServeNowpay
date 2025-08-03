@@ -126,15 +126,15 @@ export default function AddRestaurant() {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center mb-4 sm:mb-6">
-        <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-gray-900 mr-2" />
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Add New Restaurant</h1>
+      <div className="flex items-center mb-6">
+        <Plus className="h-6 w-6 text-gray-900 mr-2" />
+        <h1 className="text-2xl font-bold text-gray-900">Add New Restaurant</h1>
       </div>
-      <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Create a new restaurant and generate manager credentials</p>
+      <p className="text-gray-600 mb-8">Create a new restaurant and generate manager credentials</p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Restaurant Details Form */}
-        <div className="bg-white rounded-lg border p-4 sm:p-6">
+        <div className="bg-white rounded-lg border p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Restaurant Details</h2>
           
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -267,7 +267,7 @@ export default function AddRestaurant() {
         </div>
 
         {/* Generated Credentials */}
-        <div className="bg-white rounded-lg border p-4 sm:p-6">
+        <div className="bg-white rounded-lg border p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Generated Credentials</h2>
           
           {!credentials ? (

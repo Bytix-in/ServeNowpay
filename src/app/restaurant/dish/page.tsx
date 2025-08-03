@@ -43,8 +43,6 @@ export default function DishManagementPage() {
   })
   
   const [query, setQuery] = useState('')
-  const [editingDish, setEditingDish] = useState<any>(null)
-  const [isEditing, setIsEditing] = useState(false)
 
   // Use the custom hooks
   const { restaurant, loading: restaurantLoading, error: restaurantError } = useRestaurant()
@@ -53,7 +51,6 @@ export default function DishManagementPage() {
     loading: menuLoading, 
     error: menuError,
     addMenuItem, 
-    updateMenuItem,
     deleteMenuItem 
   } = useMenuItems(restaurant?.id)
 
@@ -80,21 +77,6 @@ export default function DishManagementPage() {
     setForm({ ...form, image: base64 })
   }
 
-  const resetForm = () => {
-    setForm({
-      name: '',
-      image: null,
-      type: '',
-      price: '',
-      ingredients: '',
-      prepTime: '',
-      tags: ''
-    })
-    setQuery('')
-    setIsEditing(false)
-    setEditingDish(null)
-  }
-
   const handleAddDish = async () => {
     if (!restaurant) {
       alert('Restaurant not found. Please try again.')
@@ -118,79 +100,32 @@ export default function DishManagementPage() {
         tags: form.tags || undefined
       }
 
-      const result = isEditing 
-        ? await updateMenuItem(editingDish.id, dishData)
-        : await addMenuItem(dishData)
+      const result = await addMenuItem(dishData)
       
       if (result) {
-        resetForm()
-        alert(isEditing ? 'Dish updated successfully!' : 'Dish added successfully!')
+        setForm({
+          name: '',
+          image: null,
+          type: '',
+          price: '',
+          ingredients: '',
+          prepTime: '',
+          tags: ''
+        })
+        setQuery('') // Clear the search query when form is reset
+        alert('Dish added successfully!')
       } else {
-        alert(`Failed to ${isEditing ? 'update' : 'save'} dish. Please try again.`)
+        alert('Failed to save dish. Please try again.')
       }
     } catch (error) {
-      console.error(`Error ${isEditing ? 'updating' : 'saving'} dish:`, error)
-      alert(`Failed to ${isEditing ? 'update' : 'save'} dish. Please try again.`)
+      console.error('Error saving dish:', error)
+      alert('Failed to save dish. Please try again.')
     }
   }
 
   const handleEdit = (dish: any) => {
-    setEditingDish(dish)
-    setIsEditing(true)
-    setForm({
-      name: dish.name,
-      image: dish.image_url || dish.image_data || null,
-      type: dish.dish_type || '',
-      price: dish.price.toString(),
-      ingredients: dish.ingredients || dish.description || '',
-      prepTime: dish.preparation_time.toString(),
-      tags: dish.tags || ''
-    })
-    setQuery('')
-    
-    // Scroll to form
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  const handleCancelEdit = () => {
-    resetForm()
-  }
-
-  // Handle Enter key navigation
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault() // Prevent form submission
-      
-      const form = e.currentTarget
-      const formElements = Array.from(form.elements) as HTMLElement[]
-      
-      // Filter only input, textarea, and select elements that are visible and not disabled
-      const focusableElements = formElements.filter(element => {
-        return (
-          (element.tagName === 'INPUT' || 
-           element.tagName === 'TEXTAREA' || 
-           element.tagName === 'SELECT') &&
-          !element.hasAttribute('disabled') &&
-          element.offsetParent !== null // Check if element is visible
-        )
-      })
-      
-      const currentIndex = focusableElements.indexOf(e.target as HTMLElement)
-      
-      if (currentIndex !== -1 && currentIndex < focusableElements.length - 1) {
-        // Move to next field
-        const nextElement = focusableElements[currentIndex + 1] as HTMLInputElement
-        nextElement.focus()
-        
-        // For number inputs, select all text for easy replacement
-        if (nextElement.type === 'number' || nextElement.type === 'text') {
-          nextElement.select()
-        }
-      } else if (currentIndex === focusableElements.length - 1) {
-        // If on last field, submit the form
-        handleAddDish()
-      }
-    }
+    // Edit functionality to be implemented
+    alert('Edit functionality coming soon!')
   }
 
   const handleDelete = async (dishId: string) => {
@@ -264,36 +199,20 @@ export default function DishManagementPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Add New Dish Form */}
           <div className="bg-white rounded-xl shadow p-8 border">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold">
-                {isEditing ? 'Edit Dish' : 'Add New Dish'}
-              </h2>
-              {isEditing && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCancelEdit}
-                  className="text-gray-600"
-                >
-                  Cancel Edit
-                </Button>
-              )}
-            </div>
+            <h2 className="text-lg font-semibold mb-6">Add New Dish</h2>
             
-            <form onKeyDown={handleKeyDown} onSubmit={(e) => e.preventDefault()}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">
-                  Dish Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
-                  placeholder="Enter dish name"
-                  autoComplete="off"
-                />
-              </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                Dish Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
+                placeholder="Enter dish name"
+              />
+            </div>
             
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Dish Image (optional)</label>
@@ -317,34 +236,6 @@ export default function DishManagementPage() {
                       displayValue={(dishType: string) => dishType}
                       onChange={(event) => setQuery(event.target.value)}
                       placeholder="Search or select dish type..."
-                      autoComplete="off"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && form.type) {
-                          e.preventDefault()
-                          // Find the next focusable element and focus it
-                          const formElement = e.currentTarget.closest('form')
-                          if (formElement) {
-                            const formElements = Array.from(formElement.elements) as HTMLElement[]
-                            const focusableElements = formElements.filter(element => {
-                              return (
-                                (element.tagName === 'INPUT' || 
-                                 element.tagName === 'TEXTAREA' || 
-                                 element.tagName === 'SELECT') &&
-                                !element.hasAttribute('disabled') &&
-                                element.offsetParent !== null
-                              )
-                            })
-                            const currentIndex = focusableElements.findIndex(el => el.contains(e.currentTarget))
-                            if (currentIndex !== -1 && currentIndex < focusableElements.length - 1) {
-                              const nextElement = focusableElements[currentIndex + 1] as HTMLInputElement
-                              nextElement.focus()
-                              if (nextElement.type === 'number' || nextElement.type === 'text') {
-                                nextElement.select()
-                              }
-                            }
-                          }
-                        }
-                      }}
                     />
                     <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-2">
                       <ChevronDown
@@ -412,7 +303,6 @@ export default function DishManagementPage() {
                   step="0.01"
                   className="w-full border rounded px-3 py-2 pl-8 focus:outline-none focus:ring-2 focus:ring-black"
                   placeholder="0.00"
-                  autoComplete="off"
                 />
               </div>
             </div>
@@ -425,7 +315,6 @@ export default function DishManagementPage() {
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="List ingredients"
-                autoComplete="off"
               />
             </div>
             
@@ -441,7 +330,6 @@ export default function DishManagementPage() {
                 min="0"
                 className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="0"
-                autoComplete="off"
               />
             </div>
             
@@ -453,23 +341,17 @@ export default function DishManagementPage() {
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="Special Today, Most Ordered"
-                autoComplete="off"
               />
               <p className="text-xs text-gray-400 mt-1">Separate multiple tags with commas</p>
             </div>
             
             <button
               onClick={handleAddDish}
-              className={`w-full py-2 rounded transition font-semibold text-lg flex items-center justify-center gap-2 ${
-                isEditing 
-                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                  : 'bg-black text-white hover:bg-gray-900'
-              }`}
-              type="submit"
+              className="w-full bg-black text-white py-2 rounded hover:bg-gray-900 transition font-semibold text-lg flex items-center justify-center gap-2"
+              type="button"
             >
-              {isEditing ? '✓ Update Dish' : '+ Add Dish'}
+              + Add Dish
             </button>
-            </form>
           </div>
           
           {/* Menu Items Section */}

@@ -72,9 +72,20 @@ export default function OrdersManagementPage() {
     resetNewOrdersCount,
     updateOrderOptimistically
   } = useRealTimeOrders({
-    restaurantId: user?.restaurantId || '',
-    notificationPermission,
+    restaurantId: user?.restaurantId || '', 
    onNewOrder: (order) => {
+      // Show notification for all new orders
+      if (notificationPermission === 'granted') {
+        notificationManager.showOrderNotification({
+          id: order.id,
+          unique_order_id: order.unique_order_id,
+          customer_name: order.customer_name,
+          table_number: order.table_number,
+          total_amount: order.total_amount
+        });
+        notificationManager.playNotificationSound();
+      }
+      
       // Add to activity feed
       if ((window as any).addOrderActivity) {
         (window as any).addOrderActivity({
@@ -86,6 +97,20 @@ export default function OrdersManagementPage() {
       }
     },
     onOrderUpdate: (updatedOrder, oldOrder) => {
+      // Show notification if payment status changed to completed
+      if (oldOrder.payment_status !== 'completed' && updatedOrder.payment_status === 'completed') {
+        if (notificationPermission === 'granted') {
+          notificationManager.showOrderNotification({
+            id: updatedOrder.id,
+            unique_order_id: updatedOrder.unique_order_id,
+            customer_name: updatedOrder.customer_name,
+            table_number: updatedOrder.table_number,
+            total_amount: updatedOrder.total_amount
+          });
+          notificationManager.playNotificationSound();
+        }
+      }
+      
       // Add to activity feed if status changed
       if (oldOrder.status !== updatedOrder.status) {
         if ((window as any).addOrderActivity) {
@@ -282,18 +307,18 @@ export default function OrdersManagementPage() {
 
       if (manualOrder.paymentMethod === 'cash') {
         // Handle cash payment - create order directly in database
-        const uniqueOrderId = Math.random().toString(36).substring(2, 8); // 6 random chars
+        const uniqueOrderId = `MAN${Date.now()}`;
 
         // Prepare order data for cash payment
         const orderData = {
           restaurant_id: user.restaurantId,
-          customer_name: manualOrder.customerName.substring(0, 50), // Reasonable limit
-          customer_phone: manualOrder.customerPhone.substring(0, 15), // Phone number limit
-          table_number: manualOrder.tableNumber.substring(0, 6), // Limit to 6 characters
+          customer_name: manualOrder.customerName,
+          customer_phone: manualOrder.customerPhone,
+          table_number: manualOrder.tableNumber,
           payment_method: 'cash', // Cash payment method
           items: manualOrder.items.map(item => ({
             dish_id: item.menuItem.id,
-            dish_name: item.menuItem.name.substring(0, 50), // Limit dish name length
+            dish_name: item.menuItem.name,
             quantity: item.quantity,
             price: item.menuItem.price,
             total: item.menuItem.price * item.quantity
@@ -306,12 +331,6 @@ export default function OrdersManagementPage() {
           updated_at: new Date().toISOString()
         };
 
-        // Debug: Log the order data being inserted
-        console.log('🔍 Order data being inserted:', {
-          ...orderData,
-          items: JSON.stringify(orderData.items).length + ' chars'
-        });
-
         // Insert cash order into database
         const { data, error } = await supabase
           .from('orders')
@@ -321,7 +340,6 @@ export default function OrdersManagementPage() {
 
         if (error) {
           console.error('Database error:', error);
-          console.error('Full error details:', JSON.stringify(error, null, 2));
           throw new Error(`Failed to create cash order: ${error.message}`);
         }
 
@@ -347,7 +365,7 @@ export default function OrdersManagementPage() {
           restaurant_id: user.restaurantId,
           customer_name: manualOrder.customerName,
           customer_phone: manualOrder.customerPhone,
-          table_number: manualOrder.tableNumber.substring(0, 6), // Limit to 6 characters
+          table_number: manualOrder.tableNumber,
           payment_method: 'online', // Online payment method
           items: manualOrder.items.map(item => ({
             dish_id: item.menuItem.id,
@@ -721,7 +739,19 @@ export default function OrdersManagementPage() {
        
         {/* Real-time Status & Controls */}
         <div className="flex items-center gap-4">
-
+          {/* Connection Status */}
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+            isConnected 
+              ? 'bg-green-50 text-green-700 border-green-200' 
+              : 'bg-red-50 text-red-700 border-red-200'
+          }`}>
+            <div className={`w-2 h-2 rounded-full ${
+              isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+            }`}></div>
+            <span className="text-sm font-medium">
+              {isConnected ? 'Live Updates' : 'Disconnected'}
+            </span>
+          </div>
 
           {/* Manual Refresh Button */}
           <button
@@ -797,7 +827,13 @@ export default function OrdersManagementPage() {
               {card.count}
             </motion.span>
             
-
+            {/* Live update indicator */}
+            <div className="flex items-center gap-1 mt-2">
+              <div className={`w-1 h-1 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`}></div>
+              <span className="text-xs text-gray-500">
+                {isConnected ? 'Live' : 'Offline'}
+              </span>
+            </div>
           </motion.div>
         ))}
       </div>
@@ -1180,7 +1216,6 @@ export default function OrdersManagementPage() {
                     onChange={(e) => setManualOrder(prev => ({ ...prev, tableNumber: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter table number"
-                    maxLength={6}
                   />
                 </div>
               </div>
