@@ -52,7 +52,20 @@ export class OrderNotificationManager {
 
   // Show a notification
   public showNotification(options: NotificationOptions): Notification | null {
-    if (!this.isSupported() || !this.isPermitted()) {
+    console.log('🔔 NotificationManager.showNotification called:', {
+      title: options.title,
+      isSupported: this.isSupported(),
+      isPermitted: this.isPermitted(),
+      permission: this.permission
+    });
+
+    if (!this.isSupported()) {
+      console.log('❌ Notifications not supported');
+      return null;
+    }
+    
+    if (!this.isPermitted()) {
+      console.log('❌ Notifications not permitted, current permission:', this.permission);
       return null;
     }
 
@@ -67,11 +80,13 @@ export class OrderNotificationManager {
         timestamp: options.timestamp || Date.now()
       };
       
+      console.log('✅ Creating notification with options:', notificationOptions);
       const notification = new Notification(options.title, notificationOptions);
+      console.log('✅ Notification created successfully');
 
       return notification;
     } catch (error) {
-      console.error('Failed to show notification:', error);
+      console.error('❌ Failed to show notification:', error);
       return null;
     }
   }
@@ -84,6 +99,8 @@ export class OrderNotificationManager {
     table_number: string;
     total_amount: number;
   }): Notification | null {
+    console.log('🔔 NotificationManager.showOrderNotification called:', order);
+    
     const formatCurrency = (amount: number) => {
       return new Intl.NumberFormat('en-IN', {
         style: 'currency',
@@ -91,13 +108,16 @@ export class OrderNotificationManager {
       }).format(amount);
     };
 
-    return this.showNotification({
+    const notification = this.showNotification({
       title: '💳 New Paid Order! 🔔',
       body: `URGENT: Payment confirmed! Order #${order.unique_order_id} from ${order.customer_name} at Table ${order.table_number} for ${formatCurrency(order.total_amount)}. Start preparing now!`,
       tag: `order-${order.id}`,
       requireInteraction: true,
       silent: false
     });
+
+    console.log('🔔 Notification result:', notification ? 'Created' : 'Failed');
+    return notification;
   }
 
   // Play notification sound

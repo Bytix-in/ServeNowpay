@@ -27,9 +27,27 @@ export default function UserLoginPage() {
     }
 
     try {
-      // Simulate login process (replace with actual API call)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      // Check if phone number exists in database
+      const response = await fetch('/api/profile/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone: phoneNumber }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError('Phone number not found. Please check your number or create an account first.')
+        } else {
+          setError(data.error || 'Failed to login. Please try again.')
+        }
+        setLoading(false)
+        return
+      }
+
       // Store user session
       localStorage.setItem('userPhone', phoneNumber)
       localStorage.setItem('userLoggedIn', 'true')
@@ -38,6 +56,7 @@ export default function UserLoginPage() {
       router.push('/user/dashboard')
       
     } catch (err) {
+      console.error('Login error:', err)
       setError('Failed to login. Please try again.')
       setLoading(false)
     }
