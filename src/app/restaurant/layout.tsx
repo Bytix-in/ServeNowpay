@@ -1,26 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
 import { 
-  ChevronDown,
-  Search,
-  Bell,
-  Settings,
   Home,
   ShoppingBag,
   Utensils,
-  Bike,
-  FileText,
   MessageSquare,
-  Megaphone,
   HelpCircle,
   CreditCard,
-  Menu,
-  Users // Add Users icon
+  Menu
 } from 'lucide-react'
 import { RestaurantProtectedRoute } from '@/components/auth/RestaurantProtectedRoute'
 import { useAuth } from '@/contexts/AuthContext'
@@ -81,7 +71,7 @@ function RestaurantLayoutContent({
               <p className="text-xs text-gray-500">Restaurant</p>
             </div>
           )}
-          {!collapsed && <Settings className="w-4 h-4 text-gray-400" />}
+
         </div>
         {/* Navigation */}
         <nav className="flex-1 py-4">
@@ -135,14 +125,14 @@ function RestaurantLayoutContent({
           <div className={`mt-6 px-4 ${collapsed ? 'hidden' : ''}`}>
             <p className="text-xs font-medium text-gray-500 mb-2">Others</p>
             <div className="space-y-1">
-              <Link href="#" className="flex items-center gap-3 px-2 py-2 rounded-xl text-gray-600 hover:bg-gray-100 transition cursor-pointer">
+              <Link 
+                href="/restaurant/support" 
+                className={`flex items-center gap-3 px-2 py-2 rounded-xl transition cursor-pointer ${pathname === '/restaurant/support' ? 'bg-gray-200 text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+              >
                 <HelpCircle className="w-5 h-5" />
                 <span className="text-sm font-medium">Support</span>
               </Link>
-              <Link href="#" className="flex items-center gap-3 px-2 py-2 rounded-xl text-gray-600 hover:bg-gray-100 transition cursor-pointer">
-                <Settings className="w-5 h-5" />
-                <span className="text-sm font-medium">Settings</span>
-              </Link>
+
               <button 
                 onClick={signOut}
                 className="flex items-center gap-3 px-2 py-2 rounded-xl text-red-600 hover:bg-red-50 transition cursor-pointer w-full text-left"
