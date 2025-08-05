@@ -52,7 +52,8 @@ export function useMenuItems(restaurantId?: string) {
   }, [restaurantId])
 
   const addMenuItem = async (values: MenuItemFormValues & { 
-    image_url?: string | null, 
+    image_url?: string | null,
+    cloudinary_public_id?: string | null,
     dish_type?: string, 
     ingredients?: string, 
     tags?: string 
@@ -70,6 +71,7 @@ export function useMenuItems(restaurantId?: string) {
         description: values.description,
         preparation_time: values.preparation_time,
         image_url: values.image_url || null,
+        cloudinary_public_id: values.cloudinary_public_id || null,
         dish_type: values.dish_type || 'Main Course',
         ingredients: values.ingredients || '',
         tags: values.tags || ''

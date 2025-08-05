@@ -72,7 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data: { session }, error } = await supabase.auth.getSession()
       
       if (error) {
-        console.error('Session check error:', error)
         setUser(null)
         setLoading(false)
         return
@@ -90,7 +89,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null)
       }
     } catch (error) {
-      console.error('Session check error:', error)
       setUser(null)
     } finally {
       setLoading(false)
@@ -115,7 +113,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         })
       }
     } catch (error) {
-      console.error('Sign in error:', error)
       throw error
     }
   }
@@ -158,7 +155,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(restaurantUser)
       }
     } catch (error) {
-      console.error('Restaurant sign in error:', error)
       throw error
     }
   }
@@ -173,7 +169,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       setUser(null)
     } catch (error) {
-      console.error('Sign out error:', error)
       throw error
     }
   }

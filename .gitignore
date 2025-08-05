@@ -41,3 +41,7 @@ database-schema.sql
 update-order-workflow.sql
 
 /database
+
+/scripts
+
+/docs

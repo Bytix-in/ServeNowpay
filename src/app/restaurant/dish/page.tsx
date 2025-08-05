@@ -35,6 +35,7 @@ export default function DishManagementPage() {
   const [form, setForm] = useState({
     name: '',
     image: null as string | null,
+    imagePublicId: null as string | null,
     type: '',
     price: '',
     ingredients: '',
@@ -73,8 +74,12 @@ export default function DishManagementPage() {
     setQuery('') // Clear the search query when a selection is made
   }
 
-  const handleImageChange = (base64: string | null) => {
-    setForm({ ...form, image: base64 })
+  const handleImageChange = (imageUrl: string | null, publicId?: string) => {
+    setForm({ 
+      ...form, 
+      image: imageUrl,
+      imagePublicId: publicId || null
+    })
   }
 
   const handleAddDish = async () => {
@@ -95,6 +100,7 @@ export default function DishManagementPage() {
         description: form.ingredients || 'No description provided',
         preparation_time: parseInt(form.prepTime),
         image_url: form.image || undefined,
+        cloudinary_public_id: form.imagePublicId || undefined,
         dish_type: form.type || undefined,
         ingredients: form.ingredients || undefined,
         tags: form.tags || undefined
@@ -106,6 +112,7 @@ export default function DishManagementPage() {
         setForm({
           name: '',
           image: null,
+          imagePublicId: null,
           type: '',
           price: '',
           ingredients: '',
@@ -221,7 +228,19 @@ export default function DishManagementPage() {
                 onChange={handleImageChange}
                 placeholder="Click to upload dish image"
                 className="w-full"
+                disabled={false}
+                onUploadStart={() => console.log('Upload started')}
+                onUploadComplete={(result) => {
+                  console.log('Upload completed:', result);
+                }}
+                onUploadError={(error) => {
+                  console.error('Upload error:', error);
+                  alert(`Upload failed: ${error}`);
+                }}
               />
+              <p className="text-xs text-green-600 mt-1">
+                ✨ Images are now uploaded directly to Cloudinary for optimal performance
+              </p>
             </div>
             
             <div className="mb-4">

@@ -129,10 +129,12 @@ export async function POST(request: NextRequest) {
     })
 
     if (!orderResult.success) {
+      console.error('Order creation failed:', orderResult.error)
       throw new Error(orderResult.error || 'Failed to create order')
     }
 
     const order = orderResult.order
+
 
     // Create Cashfree order directly (no separate auth needed)
     const baseUrl = credentials.environment === 'production'
@@ -302,11 +304,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: userFriendlyMessage,
-        details: error?.message || 'Unknown error',
-        debug: process.env.NODE_ENV === 'development' ? {
-          stack: error?.stack,
-          timestamp: new Date().toISOString()
-        } : undefined
+        details: error?.message || 'Unknown error'
       },
       { status: statusCode }
     )

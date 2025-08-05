@@ -3,14 +3,15 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { 
+import {
   Home,
   ShoppingBag,
   Utensils,
   MessageSquare,
   HelpCircle,
   CreditCard,
-  Menu
+  Menu,
+  BarChart3
 } from 'lucide-react'
 import { RestaurantProtectedRoute } from '@/components/auth/RestaurantProtectedRoute'
 import { useAuth } from '@/contexts/AuthContext'
@@ -37,7 +38,7 @@ function RestaurantLayoutContent({
   const pathname = usePathname()
   const { user, signOut } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
-  
+
   return (
     <div className="flex min-h-screen bg-gray-100 font-sans">
       {/* Sidebar */}
@@ -76,45 +77,53 @@ function RestaurantLayoutContent({
         {/* Navigation */}
         <nav className="flex-1 py-4">
           <div className="space-y-1 px-2">
-            <Link 
-              href="/restaurant" 
+            <Link
+              href="/restaurant"
               className={`flex items-center gap-3 px-2 py-2 rounded-xl transition cursor-pointer ${pathname === '/restaurant' ? 'bg-gray-200 text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               <Home className="w-5 h-5" />
               {!collapsed && <span className="text-sm font-medium">Dashboard</span>}
             </Link>
 
-            <Link 
-              href="/restaurant/orders" 
+            <Link
+              href="/restaurant/orders"
               className={`flex items-center gap-3 px-2 py-2 rounded-xl transition cursor-pointer ${pathname === '/restaurant/orders' ? 'bg-gray-200 text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               <ShoppingBag className="w-5 h-5" />
               {!collapsed && <span className="text-sm font-medium">Orders</span>}
             </Link>
-            <Link 
-              href="/restaurant/menu" 
+            <Link
+              href="/restaurant/menu"
               className={`flex items-center gap-3 px-2 py-2 rounded-xl transition cursor-pointer ${pathname === '/restaurant/menu' ? 'bg-gray-200 text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               <Utensils className="w-5 h-5" />
               {!collapsed && <span className="text-sm font-medium">Food Menu</span>}
             </Link>
-            <Link 
-              href="/restaurant/payments" 
+            <Link
+              href="/restaurant/payments"
               className={`flex items-center gap-3 px-2 py-2 rounded-xl transition cursor-pointer ${pathname === '/restaurant/payments' ? 'bg-gray-200 text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               <CreditCard className="w-5 h-5" />
               {!collapsed && <span className="text-sm font-medium">Payments</span>}
             </Link>
 
-            <Link 
-              href="/restaurant/dish" 
+            <Link
+              href="/restaurant/analytics"
+              className={`flex items-center gap-3 px-2 py-2 rounded-xl transition cursor-pointer ${pathname === '/restaurant/analytics' ? 'bg-gray-200 text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <BarChart3 className="w-5 h-5" />
+              {!collapsed && <span className="text-sm font-medium">Analytics</span>}
+            </Link>
+
+            <Link
+              href="/restaurant/dish"
               className={`flex items-center gap-3 px-2 py-2 rounded-xl transition cursor-pointer ${pathname === '/restaurant/dish' ? 'bg-gray-200 text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               <Utensils className="w-5 h-5" />
               {!collapsed && <span className="text-sm font-medium">Dish</span>}
             </Link>
-            <Link 
-              href="/restaurant/feedback" 
+            <Link
+              href="/restaurant/feedback"
               className={`flex items-center gap-3 px-2 py-2 rounded-xl transition cursor-pointer ${pathname === '/restaurant/feedback' ? 'bg-gray-200 text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               <MessageSquare className="w-5 h-5" />
@@ -125,15 +134,15 @@ function RestaurantLayoutContent({
           <div className={`mt-6 px-4 ${collapsed ? 'hidden' : ''}`}>
             <p className="text-xs font-medium text-gray-500 mb-2">Others</p>
             <div className="space-y-1">
-              <Link 
-                href="/restaurant/support" 
+              <Link
+                href="/restaurant/support"
                 className={`flex items-center gap-3 px-2 py-2 rounded-xl transition cursor-pointer ${pathname === '/restaurant/support' ? 'bg-gray-200 text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 <HelpCircle className="w-5 h-5" />
                 <span className="text-sm font-medium">Support</span>
               </Link>
 
-              <button 
+              <button
                 onClick={signOut}
                 className="flex items-center gap-3 px-2 py-2 rounded-xl text-red-600 hover:bg-red-50 transition cursor-pointer w-full text-left"
               >

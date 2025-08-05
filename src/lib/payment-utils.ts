@@ -18,8 +18,7 @@ export function encrypt(text: string): string {
     // Combine IV and encrypted text
     return iv.toString('hex') + ':' + encrypted
   } catch (error) {
-    console.error('Encryption error:', error)
-    // Fallback to simple base64 encoding for development
+    // Fallback to simple base64 encoding
     return Buffer.from(text).toString('base64')
   }
 }
@@ -42,7 +41,6 @@ export function decrypt(encryptedText: string): string {
     
     return decrypted
   } catch (error) {
-    console.error('Decryption error:', error)
     // Fallback to base64 decode
     try {
       return Buffer.from(encryptedText, 'base64').toString('utf8')
@@ -75,7 +73,6 @@ export async function getDecryptedCredentials(restaurant_id: string) {
       environment: data.cashfree_environment
     }
   } catch (error) {
-    console.error('Error getting decrypted credentials:', error)
     return null
   }
 }

@@ -1,14 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
-import { convertFileToBase64, validateImageFile, compressImage } from '@/utils/imageUtils';
+import { validateImageFile, uploadToCloudinary, CloudinaryUploadResult } from '@/utils/imageUtils';
 
 interface ImageUploadProps {
-  value?: string | null; // Base64 string
-  onChange: (base64: string | null) => void;
+  value?: string | null; // Image URL (Cloudinary URL)
+  onChange: (imageUrl: string | null, publicId?: string) => void;
   placeholder?: string;
   className?: string;
-  maxWidth?: number;
-  quality?: number;
+  disabled?: boolean;
+  onUploadStart?: () => void;
+  onUploadComplete?: (result: CloudinaryUploadResult) => void;
+  onUploadError?: (error: string) => void;
 }
 
 export const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -16,33 +18,52 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   onChange,
   placeholder = "Click to upload image or drag and drop",
   className = "",
-  maxWidth = 800,
-  quality = 0.8
+  disabled = false,
+  onUploadStart,
+  onUploadComplete,
+  onUploadError
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (file: File) => {
+    if (disabled) return;
+    
     setError(null);
     setIsUploading(true);
+    setUploadProgress('Validating file...');
+    onUploadStart?.();
 
     try {
       // Validate file
       const validation = validateImageFile(file);
       if (!validation.isValid) {
         setError(validation.error || 'Invalid file');
+        onUploadError?.(validation.error || 'Invalid file');
         return;
       }
 
-      // Compress and convert to base64
-      const base64 = await compressImage(file, maxWidth, quality);
-      onChange(base64);
+      setUploadProgress('Uploading to Cloudinary...');
+      
+      // Upload to Cloudinary
+      const result = await uploadToCloudinary(file);
+      
+      setUploadProgress('Upload complete!');
+      
+      // Call the onChange with the secure URL and public ID
+      onChange(result.secure_url, result.public_id);
+      onUploadComplete?.(result);
+      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to process image');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to upload image';
+      setError(errorMessage);
+      onUploadError?.(errorMessage);
     } finally {
       setIsUploading(false);
+      setUploadProgress('');
     }
   };
 
@@ -128,16 +149,18 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       ) : (
         // Upload area
         <div
-          onClick={handleClick}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
+          onClick={disabled ? undefined : handleClick}
+          onDrop={disabled ? undefined : handleDrop}
+          onDragOver={disabled ? undefined : handleDragOver}
+          onDragLeave={disabled ? undefined : handleDragLeave}
           className={`
-            w-full h-48 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200
+            w-full h-48 border-2 border-dashed rounded-lg transition-all duration-200
             flex flex-col items-center justify-center gap-3
-            ${isDragging 
-              ? 'border-blue-500 bg-blue-50' 
-              : 'border-gray-300 hover:border-gray-400 bg-gray-50 hover:bg-gray-100'
+            ${disabled 
+              ? 'border-gray-200 bg-gray-100 cursor-not-allowed opacity-60' 
+              : isDragging 
+                ? 'border-blue-500 bg-blue-50 cursor-pointer' 
+                : 'border-gray-300 hover:border-gray-400 bg-gray-50 hover:bg-gray-100 cursor-pointer'
             }
             ${isUploading ? 'pointer-events-none opacity-50' : ''}
           `}
@@ -145,17 +168,17 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           {isUploading ? (
             <>
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="text-sm text-gray-600">Processing image...</p>
+              <p className="text-sm text-gray-600">{uploadProgress || 'Processing image...'}</p>
             </>
           ) : (
             <>
               <ImageIcon className="w-12 h-12 text-gray-400" />
               <div className="text-center">
                 <p className="text-sm font-medium text-gray-700">
-                  {placeholder}
+                  {disabled ? 'Image upload temporarily disabled' : placeholder}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  PNG, JPG, GIF up to 5MB
+                  {disabled ? 'Cloudinary integration coming soon' : 'PNG, JPG, GIF up to 5MB • Powered by Cloudinary'}
                 </p>
               </div>
             </>

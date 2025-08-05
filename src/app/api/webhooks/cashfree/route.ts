@@ -31,10 +31,7 @@ export async function POST(request: NextRequest) {
     const body = await request.text()
     const signature = request.headers.get('x-webhook-signature')
     
-    // For development/testing, allow requests without signature
-    const isDevelopment = process.env.NODE_ENV === 'development'
-    
-    if (!signature && !isDevelopment) {
+    if (!signature) {
       console.log('No webhook signature provided')
       return NextResponse.json({ error: 'No signature provided' }, { status: 400 })
     }

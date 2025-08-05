@@ -68,9 +68,7 @@ export default function OrdersPage() {
     }, 2000)
   }
 
-  const debugOrder = (orderId: string) => {
-    window.open(`/api/orders/lookup?order_id=${orderId}`, '_blank')
-  }
+
 
   const viewOrderDetails = (orderId: string) => {
     window.open(`/payment/success?order_id=${orderId}`, '_blank')
@@ -253,13 +251,6 @@ export default function OrdersPage() {
                         title="Copy Order ID"
                       >
                         Copy ID
-                      </button>
-                      <button
-                        onClick={() => debugOrder(order.id)}
-                        className="text-purple-600 hover:text-purple-900"
-                        title="Debug Order"
-                      >
-                        Debug
                       </button>
                     </div>
                   </td>

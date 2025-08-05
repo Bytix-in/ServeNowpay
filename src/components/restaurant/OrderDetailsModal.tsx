@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import InvoiceModal from "@/components/invoice/InvoiceModal";
 
 interface OrderDetailsModalProps {
   isOpen: boolean;
@@ -27,13 +28,12 @@ interface OrderDetails {
   restaurant_id: string;
 }
 
-
-
 export default function OrderDetailsModal({ isOpen, onClose, orderId }: OrderDetailsModalProps) {
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   useEffect(() => {
     if (isOpen && orderId) {
@@ -70,8 +70,7 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }: OrderDet
   };
 
   const formatCurrency = (amount: number) => {
-    // Use simple formatting to avoid encoding issues
-    return `Rs. ${amount.toFixed(2)}`;
+    return `₹${amount.toFixed(2)}`;
   };
 
   const formatDateTime = (timestamp: string) => {
@@ -129,600 +128,223 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }: OrderDet
     }
   };
 
-  // Print invoice function
-  const printInvoice = async (order: OrderDetails) => {
-    try {
-      // Show loading state
-      const button = document.querySelector('button[disabled]') as HTMLButtonElement;
-      const originalText = button?.textContent;
-      if (button) {
-        button.textContent = 'Preparing Invoice...';
-        button.disabled = true;
-      }
-
-      // Generate invoice for printing
-      const response = await fetch('/api/download-invoice', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          orderId: order.id,
-          customerPhone: order.customer_phone
-        })
-      });
-
-      if (response.ok) {
-        const contentType = response.headers.get('content-type');
-        
-        // Always get the content as HTML for better printing compatibility
-        const htmlContent = await response.text();
-        
-        // Open HTML in new window for printing
-        const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-        if (printWindow) {
-          // Write the HTML content
-          printWindow.document.open();
-          printWindow.document.write(htmlContent);
-          printWindow.document.close();
-          
-          // Wait for content and images to load, then print
-          printWindow.onload = () => {
-            setTimeout(() => {
-              printWindow.print();
-            }, 500);
-          };
-          
-          // Fallback print trigger for older browsers
-          setTimeout(() => {
-            if (printWindow && !printWindow.closed) {
-              printWindow.print();
-            }
-          }, 2000);
-        } else {
-          alert('Please allow popups to print the invoice.');
-        }
-        
-      } else {
-        const errorText = await response.text();
-        throw new Error(`Failed to generate invoice: ${errorText}`);
-      }
-
-    } catch (error) {
-      console.error('Error printing invoice:', error);
-      alert('❌ Failed to print invoice. Please try again.');
-    } finally {
-      // Reset button state
-      const button = document.querySelector('button[disabled]') as HTMLButtonElement;
-      if (button) {
-        button.textContent = 'Print Invoice';
-        button.disabled = order?.payment_status !== 'completed';
-      }
+  // Open invoice modal
+  const openInvoiceModal = () => {
+    if (order?.payment_status === 'completed') {
+      setShowInvoiceModal(true);
     }
-  };
-
-  // Generate simple invoice HTML as fallback
-  const generateSimpleInvoice = (order: OrderDetails) => {
-    const formatCurrency = (amount: number) => {
-      // Use simple formatting to avoid encoding issues
-      return `Rs. ${amount.toFixed(2)}`;
-    };
-
-    const formatDate = (dateString: string) => {
-      return new Date(dateString).toLocaleString('en-IN', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-    };
-
-    // Calculate GST
-    const totalAmount = order.total_amount;
-    const subtotal = Math.round((totalAmount / 1.05) * 100) / 100;
-    const cgst = Math.round(((subtotal * 0.025) * 100)) / 100;
-    const sgst = Math.round(((subtotal * 0.025) * 100)) / 100;
-
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Invoice - ${order.unique_order_id}</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-            color: #333;
-          }
-          .header {
-            text-align: center;
-            border-bottom: 3px solid #8b5cf6;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-          }
-          .header h1 {
-            color: #8b5cf6;
-            font-size: 2.5em;
-            margin: 0;
-          }
-          .invoice-info {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
-          }
-          .info-section h3 {
-            color: #8b5cf6;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 5px;
-            margin-bottom: 15px;
-          }
-          .info-section p {
-            margin: 5px 0;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-          }
-          th, td {
-            border: 1px solid #ddd;
-            padding: 12px 8px;
-            text-align: left;
-          }
-          th {
-            background-color: #8b5cf6;
-            color: white;
-            font-weight: bold;
-          }
-          tbody tr:nth-child(even) {
-            background-color: #f8f9fa;
-          }
-          .total-section {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 20px;
-            text-align: center;
-          }
-          .total-section h3 {
-            margin: 0 0 10px 0;
-          }
-          .total-amount {
-            font-size: 2em;
-            font-weight: bold;
-            margin: 10px 0;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid #e5e7eb;
-            color: #666;
-          }
-          .tax-breakdown {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-          }
-          .tax-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
-          }
-          .tax-total {
-            border-top: 2px solid #333;
-            padding-top: 10px;
-            margin-top: 10px;
-            font-weight: bold;
-            font-size: 1.2em;
-          }
-          @media print {
-            body { margin: 0; padding: 15px; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>INVOICE</h1>
-          <p>Order #${order.unique_order_id}</p>
-        </div>
-
-        <div class="invoice-info">
-          <div class="info-section">
-            <h3>Restaurant Details</h3>
-            <p><strong>Name:</strong> Restaurant</p>
-            <p><strong>Address:</strong> Restaurant Address</p>
-            <p><strong>Phone:</strong> Restaurant Phone</p>
-          </div>
-          
-          <div class="info-section">
-            <h3>Customer Details</h3>
-            <p><strong>Name:</strong> ${order.customer_name}</p>
-            <p><strong>Phone:</strong> +91 ${order.customer_phone}</p>
-            <p><strong>Table:</strong> ${order.table_number}</p>
-            <p><strong>Date:</strong> ${formatDate(order.created_at)}</p>
-          </div>
-        </div>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Item Name</th>
-              <th>Quantity</th>
-              <th>Unit Price</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${order.items.map(item => `
-              <tr>
-                <td>${item.dish_name || item.name}</td>
-                <td>${item.quantity}</td>
-                <td>${formatCurrency(item.price || 0)}</td>
-                <td>${formatCurrency(item.total || (item.price * item.quantity) || 0)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-
-        <div class="tax-breakdown">
-          <div class="tax-row">
-            <span>Subtotal:</span>
-            <span>${formatCurrency(subtotal)}</span>
-          </div>
-          <div class="tax-row">
-            <span>CGST @2.5%:</span>
-            <span>${formatCurrency(cgst)}</span>
-          </div>
-          <div class="tax-row">
-            <span>SGST @2.5%:</span>
-            <span>${formatCurrency(sgst)}</span>
-          </div>
-          <div class="tax-row tax-total">
-            <span>Total Amount:</span>
-            <span>${formatCurrency(totalAmount)}</span>
-          </div>
-        </div>
-
-        <div class="footer">
-          <p><strong>ServeNowPay</strong> - Digital Restaurant Ordering System</p>
-          <p>This is a computer-generated invoice.</p>
-          <p>Generated on: ${new Date().toLocaleString('en-IN')}</p>
-        </div>
-      </body>
-      </html>
-    `;
   };
 
   if (!isOpen) return null;
 
   return (
     <>
-      <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          .print-content, .print-content * {
-            visibility: visible;
-          }
-          .print-content {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-          }
-          .no-print {
-            display: none !important;
-          }
-        }
-      `}</style>
-      
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl print-content"
+          className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
         >
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Order Details</h2>
-            <p className="text-gray-500 text-sm">Complete order and payment information</p>
-          </div>
-          <div className="flex items-center gap-3 no-print">
-            <button
-              onClick={() => fetchOrderDetails(true)}
-              disabled={refreshing}
-              className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition flex items-center gap-2 text-sm disabled:opacity-50"
-            >
-              <span className={refreshing ? "animate-spin" : ""}>🔄</span>
-              {refreshing ? 'Refreshing...' : 'Refresh'}
-            </button>
-            <button
-              onClick={() => printInvoice(order)}
-              disabled={order?.payment_status !== 'completed'}
-              className="px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span>🖨️</span>
-              {order?.payment_status === 'completed' ? 'Print Invoice' : 'Payment Required'}
-            </button>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-6">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-              <p className="text-gray-600">Loading order details...</p>
+          {/* Header */}
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Order Details</h2>
+              <p className="text-gray-500 text-sm">Complete order and payment information</p>
             </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="text-red-500 text-6xl mb-4">⚠️</div>
-              <p className="text-red-600 font-semibold mb-2">Error Loading Order</p>
-              <p className="text-gray-600 text-center">{error}</p>
+            <div className="flex items-center gap-3">
               <button
-                onClick={fetchOrderDetails}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                onClick={() => fetchOrderDetails(true)}
+                disabled={refreshing}
+                className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition flex items-center gap-2 text-sm disabled:opacity-50"
               >
-                Try Again
+                <span className={refreshing ? "animate-spin" : ""}>🔄</span>
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </button>
+              <button
+                onClick={openInvoiceModal}
+                disabled={order?.payment_status !== 'completed'}
+                className="px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span>🧾</span>
+                {order?.payment_status === 'completed' ? 'View Invoice' : 'Payment Required'}
+              </button>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition"
+              >
+                ×
               </button>
             </div>
-          ) : order ? (
-            <div className="space-y-6">
-              {/* Order Summary */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">#{order.unique_order_id}</h3>
-                    <p className="text-gray-600">Order placed on {formatDateTime(order.created_at)}</p>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
-                      {getStatusLabel(order.status)}
-                    </span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPaymentStatusColor(order.payment_status)}`}>
-                      {getPaymentStatusLabel(order.payment_status)}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-white rounded-lg p-4 border border-gray-100">
-                    <h4 className="font-semibold text-gray-700 mb-2">Customer Information</h4>
-                    <p className="font-medium text-gray-900">{order.customer_name}</p>
-                    <p className="text-gray-600">{order.customer_phone}</p>
-                  </div>
-                  
-                  <div className="bg-white rounded-lg p-4 border border-gray-100">
-                    <h4 className="font-semibold text-gray-700 mb-2">Table Information</h4>
-                    <p className="font-medium text-gray-900">Table {order.table_number}</p>
-                  </div>
-                  
-                  <div className="bg-white rounded-lg p-4 border border-gray-100">
-                    <h4 className="font-semibold text-gray-700 mb-2">Order Total</h4>
-                    <p className="font-bold text-2xl text-green-600">{formatCurrency(order.total_amount)}</p>
-                  </div>
-                </div>
-              </div>
+          </div>
 
-              {/* Order Items */}
-              <div className="bg-white rounded-xl border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Order Items</h3>
-                </div>
-                <div className="p-6">
-                  <div className="space-y-4">
-                    {order.items.map((item: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{item.dish_name || item.name}</h4>
-                          <p className="text-gray-600 text-sm">Quantity: {item.quantity}</p>
-                          <p className="text-gray-600 text-sm">Unit Price: {formatCurrency(item.price)}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-gray-900">{formatCurrency(item.total)}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="mt-6 pt-4 border-t border-gray-200">
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold text-gray-900">Total Amount:</span>
-                      <span className="text-xl font-bold text-green-600">{formatCurrency(order.total_amount)}</span>
-                    </div>
-                  </div>
-                </div>
+          {/* Content */}
+          <div className="p-6">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                <p className="text-gray-600">Loading order details...</p>
               </div>
-
-              {/* Payment Details */}
-              <div className="bg-white rounded-xl border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Payment Information</h3>
-                </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="text-red-500 text-6xl mb-4">⚠️</div>
+                <p className="text-red-600 font-semibold mb-2">Error Loading Order</p>
+                <p className="text-gray-600 text-center">{error}</p>
+                <button
+                  onClick={fetchOrderDetails}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : order ? (
+              <div className="space-y-6">
+                {/* Order Summary */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+                  <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h4 className="font-medium text-gray-700 mb-3">Payment Status</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-600">Status:</span>
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(order.payment_status)}`}>
-                            {getPaymentStatusLabel(order.payment_status)}
-                          </span>
-                        </div>
-                        
-                        {order.payment_status === 'completed' && (
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-green-600">✅</span>
-                              <span className="text-green-800 font-medium">Payment Successful</span>
-                            </div>
-                            <p className="text-green-700 text-sm mt-1">
-                              Customer has successfully paid {formatCurrency(order.total_amount)}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {order.payment_status === 'pending' && (
-                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-yellow-600">⏳</span>
-                              <span className="text-yellow-800 font-medium">Payment Pending</span>
-                            </div>
-                            <p className="text-yellow-700 text-sm mt-1">
-                              Waiting for customer to complete payment
-                            </p>
-                          </div>
-                        )}
-                        
-                        {order.payment_status === 'failed' && (
-                          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-red-600">❌</span>
-                              <span className="text-red-800 font-medium">Payment Failed</span>
-                            </div>
-                            <p className="text-red-700 text-sm mt-1">
-                              Payment could not be processed. Customer may need to retry.
-                            </p>
-                          </div>
-                        )}
-                        
-                        {order.payment_id && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Payment ID:</span>
-                            <span className="font-mono text-sm text-gray-900 bg-gray-100 px-2 py-1 rounded">
-                              {order.payment_id}
-                            </span>
-                          </div>
-                        )}
-                        {order.payment_gateway_order_id && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Gateway Order ID:</span>
-                            <span className="font-mono text-sm text-gray-900 bg-gray-100 px-2 py-1 rounded">
-                              {order.payment_gateway_order_id}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                      <h3 className="text-xl font-bold text-gray-900">#{order.unique_order_id}</h3>
+                      <p className="text-gray-600">Order placed on {formatDateTime(order.created_at)}</p>
                     </div>
-                    
-                    <div>
-                      <h4 className="font-medium text-gray-700 mb-3">Amount Breakdown</h4>
-                      <div className="space-y-3">
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <div className="space-y-2">
-                            {(() => {
-                              // Calculate GST breakdown (same as invoice)
-                              const totalAmount = order.total_amount;
-                              const subtotal = Math.round((totalAmount / 1.05) * 100) / 100;
-                              const cgst = Math.round(((subtotal * 0.025) * 100)) / 100;
-                              const sgst = Math.round(((subtotal * 0.025) * 100)) / 100;
-                              const totalTax = cgst + sgst;
-                              
-                              return (
-                                <>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">Subtotal (before tax):</span>
-                                    <span className="text-gray-900">{formatCurrency(subtotal)}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">CGST @2.5%:</span>
-                                    <span className="text-gray-900">{formatCurrency(cgst)}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">SGST @2.5%:</span>
-                                    <span className="text-gray-900">{formatCurrency(sgst)}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">Total Tax (5%):</span>
-                                    <span className="text-gray-900">{formatCurrency(totalTax)}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">Discount:</span>
-                                    <span className="text-gray-900">₹0.00</span>
-                                  </div>
-                                  <div className="flex justify-between font-semibold text-lg pt-2 border-t border-gray-300">
-                                    <span className="text-gray-900">Final Amount:</span>
-                                    <span className="text-green-600">{formatCurrency(totalAmount)}</span>
-                                  </div>
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                        
-                        {order.payment_status === 'completed' && (
-                          <div className="text-center">
-                            <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-2 rounded-lg">
-                              <span>💳</span>
-                              <span className="font-medium">Amount Received</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Order Timeline */}
-              <div className="bg-white rounded-xl border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900">Order Timeline</h3>
-                </div>
-                <div className="p-6">
-                  <div className="space-y-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                      <div>
-                        <p className="font-medium text-gray-900">Order Created</p>
-                        <p className="text-sm text-gray-600">{formatDateTime(order.created_at)}</p>
-                      </div>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
+                        {getStatusLabel(order.status)}
+                      </span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPaymentStatusColor(order.payment_status)}`}>
+                        {getPaymentStatusLabel(order.payment_status)}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-white rounded-lg p-4 border border-gray-100">
+                      <h4 className="font-semibold text-gray-700 mb-2">Customer Information</h4>
+                      <p className="font-medium text-gray-900">{order.customer_name}</p>
+                      <p className="text-gray-600">{order.customer_phone}</p>
                     </div>
                     
-                    {order.updated_at !== order.created_at && (
-                      <div className="flex items-center space-x-3">
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <div>
-                          <p className="font-medium text-gray-900">Last Updated</p>
-                          <p className="text-sm text-gray-600">{formatDateTime(order.updated_at)}</p>
+                    <div className="bg-white rounded-lg p-4 border border-gray-100">
+                      <h4 className="font-semibold text-gray-700 mb-2">Table Information</h4>
+                      <p className="font-medium text-gray-900">Table {order.table_number}</p>
+                    </div>
+                    
+                    <div className="bg-white rounded-lg p-4 border border-gray-100">
+                      <h4 className="font-semibold text-gray-700 mb-2">Order Total</h4>
+                      <p className="font-bold text-2xl text-green-600">{formatCurrency(order.total_amount)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Items */}
+                <div className="bg-white rounded-xl border border-gray-200">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900">Order Items</h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="space-y-4">
+                      {order.items && order.items.length > 0 ? order.items.map((item: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900">{item.dish_name || item.name}</h4>
+                            <p className="text-gray-600 text-sm">Quantity: {item.quantity}</p>
+                            <p className="text-gray-600 text-sm">Unit Price: {formatCurrency(item.price)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-gray-900">{formatCurrency(item.total)}</p>
+                          </div>
+                        </div>
+                      )) : (
+                        <div className="text-center py-8 text-gray-500">
+                          No items found for this order
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold text-gray-900">Total Amount:</span>
+                        <span className="text-xl font-bold text-green-600">{formatCurrency(order.total_amount)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Details */}
+                <div className="bg-white rounded-xl border border-gray-200">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900">Payment Information</h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium text-gray-700 mb-3">Payment Status</h4>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Status:</span>
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(order.payment_status)}`}>
+                              {getPaymentStatusLabel(order.payment_status)}
+                            </span>
+                          </div>
+                          
+                          {order.payment_status === 'completed' && (
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-green-600">✅</span>
+                                <span className="text-green-800 font-medium">Payment Successful</span>
+                              </div>
+                              <p className="text-green-700 text-sm mt-1">
+                                Customer has successfully paid {formatCurrency(order.total_amount)}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {order.payment_id && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Payment ID:</span>
+                              <span className="font-mono text-sm text-gray-900 bg-gray-100 px-2 py-1 rounded">
+                                {order.payment_id}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    )}
+                      
+                      <div>
+                        <h4 className="font-medium text-gray-700 mb-3">Amount Breakdown</h4>
+                        <div className="space-y-3">
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="space-y-2">
+                              <div className="flex justify-between font-semibold text-lg pt-2 border-t border-gray-300">
+                                      <span className="text-gray-900">Final Amount:</span>
+                                      <span className="text-green-600">{formatCurrency(order.total_amount)}</span>
+                                    </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="text-gray-400 text-6xl mb-4">📋</div>
+                <p className="text-gray-600">Order not found</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
 
-
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="text-gray-400 text-6xl mb-4">📋</div>
-              <p className="text-gray-600">Order not found</p>
-            </div>
-          )}
-        </div>
-      </motion.div>
-    </div>
+        {/* Invoice Modal */}
+        {showInvoiceModal && order && (
+          <InvoiceModal
+            isOpen={showInvoiceModal}
+            onClose={() => setShowInvoiceModal(false)}
+            orderId={order.id}
+            customerPhone={order.customer_phone}
+          />
+        )}
+      </div>
     </>
   );
 }

@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       .eq('restaurant_id', restaurant_id)
       .single()
 
-    // Debug: Let's also check all payment settings for this restaurant
+    // Check all payment settings for this restaurant
     const { data: allSettings } = await supabase
       .from('payment_settings')
       .select('*')
@@ -30,13 +30,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Payment settings not found. Please configure your Cashfree credentials first.',
-          debug: {
-            restaurant_id,
-            error: error?.message,
-            allSettingsCount: allSettings?.length || 0,
-            hasSettings: !!allSettings && allSettings.length > 0
-          }
+          error: 'Payment settings not found. Please configure your Cashfree credentials first.'
         },
         { status: 404 }
       )

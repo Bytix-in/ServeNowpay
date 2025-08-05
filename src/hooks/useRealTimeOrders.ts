@@ -53,7 +53,6 @@ export function useRealTimeOrders({
       setOrders(data || []);
       setLastUpdate(new Date());
     } catch (err) {
-      console.error('Error fetching orders:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch orders');
     } finally {
       setLoading(false);

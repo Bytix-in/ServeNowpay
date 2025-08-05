@@ -110,7 +110,8 @@ export async function POST(request: NextRequest) {
       ingredients: body.ingredients || '',
       tags: body.tags || '',
       image_url: body.image_url || null,
-      image_data: body.image_data || null
+      cloudinary_public_id: body.cloudinary_public_id || null
+      // Note: image_data (base64) field removed - using Cloudinary URLs only
     }
 
     // Insert into database

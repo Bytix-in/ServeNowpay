@@ -40,7 +40,6 @@ export function usePaymentStatus() {
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
-      console.error('Error fetching payment status:', err)
     } finally {
       setLoading(false)
     }

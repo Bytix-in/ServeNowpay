@@ -71,8 +71,6 @@ interface RecentOrder {
   payment_status: string
   created_at: string
   items: any[]
-  invoice_base64?: string
-  invoice_generated?: boolean
 }
 
 interface ChartDataPoint {
@@ -110,6 +108,7 @@ export default function RestaurantDashboard() {
   const [revenueProfileData, setRevenueProfileData] = useState<ChartDataPoint[]>([])
   const [chartPeriod, setChartPeriod] = useState<'7days' | '30days' | '90days'>('30days')
   const [downloadingInvoice, setDownloadingInvoice] = useState<string | null>(null)
+  const [hasNoData, setHasNoData] = useState(false)
 
   // Generate chart data from orders
   const generateChartData = (orders: RecentOrder[], period: '7days' | '30days' | '90days') => {
@@ -156,11 +155,33 @@ export default function RestaurantDashboard() {
       // Get all orders for the restaurant
       const { data: orders, error } = await supabase
         .from('orders')
-        .select('*, invoice_base64, invoice_generated')
+        .select('*')
         .eq('restaurant_id', user.restaurantId)
         .order('created_at', { ascending: false })
 
       if (error) throw error
+
+      // Check if there are any orders at all in the database
+      
+      if (!orders || orders.length === 0) {
+        console.log('No orders found for restaurant:', user.restaurantId)
+        
+        // Check if there are any orders in the database at all
+        const { data: allOrders } = await supabase
+          .from('orders')
+          .select('id, restaurant_id, unique_order_id, customer_name, total_amount, created_at')
+          .limit(5)
+        
+        console.log('Sample orders in database:', allOrders)
+        
+        // Check if there are any restaurants in the database
+        const { data: restaurants } = await supabase
+          .from('restaurants')
+          .select('id, name, slug')
+          .limit(3)
+        
+        console.log('Sample restaurants in database:', restaurants)
+      }
 
       const today = new Date()
       today.setHours(0, 0, 0, 0)
@@ -198,6 +219,7 @@ export default function RestaurantDashboard() {
       setDashboardStats(stats)
       setRecentOrders(orders?.slice(0, 10) || [])
       setLastUpdated(new Date())
+      setHasNoData(!orders || orders.length === 0)
 
     } catch (error) {
       console.error('Error fetching dashboard stats:', error)
@@ -292,73 +314,37 @@ export default function RestaurantDashboard() {
     }
   }
 
-  // Download invoice from base64 data
+  // Generate and download invoice dynamically
   const downloadInvoice = async (order: RecentOrder) => {
     try {
       setDownloadingInvoice(order.id)
       
-      // Check if invoice exists in the order data
-      if (!order.invoice_base64) {
-        // If no invoice exists, try to generate one
-        const response = await fetch('/api/auto-generate-invoice', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            orderId: order.id
-          })
+      // Generate invoice dynamically using the new system
+      const response = await fetch('/api/dynamic-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: order.id,
+          customerPhone: order.customer_phone,
+          options: { format: 'pdf' }
         })
+      })
 
-        if (!response.ok) {
-          throw new Error('Failed to generate invoice')
-        }
-
-        const result = await response.json()
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to generate invoice')
-        }
-
-        // Refresh the dashboard data to get the new invoice
-        await fetchDashboardStats()
-        alert('Invoice generated! Please try downloading again.')
-        return
+      if (!response.ok) {
+        throw new Error('Failed to generate invoice')
       }
 
-      // Convert base64 to blob
-      const base64Data = order.invoice_base64
-      const byteCharacters = atob(base64Data)
-      const byteNumbers = new Array(byteCharacters.length)
-      
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i)
-      }
-      
-      const byteArray = new Uint8Array(byteNumbers)
-      
-      // Determine content type based on the data
-      let contentType = 'text/html'
-      let fileExtension = 'html'
-      
-      // Check if it's actually a PDF (starts with PDF signature)
-      if (base64Data.startsWith('JVBERi0')) {
-        contentType = 'application/pdf'
-        fileExtension = 'pdf'
-      }
-      
-      const blob = new Blob([byteArray], { type: contentType })
-      
-      // Create download link
+      // Download the PDF
+      const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `invoice-${order.unique_order_id || order.id.slice(-8)}.${fileExtension}`
+      link.download = `invoice-${order.unique_order_id || order.id.slice(-8)}.pdf`
       
-      // Trigger download
       document.body.appendChild(link)
       link.click()
-      
-      // Cleanup
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
       
@@ -384,6 +370,8 @@ export default function RestaurantDashboard() {
   }
 
   const periodStats = getCurrentPeriodStats()
+
+
 
   // Custom tooltip for the Order Analytics chart
   const OrderAnalyticsTooltip = ({ active, payload, label }: TooltipProps) => {
@@ -471,6 +459,7 @@ export default function RestaurantDashboard() {
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               <span className="text-sm">Refresh</span>
             </button>
+
           </div>
         </div>
         <div className="mt-2 text-xs text-gray-400">
@@ -480,6 +469,43 @@ export default function RestaurantDashboard() {
 
       {/* Payment Setup Banners */}
       <PaymentDisabledBanner />
+
+      {/* No Data Message */}
+      {!loading && hasNoData && (
+        <div className="bg-blue-50 border border-blue-200 rounded-3xl p-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <ShoppingBag className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-1">No Orders Yet</h3>
+              <p className="text-blue-700 text-sm mb-2">
+                Your dashboard will show real-time data once customers start placing orders.
+              </p>
+              {user?.restaurantSlug && (
+                <p className="text-blue-600 text-xs">
+                  Menu Link: <code className="bg-blue-100 px-1 rounded">/{user.restaurantSlug}/menu</code>
+                </p>
+              )}
+            </div>
+            <div className="ml-auto flex gap-2">
+              <button
+                onClick={fixRestaurantData}
+                disabled={loading}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium disabled:opacity-50"
+              >
+                Fix Data
+              </button>
+              <Link
+                href="/restaurant/orders"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+              >
+                View Orders
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Real-time Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -599,6 +625,38 @@ export default function RestaurantDashboard() {
             <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center">
               <TrendingUp className="w-6 h-6 text-blue-600" />
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Quick Access */}
+      <div className="bg-gradient-to-r from-purple-50 to-indigo-100 p-6 rounded-3xl border border-purple-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-purple-200 rounded-full flex items-center justify-center">
+              <BarChart3 className="w-8 h-8 text-purple-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-purple-900 mb-1">Advanced Analytics</h3>
+              <p className="text-purple-700 text-sm mb-2">
+                Get detailed insights with custom date ranges, revenue trends, and performance metrics
+              </p>
+              <div className="flex items-center gap-4 text-sm text-purple-600">
+                <span>• Date Range Selection</span>
+                <span>• Revenue Analysis</span>
+                <span>• Top Dishes Report</span>
+                <span>• Export Data</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Link
+              href="/restaurant/analytics"
+              className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-medium text-center"
+            >
+              View Analytics
+            </Link>
+            <p className="text-xs text-purple-600 text-center">Detailed Reports</p>
           </div>
         </div>
       </div>

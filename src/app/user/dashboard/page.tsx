@@ -67,36 +67,41 @@ export default function UserDashboard() {
     try {
       setLoading(true)
       
-      // Fetch user orders
+      // Clean phone number (remove any non-digits) - same as profile API
+      const cleanPhone = phone.replace(/\D/g, '')
+      console.log('Original phone:', phone, 'Clean phone:', cleanPhone)
+      
+      // Fetch user orders using the same query structure as profile API
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
         .select(`
-          id,
-          unique_order_id,
-          total_amount,
-          status,
-          payment_status,
-          created_at,
-          table_number,
-          items,
-          invoice_base64,
-          invoice_generated,
-          restaurants (
-            name,
-            address
-          )
+          *,
+          restaurant:restaurants(name, address)
         `)
-        .eq('customer_phone', phone)
+        .eq('customer_phone', cleanPhone)
         .order('created_at', { ascending: false })
+
+      console.log('Orders query result:', { orders, error: ordersError, count: orders?.length || 0 })
+
+      // Debug: If no orders found, let's check what phone numbers exist in the database
+      if (!orders || orders.length === 0) {
+        const { data: sampleOrders } = await supabase
+          .from('orders')
+          .select('customer_phone, customer_name, unique_order_id')
+          .limit(5)
+        
+        console.log('Sample orders in database:', sampleOrders)
+        console.log('Looking for phone:', cleanPhone)
+      }
 
       if (ordersError) throw ordersError
 
-      // Process orders data
+      // Process orders data - updated to match the new query structure
       const processedOrders: RecentOrder[] = orders?.map(order => ({
         id: order.id,
         unique_order_id: order.unique_order_id,
-        restaurant_name: order.restaurants?.name || 'Unknown Restaurant',
-        restaurant_address: order.restaurants?.address || null,
+        restaurant_name: order.restaurant?.name || 'Unknown Restaurant',
+        restaurant_address: order.restaurant?.address || null,
         items: order.items || [],
         total_amount: order.total_amount,
         status: order.status,
@@ -144,9 +149,27 @@ export default function UserDashboard() {
   }
 
   useEffect(() => {
-    // Check if user is logged in
-    const phone = localStorage.getItem('userPhone')
-    const isLoggedIn = localStorage.getItem('userLoggedIn')
+    // Check if user is logged in (support both authentication methods)
+    let phone = localStorage.getItem('userPhone')
+    let isLoggedIn = localStorage.getItem('userLoggedIn')
+    
+    // Also check for profile-based session
+    if (!phone || !isLoggedIn) {
+      try {
+        const userSession = localStorage.getItem('userSession')
+        if (userSession) {
+          const session = JSON.parse(userSession)
+          phone = session.phone
+          isLoggedIn = 'true'
+          // Migrate to new format
+          localStorage.setItem('userPhone', phone)
+          localStorage.setItem('userLoggedIn', 'true')
+          localStorage.setItem('userName', session.name)
+        }
+      } catch (error) {
+        console.error('Error parsing user session:', error)
+      }
+    }
     
     if (!phone || !isLoggedIn) {
       router.push('/auth/user-login')
@@ -154,6 +177,8 @@ export default function UserDashboard() {
     }
     
     setUserPhone(phone)
+    console.log('Using phone number for dashboard:', phone)
+    
     // Generate a display name from phone number or use stored name
     const storedName = localStorage.getItem('userName')
     if (storedName) {
@@ -165,18 +190,20 @@ export default function UserDashboard() {
     // Fetch user data
     fetchUserData(phone)
 
-    // Set up real-time subscription for orders
+    // Set up real-time subscription for orders using cleaned phone number
+    const cleanPhone = phone.replace(/\D/g, '')
     const subscription = supabase
-      .channel(`user-orders-${phone}`)
+      .channel(`user-orders-${cleanPhone}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'orders',
-          filter: `customer_phone=eq.${phone}`
+          filter: `customer_phone=eq.${cleanPhone}`
         },
         (payload) => {
+          console.log('Real-time order update received:', payload)
           // Refresh data when orders change
           fetchUserData(phone)
         }
@@ -192,11 +219,49 @@ export default function UserDashboard() {
     }
   }, [router])
 
-  const handleLogout = () => {
-    localStorage.removeItem('userPhone')
-    localStorage.removeItem('userLoggedIn')
-    localStorage.removeItem('userName')
-    router.push('/')
+  const handleLogout = async () => {
+    try {
+      // Get the most recent order to redirect to that restaurant's menu
+      if (recentOrders.length > 0) {
+        const latestOrder = recentOrders[0]
+        
+        // Get restaurant slug from the database
+        const { data: restaurant, error } = await supabase
+          .from('restaurants')
+          .select('slug')
+          .eq('name', latestOrder.restaurant_name)
+          .single()
+        
+        // Clear user session data
+        localStorage.removeItem('userPhone')
+        localStorage.removeItem('userLoggedIn')
+        localStorage.removeItem('userName')
+        localStorage.removeItem('userSession')
+        
+        // Redirect to the restaurant's menu page
+        if (!error && restaurant?.slug) {
+          router.push(`/${restaurant.slug}/menu`)
+        } else {
+          // Fallback to home page if restaurant not found
+          router.push('/')
+        }
+      } else {
+        // No orders found, redirect to home page
+        localStorage.removeItem('userPhone')
+        localStorage.removeItem('userLoggedIn')
+        localStorage.removeItem('userName')
+        localStorage.removeItem('userSession')
+        router.push('/')
+      }
+    } catch (error) {
+      console.error('Error during logout:', error)
+      // Fallback: clear session and redirect to home
+      localStorage.removeItem('userPhone')
+      localStorage.removeItem('userLoggedIn')
+      localStorage.removeItem('userName')
+      localStorage.removeItem('userSession')
+      router.push('/')
+    }
   }
 
   const handleRefresh = () => {
@@ -279,75 +344,65 @@ export default function UserDashboard() {
     })
   }
 
-  // Download invoice from base64 data
+  // Download invoice as PDF using dynamic invoice API
   const downloadInvoice = async (order: RecentOrder) => {
     try {
       setDownloadingPDF(true)
       
-      // Check if invoice exists in the order data
-      if (!order.invoice_base64) {
-        // If no invoice exists, try to generate one
-        const response = await fetch('/api/auto-generate-invoice', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            orderId: order.id
-          })
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to generate invoice')
-        }
-
-        const result = await response.json()
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to generate invoice')
-        }
-
-        // Refresh the order data to get the new invoice
-        await fetchUserData(userPhone)
-        alert('Invoice generated! Please try downloading again.')
-        return
-      }
-
-      // Convert base64 to blob
-      const base64Data = order.invoice_base64
-      const byteCharacters = atob(base64Data)
-      const byteNumbers = new Array(byteCharacters.length)
+      // Clean phone number for API call
+      const cleanPhone = userPhone.replace(/\D/g, '')
       
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      // Generate invoice HTML using dynamic invoice API
+      const response = await fetch(`/api/dynamic-invoice?orderId=${order.id}&customerPhone=${cleanPhone}&format=html`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate invoice')
       }
       
-      const byteArray = new Uint8Array(byteNumbers)
+      // Get the HTML content
+      const htmlContent = await response.text()
       
-      // Determine content type based on the data
-      let contentType = 'text/html'
-      let fileExtension = 'html'
+      // Create a temporary div to render the HTML
+      const tempDiv = document.createElement('div')
+      tempDiv.innerHTML = htmlContent
+      tempDiv.style.position = 'absolute'
+      tempDiv.style.left = '-9999px'
+      tempDiv.style.top = '-9999px'
+      tempDiv.style.width = '800px'
+      document.body.appendChild(tempDiv)
       
-      // Check if it's actually a PDF (starts with PDF signature)
-      if (base64Data.startsWith('JVBERi0')) {
-        contentType = 'application/pdf'
-        fileExtension = 'pdf'
-      }
+      // Import PDF generation libraries
+      const html2canvas = (await import('html2canvas')).default
+      const jsPDF = (await import('jspdf')).jsPDF
       
-      const blob = new Blob([byteArray], { type: contentType })
+      // Convert HTML to canvas
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      })
       
-      // Create download link
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `invoice-${order.unique_order_id || order.id.slice(-8)}.${fileExtension}`
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const imgData = canvas.toDataURL('image/png')
       
-      // Trigger download
-      document.body.appendChild(link)
-      link.click()
+      // Calculate dimensions to fit A4
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = pdf.internal.pageSize.getHeight()
+      const imgWidth = canvas.width
+      const imgHeight = canvas.height
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight)
+      const imgX = (pdfWidth - imgWidth * ratio) / 2
+      const imgY = 0
+      
+      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio)
+      
+      // Download the PDF
+      pdf.save(`invoice-${order.unique_order_id || order.id.slice(-8)}.pdf`)
       
       // Cleanup
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
+      document.body.removeChild(tempDiv)
       
     } catch (error) {
       console.error('Error downloading invoice:', error)
@@ -369,7 +424,7 @@ export default function UserDashboard() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-md mx-auto px-4 py-6">
+        <div className="max-w-5xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <motion.div
@@ -419,7 +474,7 @@ export default function UserDashboard() {
       </div>
 
       {/* Content */}
-      <div className="max-w-md mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
         {/* Quick Stats */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -482,7 +537,7 @@ export default function UserDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100"
+          className="bg-white rounded-lg shadow-sm border border-gray-100"
         >
           <div className="p-4 border-b border-gray-100">
             <div className="flex items-center justify-between">
@@ -493,14 +548,6 @@ export default function UserDashboard() {
                   <span className="text-xs text-gray-500">Real-time updates</span>
                 </div>
               </div>
-              <Button
-                onClick={() => router.push('/user/orders')}
-                variant="ghost"
-                size="sm"
-                className="text-purple-600"
-              >
-                View All
-              </Button>
             </div>
           </div>
           
@@ -515,48 +562,54 @@ export default function UserDashboard() {
               <p className="text-gray-400 text-sm">Start ordering from your favorite restaurants</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div>
               {recentOrders.map((order, index) => (
                 <motion.div
                   key={order.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 + index * 0.1 }}
-                  className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => setSelectedOrder(order)}
+                  className={`p-6 flex items-center justify-between hover:bg-gray-50 transition-colors ${
+                    index !== recentOrders.length - 1 ? 'border-b border-gray-100' : ''
+                  }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium text-gray-900">{order.restaurant_name}</h3>
-                        {order.unique_order_id && (
-                          <span className="text-xs font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                            #{order.unique_order_id}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        {order.items.length > 0 
-                          ? order.items.map(item => `${item.dish_name} x${item.quantity}`).join(', ')
-                          : 'Order details'
-                        }
-                      </p>
-                      <div className="flex items-center gap-4 mt-2">
-                        <span className="text-sm font-medium text-green-600">
-                          {formatCurrency(order.total_amount)}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {formatDateTime(order.created_at)}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          Table {order.table_number}
-                        </span>
-                      </div>
+                  {/* Left side - Restaurant info and date */}
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 text-lg mb-1">
+                      {order.restaurant_name}
+                    </h3>
+                    <div className="flex items-center text-sm text-gray-600 mb-3">
+                      <Clock className="h-4 w-4 mr-1" />
+                      <span>{formatDateTime(order.created_at)}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
+                    
+                    {/* Status badges and table */}
+                    <div className="flex items-center gap-3">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                         {getStatusLabel(order.status)}
                       </span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(order.payment_status)}`}>
+                        {order.payment_status}
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        Table {order.table_number}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right side - Order ID, Amount and Actions */}
+                  <div className="text-right">
+                    {order.unique_order_id && (
+                      <div className="text-sm font-mono text-blue-600 mb-1">
+                        {order.unique_order_id}
+                      </div>
+                    )}
+                    <div className="text-xl font-bold text-green-600 mb-3">
+                      {formatCurrency(order.total_amount)}
+                    </div>
+                    
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-2">
                       {order.payment_status === 'completed' && (
                         <Button
                           onClick={(e) => {
@@ -565,13 +618,22 @@ export default function UserDashboard() {
                           }}
                           variant="outline"
                           size="sm"
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50 flex items-center gap-1"
                           disabled={downloadingPDF}
                         >
-                          <Download className="w-3 h-3" />
+                          <Download className="h-4 w-4" />
+                          Print Invoice
                         </Button>
                       )}
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                      <Button
+                        onClick={() => setSelectedOrder(order)}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1"
+                      >
+                        <Receipt className="h-4 w-4" />
+                        View Details
+                      </Button>
                     </div>
                   </div>
                 </motion.div>
@@ -719,28 +781,7 @@ export default function UserDashboard() {
 
               {/* Action Buttons */}
               <div className="space-y-3 pt-2">
-                {/* Invoice Download Button */}
-                {selectedOrder.payment_status === 'completed' && (
-                  <Button
-                    onClick={() => downloadInvoice(selectedOrder)}
-                    disabled={downloadingPDF}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    {downloadingPDF ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        {selectedOrder.invoice_generated ? 'Downloading...' : 'Generating Invoice...'}
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-4 h-4 mr-2" />
-                        {selectedOrder.invoice_generated ? 'Download Invoice' : 'Generate & Download Invoice'}
-                      </>
-                    )}
-                  </Button>
-                )}
-                
-                {/* Other Action Buttons */}
+                {/* Action Buttons */}
                 <div className="flex gap-3">
                   <Button
                     onClick={() => setSelectedOrder(null)}
@@ -749,15 +790,25 @@ export default function UserDashboard() {
                   >
                     Close
                   </Button>
-                  <Button
-                    onClick={() => {
-                      setSelectedOrder(null)
-                      router.push('/user/orders')
-                    }}
-                    className="flex-1 bg-purple-600 hover:bg-purple-700"
-                  >
-                    View All Orders
-                  </Button>
+                  {selectedOrder.payment_status === 'completed' && (
+                    <Button
+                      onClick={() => downloadInvoice(selectedOrder)}
+                      disabled={downloadingPDF}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {downloadingPDF ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          {selectedOrder.invoice_generated ? 'Downloading...' : 'Generating...'}
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4 mr-2" />
+                          Download Invoice
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

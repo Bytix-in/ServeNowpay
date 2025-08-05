@@ -142,9 +142,9 @@
             margin-right: 10px;
         }
         
-        .status-completed { background-color: #28a745; }
-        .status-pending { background-color: #ffc107; color: #333; }
-        .status-failed { background-color: #dc3545; }
+        .status-completed { background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .status-pending { background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .status-failed { background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
         .status-in-progress { background-color: #007bff; }
         
         @media print {
@@ -161,7 +161,7 @@
     <div class="restaurant-info">
         <h2>{{restaurantName}}</h2>
         <p>{{restaurantAddress}}</p>
-        <p>Phone: {{restaurantPhone}} | GSTIN: {{restaurantGST}}</p>
+        <p>Phone: {{restaurantPhone}}</p>
     </div>
     
     <div class="invoice-details">
@@ -198,9 +198,6 @@
     </table>
     
     <div class="tax-summary">
-        <p><span>Subtotal:</span> <span class="amount-cell">Rs. {{subtotal}}</span></p>
-        <p><span>CGST @2.5%:</span> <span class="amount-cell">Rs. {{cgst}}</span></p>
-        <p><span>SGST @2.5%:</span> <span class="amount-cell">Rs. {{sgst}}</span></p>
         <p class="total-row"><span>Total Amount:</span> <span class="amount-cell">Rs. {{total}}</span></p>
     </div>
     

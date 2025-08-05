@@ -93,7 +93,6 @@ export async function getCurrentUserWithRole(): Promise<User | null> {
 
     return await getUserWithRole(user)
   } catch (error) {
-    console.error('Error getting current user:', error)
     return null
   }
 }
@@ -106,7 +105,6 @@ export async function signOut(): Promise<void> {
       throw new Error(error.message)
     }
   } catch (error) {
-    console.error('Sign out error:', error)
     throw error
   }
 }
@@ -141,7 +139,6 @@ export async function isTokenExpired(): Promise<boolean> {
     // Add buffer of 5 minutes (300 seconds) before actual expiration
     return now >= (expiresAt - 300)
   } catch (error) {
-    console.error('Error checking token expiration:', error)
     return true
   }
 }
@@ -163,7 +160,6 @@ export async function isSessionExpired(): Promise<boolean> {
     
     return (now - lastSignIn) > oneDayInMs
   } catch (error) {
-    console.error('Error checking session expiration:', error)
     return true
   }
 }
@@ -189,7 +185,6 @@ export async function getCurrentUserWithRoleAndExpiration(): Promise<User | null
 
     return currentUser
   } catch (error) {
-    console.error('Error getting current user with expiration check:', error)
     return null
   }
 }
