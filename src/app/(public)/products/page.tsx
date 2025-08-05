@@ -294,8 +294,7 @@ export default function ProductsPage() {
 
       {/* Pricing Note */}
       <div className="mt-16 text-center text-muted-foreground">
-        <p>All prices are listed in Indian Rupees (INR) and are exclusive of applicable taxes.</p>
-        <p>18% GST will be added to all purchases as per Indian tax regulations.</p>
+        <p>All prices are listed in Indian Rupees (INR) inclusive of all taxes.</p>
       </div>
     </div>
   )

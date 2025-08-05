@@ -54,6 +54,8 @@ function PaymentSuccessContent() {
   const paymentStatus = searchParams.get('payment_status')
   const orderStatus = searchParams.get('order_status')
 
+
+
   useEffect(() => {
     // Check URL parameters for payment failure indicators
     if (paymentStatus === 'FAILED' || orderStatus === 'FAILED') {
@@ -79,7 +81,6 @@ function PaymentSuccessContent() {
         order.payment_status !== 'not_configured'
 
       if (needsVerification) {
-        console.log('Setting up timeout for payment status:', order.payment_status)
         setTimeoutActive(true)
         setCountdown(15)
 
@@ -96,7 +97,6 @@ function PaymentSuccessContent() {
         }, 1000)
 
         const timeout = setTimeout(() => {
-          console.log('Timeout reached, redirecting to fallback page')
           setVerificationTimeout(true)
           setTimeoutActive(false)
           clearInterval(countdownInterval)
@@ -105,7 +105,6 @@ function PaymentSuccessContent() {
         }, 15000) // 15 seconds
 
         return () => {
-          console.log('Clearing timeout')
           setTimeoutActive(false)
           clearInterval(countdownInterval)
           clearTimeout(timeout)
@@ -223,11 +222,9 @@ function PaymentSuccessContent() {
           setCountdown(0)
         }
       } else {
-        console.error('Payment verification failed:', data.error || 'Unknown error')
         // Keep current status and let user try again
       }
     } catch (error) {
-      console.error('Payment verification error:', error)
       // Network or other errors - let user try again
     } finally {
       setCheckingStatus(false)
@@ -245,11 +242,15 @@ function PaymentSuccessContent() {
       let response = await fetch(`/api/orders/${orderId}`)
       let data = await response.json()
 
-      // If order not found, try to create it (this handles the case where user lands on success page
-      // but order wasn't created yet due to payment flow issues)
+      // If order not found, try once more after a short delay
       if (!data.success && data.code === 'ORDER_NOT_FOUND') {
-        // For now, we'll just show the error since we don't have order creation data
-        // In a real scenario, this data would come from payment gateway or session storage
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        response = await fetch(`/api/orders/${orderId}`)
+        data = await response.json()
+      }
+
+      // If order still not found, show error
+      if (!data.success && data.code === 'ORDER_NOT_FOUND') {
         throw new Error('Order not found. Please contact the restaurant if you completed payment.')
       }
 
@@ -262,7 +263,6 @@ function PaymentSuccessContent() {
 
         // If payment status is still pending, set it to verifying for better UX
         if (data.order.payment_status === 'pending') {
-          console.log('Updating payment status from pending to verifying')
           try {
             const updateResponse = await fetch(`/api/orders/${orderId}`, {
               method: 'PATCH',
@@ -270,10 +270,9 @@ function PaymentSuccessContent() {
               body: JSON.stringify({ payment_status: 'verifying' })
             })
             const updateResult = await updateResponse.json()
-            console.log('Update result:', updateResult)
             data.order.payment_status = 'verifying'
           } catch (updateError) {
-            console.error('Failed to update payment status:', updateError)
+            // Failed to update status, continue with existing status
             // Continue with pending status if update fails
           }
         }
@@ -408,11 +407,21 @@ function PaymentSuccessContent() {
         <div className="text-center max-w-md mx-auto p-6">
           <div className="text-6xl mb-4">❌</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Not Found</h1>
-          <p className="text-gray-600 mb-6">{error || 'Unable to load order details'}</p>
-          <Button onClick={() => router.push('/')} className="bg-blue-600 hover:bg-blue-700">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Go Home
-          </Button>
+          <p className="text-gray-600 mb-4">{error || 'Unable to load order details'}</p>
+          
+          <div className="flex flex-col gap-2">
+            <Button 
+              onClick={fetchOrderDetails} 
+              className="bg-orange-600 hover:bg-orange-700"
+              disabled={loading}
+            >
+              {loading ? 'Retrying...' : 'Try Again'}
+            </Button>
+            <Button onClick={() => router.push('/')} className="bg-blue-600 hover:bg-blue-700">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Go Home
+            </Button>
+          </div>
         </div>
       </div>
     )

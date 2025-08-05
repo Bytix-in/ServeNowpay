@@ -1,26 +1,26 @@
 import { supabase } from '@/lib/supabase'
-import { generateInvoicePDF, validateOrderData } from '@/lib/generateInvoicePDF'
 
 /**
- * Handle payment status updates and trigger invoice generation
+ * Handle payment status updates with pure dynamic invoice system
+ * No invoice storage - invoices are generated on-demand when needed
  */
 export class PaymentStatusHandler {
   
   /**
-   * Update payment status and generate invoice if completed
+   * Update payment status and ensure order items are migrated for invoice generation
    */
   async updatePaymentStatus(
     orderId: string, 
     newStatus: string, 
     options: {
-      generateInvoice?: boolean
+      migrateOrderItems?: boolean
       webhookSource?: string
     } = {}
   ) {
-    const { generateInvoice = true, webhookSource } = options
+    const { migrateOrderItems = true, webhookSource } = options
 
     try {
-      console.log(`Updating payment status for order ${orderId} to ${newStatus}`)
+
 
       // Update the payment status
       const { data: updatedOrder, error: updateError } = await supabase
@@ -41,13 +41,11 @@ export class PaymentStatusHandler {
           created_at,
           table_number,
           items,
-          invoice_generated,
-          invoice_base64,
           restaurants (
             name,
             address,
-            phone,
-            gst_number
+            phone_number,
+            email,
           )
         `)
         .single()
@@ -62,20 +60,20 @@ export class PaymentStatusHandler {
         oldStatus: 'unknown',
         newStatus,
         paymentUpdated: true,
-        invoiceGenerated: false,
-        invoiceAlreadyExists: false
+        invoiceReady: false,
+        orderItemsMigrated: false
       }
 
-      // If payment is completed and invoice generation is enabled
-      if (newStatus === 'completed' && generateInvoice) {
+      // If payment is completed, ensure order items are migrated for invoice generation
+      if (newStatus === 'completed' && migrateOrderItems) {
         try {
-          const invoiceResult = await this.generateInvoiceForCompletedPayment(updatedOrder)
-          result.invoiceGenerated = invoiceResult.generated
-          result.invoiceAlreadyExists = invoiceResult.alreadyExists
-        } catch (invoiceError) {
-          console.error('Invoice generation failed:', invoiceError)
-          // Don't fail the payment update if invoice generation fails
-          result.invoiceGenerated = false
+          const migrationResult = await this.ensureOrderItemsMigrated(updatedOrder)
+          result.orderItemsMigrated = migrationResult.migrated
+          result.invoiceReady = migrationResult.invoiceReady
+        } catch (migrationError) {
+          // Don't fail the payment update if migration fails
+          result.orderItemsMigrated = false
+          result.invoiceReady = false
         }
       }
 
@@ -85,50 +83,72 @@ export class PaymentStatusHandler {
       return result
 
     } catch (error) {
-      console.error('Error updating payment status:', error)
       throw error
     }
   }
 
   /**
-   * Generate invoice for completed payment
+   * Ensure order items are migrated to order_items table for dynamic invoice generation
    */
-  private async generateInvoiceForCompletedPayment(order: any) {
-    // Check if invoice already exists
-    if (order.invoice_generated && order.invoice_base64) {
-      console.log(`Invoice already exists for order ${order.id}`)
-      return { generated: false, alreadyExists: true }
+  private async ensureOrderItemsMigrated(order: any) {
+    try {
+      // Check if order items already exist in order_items table
+      const { data: existingItems, error: checkError } = await supabase
+        .from('order_items')
+        .select('id')
+        .eq('order_id', order.id)
+        .limit(1)
+
+      if (checkError) {
+        throw new Error(`Failed to check existing order items: ${checkError.message}`)
+      }
+
+      // If items already exist, order is ready for invoice generation
+      if (existingItems && existingItems.length > 0) {
+
+        return { 
+          migrated: true, 
+          invoiceReady: true
+        }
+      }
+
+      // Migrate items from JSONB to order_items table
+      if (order.items && Array.isArray(order.items) && order.items.length > 0) {
+
+        const orderItemsToInsert = order.items.map((item: any) => ({
+          order_id: order.id,
+          dish_name: item.dish_name || item.name || 'Unknown Item',
+          dish_description: item.description || item.dish_description,
+          quantity: item.quantity || 1,
+          unit_price: item.price || item.unit_price || 0,
+          total_price: item.total || item.total_price || (item.price * item.quantity) || 0,
+          dish_type: item.dish_type
+        }))
+
+        const { error: insertError } = await supabase
+          .from('order_items')
+          .insert(orderItemsToInsert)
+
+        if (insertError) {
+          throw new Error(`Failed to migrate order items: ${insertError.message}`)
+        }
+        
+        return { 
+          migrated: true, 
+          invoiceReady: true
+        }
+      }
+
+      // No items to migrate
+      return { 
+        migrated: false, 
+        invoiceReady: false,
+        error: 'No order items found' 
+      }
+
+    } catch (error) {
+      throw error
     }
-
-    // Validate order data
-    if (!validateOrderData(order)) {
-      throw new Error('Invalid order data for invoice generation')
-    }
-
-    console.log(`Generating invoice for completed payment: ${order.id}`)
-
-    // Generate PDF as base64
-    const base64PDF = await generateInvoicePDF(order, {
-      returnBase64: true,
-      format: 'A4'
-    }) as string
-
-    // Update the order with the generated invoice
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({
-        invoice_base64: base64PDF,
-        invoice_generated: true,
-        invoice_generated_at: new Date().toISOString()
-      })
-      .eq('id', order.id)
-
-    if (updateError) {
-      throw new Error(`Failed to save invoice: ${updateError.message}`)
-    }
-
-    console.log(`Invoice generated successfully for order: ${order.id}`)
-    return { generated: true, alreadyExists: false }
   }
 
   /**
@@ -151,7 +171,6 @@ export class PaymentStatusHandler {
           logged_at: new Date().toISOString()
         })
     } catch (error) {
-      console.error('Failed to log payment status update:', error)
       // Don't throw error as this is just logging
     }
   }
@@ -198,31 +217,127 @@ export class PaymentStatusHandler {
   }
 
   /**
-   * Get orders with completed payments but no invoices
+   * Get orders with completed payments that are ready for dynamic invoice generation
    */
-  async getCompletedOrdersWithoutInvoices(limit = 50) {
+  async getCompletedOrdersReadyForInvoice(limit = 50) {
     const { data: orders, error } = await supabase
-      .from('orders')
-      .select(`
-        id,
-        unique_order_id,
-        customer_name,
-        total_amount,
-        payment_status,
-        created_at,
-        invoice_generated,
-        restaurants (name)
-      `)
-      .eq('payment_status', 'completed')
-      .or('invoice_generated.is.null,invoice_generated.eq.false')
+      .from('orders_ready_for_invoice')
+      .select('*')
       .limit(limit)
-      .order('created_at', { ascending: false })
 
     if (error) {
       throw error
     }
 
     return orders || []
+  }
+
+  /**
+   * Migrate all orders with JSONB items to order_items table
+   */
+  async migrateAllOrderItems(limit = 100) {
+    try {
+
+      // Get orders with JSONB items but no migrated order_items
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('id, items')
+        .not('items', 'is', null)
+        .limit(limit)
+
+      if (ordersError) {
+        throw ordersError
+      }
+
+      if (!orders || orders.length === 0) {
+        return {
+          success: true,
+          message: 'No orders found needing migration',
+          processed: 0,
+          migrated: 0
+        }
+      }
+
+      let processed = 0
+      let migrated = 0
+      const results = []
+
+      for (const order of orders) {
+        try {
+          // Check if already migrated
+          const { data: existingItems } = await supabase
+            .from('order_items')
+            .select('id')
+            .eq('order_id', order.id)
+            .limit(1)
+
+          if (existingItems && existingItems.length > 0) {
+            results.push({
+              orderId: order.id,
+              status: 'already_migrated',
+              itemCount: 0
+            })
+            processed++
+            continue
+          }
+
+          // Migrate items
+          if (order.items && Array.isArray(order.items) && order.items.length > 0) {
+            const orderItemsToInsert = order.items.map((item: any) => ({
+              order_id: order.id,
+              dish_name: item.dish_name || item.name || 'Unknown Item',
+              dish_description: item.description || item.dish_description,
+              quantity: item.quantity || 1,
+              unit_price: item.price || item.unit_price || 0,
+              total_price: item.total || item.total_price || (item.price * item.quantity) || 0,
+              dish_type: item.dish_type
+            }))
+
+            const { error: insertError } = await supabase
+              .from('order_items')
+              .insert(orderItemsToInsert)
+
+            if (insertError) {
+              throw insertError
+            }
+
+            results.push({
+              orderId: order.id,
+              status: 'migrated',
+              itemCount: orderItemsToInsert.length
+            })
+            migrated++
+          } else {
+            results.push({
+              orderId: order.id,
+              status: 'no_items',
+              itemCount: 0
+            })
+          }
+
+          processed++
+
+        } catch (error) {
+          results.push({
+            orderId: order.id,
+            status: 'error',
+            error: error instanceof Error ? error.message : 'Unknown error'
+          })
+          processed++
+        }
+      }
+
+      return {
+        success: true,
+        message: `Migration completed: ${processed} processed, ${migrated} migrated`,
+        processed,
+        migrated,
+        results
+      }
+
+    } catch (error) {
+      throw error
+    }
   }
 }
 

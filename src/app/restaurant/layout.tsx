@@ -20,7 +20,8 @@ import {
   HelpCircle,
   CreditCard,
   Menu,
-  Users // Add Users icon
+  Users,
+  BarChart3 // Add BarChart3 icon
 } from 'lucide-react'
 import { RestaurantProtectedRoute } from '@/components/auth/RestaurantProtectedRoute'
 import { useAuth } from '@/contexts/AuthContext'
@@ -114,6 +115,14 @@ function RestaurantLayoutContent({
             >
               <CreditCard className="w-5 h-5" />
               {!collapsed && <span className="text-sm font-medium">Payments</span>}
+            </Link>
+
+            <Link 
+              href="/restaurant/analytics" 
+              className={`flex items-center gap-3 px-2 py-2 rounded-xl transition cursor-pointer ${pathname === '/restaurant/analytics' ? 'bg-gray-200 text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <BarChart3 className="w-5 h-5" />
+              {!collapsed && <span className="text-sm font-medium">Analytics</span>}
             </Link>
 
             <Link 

@@ -45,6 +45,360 @@ export default function OrdersManagementPage() {
   const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set());
   const { user } = useAuth();
 
+  // Print state management
+  const [isPrintingInvoice, setIsPrintingInvoice] = useState(false);
+  const [printError, setPrintError] = useState<string | null>(null);
+
+  // Print invoice function for quick print buttons
+  const printInvoice = async (orderId: string, customerPhone: string) => {
+    setIsPrintingInvoice(true);
+    setPrintError(null);
+
+    try {
+      // Fetch invoice data
+      const response = await fetch('/api/dynamic-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId,
+          customerPhone,
+          options: { includeData: true }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch invoice data');
+      }
+
+      const result = await response.json();
+      const invoiceData = result.data.invoiceData;
+
+      // Generate and print invoice using the same rich template
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        throw new Error('Could not open print window. Please allow popups.');
+      }
+
+      // Use the same rich HTML template as the invoice modal
+      const formatCurrency = (amount: number): string => `₹${amount.toFixed(2)}`;
+      const formatDate = (dateString: string): string => {
+        return new Date(dateString).toLocaleString('en-IN', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+      };
+
+      const escapeHtml = (text: string): string => {
+        if (!text) return '';
+        const map: { [key: string]: string } = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, (m) => map[m]);
+      };
+
+      const getStatusClass = (status: string): string => {
+        switch (status.toLowerCase()) {
+          case 'completed':
+          case 'served': return 'completed';
+          case 'pending': return 'pending';
+          case 'failed':
+          case 'cancelled': return 'failed';
+          default: return 'pending';
+        }
+      };
+
+      const formatStatus = (status: string): string => {
+        return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+      };
+
+      // Generate items HTML
+      const itemsHTML = invoiceData.items.length > 0 
+        ? invoiceData.items.map((item: any) => `
+            <tr>
+              <td>
+                <strong>${escapeHtml(item.dish_name)}</strong>
+                ${item.dish_description ? `<br><small class="text-muted">${escapeHtml(item.dish_description)}</small>` : ''}
+              </td>
+              <td class="text-center">${item.quantity}</td>
+              <td class="text-right">${formatCurrency(item.unit_price)}</td>
+              <td class="text-right"><strong>${formatCurrency(item.total_price)}</strong></td>
+            </tr>
+          `).join('')
+        : `
+            <tr>
+              <td colspan="4" class="text-center text-muted">
+                <em>No item details available</em>
+              </td>
+            </tr>
+          `;
+
+      const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice - ${invoiceData.unique_order_id}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #8b5cf6;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #8b5cf6;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header .subtitle {
+            color: #666666;
+            font-size: 1.1rem;
+        }
+        
+        .invoice-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .info-section h3 {
+            color: #8b5cf6;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .info-section p {
+            margin: 8px 0;
+            font-size: 0.95rem;
+        }
+        
+        .info-section strong {
+            color: #374151;
+        }
+        
+        .status-badges {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 0 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-completed { background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .status-pending { background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .status-failed { background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 15px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        th {
+            background-color: #8b5cf6;
+            color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-muted { color: #6b7280; }
+        
+        .tax-summary {
+            background-color: #f8fafc;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .tax-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 1rem;
+        }
+        
+        .tax-total {
+            border-top: 2px solid #8b5cf6;
+            padding-top: 15px;
+            margin-top: 15px;
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: #8b5cf6;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+            color: #6b7280;
+        }
+        
+        .footer p {
+            margin: 8px 0;
+        }
+        
+        .footer .brand {
+            color: #8b5cf6;
+            font-weight: 600;
+        }
+        
+        .generated-info {
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-top: 15px;
+        }
+        
+        @media print {
+            body { margin: 0; padding: 15px; }
+            .header { page-break-after: avoid; }
+            table { page-break-inside: avoid; }
+            .tax-summary { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>INVOICE</h1>
+        <p class="subtitle">Order #${invoiceData.unique_order_id}</p>
+    </div>
+
+    <div class="status-badges">
+        <span class="status-badge status-${getStatusClass(invoiceData.order_status)}">
+            Order: ${formatStatus(invoiceData.order_status)}
+        </span>
+        <span class="status-badge status-${getStatusClass(invoiceData.payment_status)}">
+            Payment: ${formatStatus(invoiceData.payment_status)}
+        </span>
+    </div>
+
+    <div class="invoice-grid">
+        <div class="info-section">
+            <h3>Restaurant Details</h3>
+            <p><strong>Name:</strong> ${escapeHtml(invoiceData.restaurant_name)}</p>
+            <p><strong>Address:</strong> ${escapeHtml(invoiceData.restaurant_address || 'Address not available')}</p>
+            <p><strong>Phone:</strong> ${escapeHtml(invoiceData.restaurant_phone || 'Phone not available')}</p>
+        </div>
+        
+        <div class="info-section">
+            <h3>Customer Details</h3>
+            <p><strong>Name:</strong> ${escapeHtml(invoiceData.customer_name)}</p>
+            <p><strong>Phone:</strong> +91 ${invoiceData.customer_phone}</p>
+            <p><strong>Table:</strong> ${escapeHtml(invoiceData.table_number)}</p>
+            <p><strong>Date:</strong> ${formatDate(invoiceData.order_date)}</p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Item Details</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${itemsHTML}
+        </tbody>
+    </table>
+
+    <div class="tax-summary">
+        <div class="tax-row">
+            <span>Subtotal:</span>
+            <span><strong>${formatCurrency(invoiceData.subtotal)}</strong></span>
+        </div>
+        <div class="tax-row tax-total">
+            <span>Total Amount:</span>
+            <span>${formatCurrency(invoiceData.total_amount)}</span>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><span class="brand">ServeNowPay</span> - Digital Restaurant Ordering System</p>
+        <p>This is a computer-generated invoice. No signature required.</p>
+        <div class="generated-info">
+            <p>Generated on: ${new Date().toLocaleString('en-IN')}</p>
+            <p>⚡ Dynamic Invoice - Generated from immutable order data</p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      
+      // Wait for content to load then print
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 500);
+      };
+
+    } catch (error) {
+      console.error('Print invoice error:', error);
+      setPrintError(error instanceof Error ? error.message : 'Failed to print invoice');
+      alert(`Failed to print invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsPrintingInvoice(false);
+    }
+  };
+
   // Manual order creation state
   const [manualOrder, setManualOrder] = useState({
     customerName: '',
@@ -307,7 +661,17 @@ export default function OrdersManagementPage() {
 
       if (manualOrder.paymentMethod === 'cash') {
         // Handle cash payment - create order directly in database
-        const uniqueOrderId = `MAN${Date.now()}`;
+        // Generate a 6-character unique order ID (matching database constraint)
+        const generateUniqueOrderId = () => {
+          const chars = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+          let result = '';
+          for (let i = 0; i < 6; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+          }
+          return result;
+        };
+        
+        const uniqueOrderId = generateUniqueOrderId();
 
         // Prepare order data for cash payment
         const orderData = {
@@ -423,8 +787,8 @@ export default function OrdersManagementPage() {
             // Create payment URL for new tab
             const paymentUrl = `/payment?session_id=${result.payment_session_id}&order_id=${result.order_id}&environment=${result.environment}`;
             
-            // Open payment in new tab
-            const newWindow = window.open(paymentUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+            // Open payment in new tab (not popup window)
+            const newWindow = window.open(paymentUrl, '_blank');
             setPaymentWindow(newWindow);
 
             if (!newWindow) {
@@ -588,87 +952,13 @@ export default function OrdersManagementPage() {
     }
   };
 
-  // Print invoice function
-  const printInvoice = async (order: Order) => {
-    try {
-      // Show loading state
-      const button = document.querySelector(`[data-order-id="${order.id}"] button:last-child`) as HTMLButtonElement;
-      const originalText = button?.textContent;
-      if (button) {
-        button.textContent = 'Printing...';
-        button.disabled = true;
-      }
-
-      // Generate invoice for printing
-      const response = await fetch('/api/download-invoice', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          orderId: order.id,
-          customerPhone: order.customer_phone
-        })
-      });
-
-      if (response.ok) {
-        const contentType = response.headers.get('content-type');
-        
-        // Always get the content as HTML for better printing compatibility
-        const htmlContent = await response.text();
-        
-        // Open HTML in new window for printing
-        const printWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-        if (printWindow) {
-          // Write the HTML content
-          printWindow.document.open();
-          printWindow.document.write(htmlContent);
-          printWindow.document.close();
-          
-          // Wait for content and images to load, then print
-          printWindow.onload = () => {
-            setTimeout(() => {
-              printWindow.print();
-            }, 500);
-          };
-          
-          // Fallback print trigger for older browsers
-          setTimeout(() => {
-            if (printWindow && !printWindow.closed) {
-              printWindow.print();
-            }
-          }, 2000);
-        } else {
-          alert('Please allow popups to print the invoice.');
-        }
-        
-        // Add to activity feed
-        if ((window as any).addOrderActivity) {
-          (window as any).addOrderActivity({
-            type: 'status_change',
-            message: `Invoice printed for ${order.customer_name}`,
-            orderId: order.unique_order_id,
-            customerName: order.customer_name
-          });
-        }
-        
-      } else {
-        const errorText = await response.text();
-        throw new Error(`Failed to generate invoice: ${errorText}`);
-      }
-
-    } catch (error) {
-      console.error('Error printing invoice:', error);
-      alert('❌ Failed to print invoice. Please try again.');
-    } finally {
-      // Reset button state
-      const button = document.querySelector(`[data-order-id="${order.id}"] button:last-child`) as HTMLButtonElement;
-      if (button && originalText) {
-        button.textContent = originalText;
-        button.disabled = false;
-      }
-    }
+  // Open order details modal
+  const openOrderDetails = (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setShowOrderDetails(true);
   };
+
+
 
   // Utility functions
   const formatCurrency = (amount: number) => {
@@ -724,9 +1014,13 @@ export default function OrdersManagementPage() {
           <h1 className="text-2xl font-bold mb-1 flex items-center gap-2">
             <span className="text-3xl">📋</span> Orders Management
             {newOrdersCount > 0 && (
-              <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-bounce">
+              <motion.span 
+                className="bg-red-500 text-white text-xs px-2 py-1 rounded-full"
+                animate={{ y: [0, -4, 0] }}
+                transition={{ duration: 0.6, repeat: Infinity }}
+              >
                 {newOrdersCount} new
-              </span>
+              </motion.span>
             )}
           </h1>
           <p className="text-gray-500 flex items-center gap-2">
@@ -745,9 +1039,15 @@ export default function OrdersManagementPage() {
               ? 'bg-green-50 text-green-700 border-green-200' 
               : 'bg-red-50 text-red-700 border-red-200'
           }`}>
-            <div className={`w-2 h-2 rounded-full ${
-              isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-            }`}></div>
+            {isConnected ? (
+              <motion.div 
+                className="w-2 h-2 rounded-full bg-green-500"
+                animate={{ opacity: [1, 0.5, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+            ) : (
+              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+            )}
             <span className="text-sm font-medium">
               {isConnected ? 'Live Updates' : 'Disconnected'}
             </span>
@@ -770,7 +1070,11 @@ export default function OrdersManagementPage() {
           {notificationPermission === 'granted' ? (
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-2 rounded-lg border border-green-200">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <motion.div 
+                  className="w-2 h-2 bg-green-500 rounded-full"
+                  animate={{ opacity: [1, 0.5, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
                 <span className="text-sm font-medium">Notifications ON</span>
               </div>
               <button
@@ -798,7 +1102,24 @@ export default function OrdersManagementPage() {
             </button>
           )}
         </div>
-      </div>    
+      </div>
+
+      {/* Print Error Display */}
+      {printError && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-red-600">❌</span>
+            <span className="text-red-800 font-medium">Print Error</span>
+          </div>
+          <p className="text-red-700 text-sm mt-1">{printError}</p>
+          <button
+            onClick={() => setPrintError(null)}
+            className="mt-2 px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200 transition"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
   
       {/* Real-time Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -812,15 +1133,19 @@ export default function OrdersManagementPage() {
           >
             {/* Real-time indicator for new orders */}
             {card.label === "New Orders" && card.count > 0 && (
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+              <motion.div 
+                className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"
+                animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              />
             )}
             
             <span className={`text-3xl mb-2 ${card.color}`}>{card.icon}</span>
             <span className="text-gray-700 font-semibold">{card.label}</span>
             <motion.span 
               key={card.count}
-              initial={{ scale: 1.2, color: '#ef4444' }}
-              animate={{ scale: 1, color: 'inherit' }}
+              initial={{ scale: 1.2 }}
+              animate={{ scale: 1 }}
               transition={{ duration: 0.3 }}
               className="text-2xl font-bold mt-2"
             >
@@ -829,7 +1154,15 @@ export default function OrdersManagementPage() {
             
             {/* Live update indicator */}
             <div className="flex items-center gap-1 mt-2">
-              <div className={`w-1 h-1 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`}></div>
+              {isConnected ? (
+                <motion.div 
+                  className="w-1 h-1 rounded-full bg-green-400"
+                  animate={{ opacity: [1, 0.5, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+              ) : (
+                <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+              )}
               <span className="text-xs text-gray-500">
                 {isConnected ? 'Live' : 'Offline'}
               </span>
@@ -853,7 +1186,11 @@ export default function OrdersManagementPage() {
             All Orders ({orders.length})
             {isConnected && (
               <span className="flex items-center gap-1 text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <motion.div 
+                  className="w-2 h-2 bg-green-500 rounded-full"
+                  animate={{ opacity: [1, 0.5, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
                 Real-time
               </span>
             )}
@@ -863,7 +1200,11 @@ export default function OrdersManagementPage() {
             {/* Auto-refresh indicator */}
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span>Auto-refresh:</span>
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+              <motion.div 
+                className="w-2 h-2 bg-blue-400 rounded-full"
+                animate={{ opacity: [1, 0.5, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
               <span>30s</span>
             </div>
           </div>
@@ -1011,11 +1352,13 @@ export default function OrdersManagementPage() {
                       {/* Print Invoice Button - Only for completed payments */}
                       {order.payment_status === 'completed' && (
                         <button
-                          onClick={() => printInvoice(order)}
-                          className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded hover:bg-green-100 transition border border-green-200 flex items-center gap-1"
+                          onClick={() => printInvoice(order.id, order.customer_phone)}
+                          disabled={isPrintingInvoice}
+                          className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded hover:bg-green-100 transition border border-green-200 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Print Invoice"
                         >
-                          <span>🖨️</span>
-                          Print Invoice
+                          <span>{isPrintingInvoice ? '⏳' : '🖨️'}</span>
+                          {isPrintingInvoice ? 'Printing...' : 'Print Invoice'}
                         </button>
                       )}
                       
@@ -1088,7 +1431,11 @@ export default function OrdersManagementPage() {
                       {/* Show payment status message for unpaid orders */}
                       {(order.payment_status === 'pending' || order.payment_status === 'verifying') && (
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                          <motion.div 
+                            className="w-2 h-2 bg-yellow-500 rounded-full"
+                            animate={{ opacity: [1, 0.5, 1] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                          />
                           <span className="text-xs text-yellow-700 font-medium">
                             {order.payment_status === 'pending' ? 'Awaiting Payment' : 'Verifying Payment'}
                           </span>
@@ -1384,7 +1731,11 @@ export default function OrdersManagementPage() {
               {waitingForPayment ? (
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2 text-blue-600">
-                    <div className="animate-pulse w-2 h-2 bg-blue-600 rounded-full"></div>
+                    <motion.div 
+                      className="w-2 h-2 bg-blue-600 rounded-full"
+                      animate={{ opacity: [1, 0.5, 1] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    />
                     <span className="text-sm font-medium">Waiting for payment confirmation...</span>
                   </div>
                 </div>

@@ -71,7 +71,7 @@ export class OrderNotificationManager {
 
       return notification;
     } catch (error) {
-      console.error('Failed to show notification:', error);
+      // Silently fail for production
       return null;
     }
   }

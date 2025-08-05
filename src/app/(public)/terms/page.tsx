@@ -64,7 +64,7 @@ export default function TermsPage() {
                             <li>All fees are non-refundable except as specified in our refund policy</li>
                             <li>We reserve the right to change pricing with 30 days notice</li>
                             <li>Failure to pay may result in service suspension or termination</li>
-                            <li>18% GST will be added to all purchases as per Indian tax regulations</li>
+
                             <li>International customers will be billed in INR with conversion handled by payment processor</li>
                         </ul>
                         <p className="mb-4">

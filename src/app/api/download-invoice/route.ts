@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import { generateInvoicePDF, validateOrderData } from '@/lib/generateInvoicePDF'
+import { generateDynamicInvoice, validateOrderForInvoice } from '@/lib/dynamicInvoiceGenerator'
 
+/**
+ * Download invoice endpoint - generates invoice on-demand from immutable order data
+ * NO STORAGE - always fresh and accurate, generated from order details
+ */
 export async function POST(request: NextRequest) {
   try {
     const { orderId, customerPhone } = await request.json()
@@ -13,131 +16,54 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Fetch order details from database
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .select(`
-        id,
-        unique_order_id,
-        customer_name,
-        customer_phone,
-        total_amount,
-        status,
-        payment_status,
-        created_at,
-        table_number,
-        items,
-        invoice_base64,
-        invoice_generated,
-        restaurants (
-          name,
-          address,
-          phone_number,
-          email
-        )
-      `)
-      .eq('id', orderId)
-      .eq('customer_phone', customerPhone)
-      .single()
-
-    if (orderError || !order) {
+    // Validate order eligibility
+    const validation = await validateOrderForInvoice(orderId)
+    if (!validation.isValid) {
       return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      )
-    }
-
-    // Check if payment is completed
-    if (order.payment_status !== 'completed') {
-      return NextResponse.json(
-        { error: 'Payment not completed yet' },
+        { error: validation.error },
         { status: 400 }
       )
     }
 
-    let pdfBuffer: Buffer | null = null;
+    // Verify customer phone matches (security check)
+    const { supabase } = await import('@/lib/supabase')
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('customer_phone, unique_order_id')
+      .eq('id', orderId)
+      .single()
 
-    // For printing, we'll always generate HTML content for better compatibility
-    let htmlContent = '';
-
-    // First, try to use existing invoice if available and it's HTML
-    if (order.invoice_base64) {
-      try {
-        const base64Data = order.invoice_base64;
-        
-        // Check if it's HTML (not PDF)
-        if (!base64Data.startsWith('JVBERi0')) {
-          // It's HTML, decode and use it
-          htmlContent = Buffer.from(base64Data, 'base64').toString('utf8');
-        }
-      } catch (error) {
-        console.error('Error processing existing invoice:', error);
-      }
+    if (orderError || !order || order.customer_phone !== customerPhone) {
+      return NextResponse.json(
+        { error: 'Order not found or phone number mismatch' },
+        { status: 404 }
+      )
     }
 
-    // If we don't have HTML content yet, generate it
-    if (!htmlContent) {
-      // Validate order data
-      if (!validateOrderData(order)) {
-        return NextResponse.json(
-          { error: 'Invalid order data' },
-          { status: 400 }
-        )
-      }
+    console.log(`🧾 Generating fresh invoice for order: ${orderId}`)
 
-      try {
-        // Try to generate invoice (this might return HTML or PDF)
-        const result = await generateInvoicePDF(order, {
-          returnBase64: true,
-          format: 'A4'
-        });
+    // Generate fresh invoice from immutable order data (NO STORAGE)
+    const htmlContent = await generateDynamicInvoice(orderId)
 
-        if (typeof result === 'string') {
-          // It's base64 data, check if it's HTML or PDF
-          const base64Data = result;
-          
-          if (base64Data.startsWith('JVBERi0')) {
-            // It's a PDF, but we need HTML for printing, so generate fallback
-            htmlContent = generateFallbackInvoice(order);
-          } else {
-            // It's HTML, decode it
-            htmlContent = Buffer.from(base64Data, 'base64').toString('utf8');
-          }
-          
-          // Store the result in the database
-          await supabase
-            .from('orders')
-            .update({
-              invoice_base64: base64Data,
-              invoice_generated: true,
-              invoice_generated_at: new Date().toISOString()
-            })
-            .eq('id', orderId);
-            
-        } else {
-          // Fallback to simple HTML invoice
-          htmlContent = generateFallbackInvoice(order);
-        }
-      } catch (error) {
-        console.error('Error generating invoice:', error);
-        
-        // Final fallback - generate simple HTML invoice
-        htmlContent = generateFallbackInvoice(order);
-      }
-    }
+    console.log(`✅ Fresh invoice generated for order: ${orderId}`)
 
-    // Return HTML content optimized for printing
+    // Return HTML content optimized for printing/viewing
     return new NextResponse(htmlContent, {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'no-cache'
+        'Cache-Control': 'no-store', // Always fresh - no caching
+        'X-Invoice-Source': 'fresh-generation',
+        'X-Invoice-Order': order.unique_order_id || orderId.slice(-8)
       }
     })
 
   } catch (error) {
-    console.error('Error downloading invoice:', error)
+    console.error('Error generating fresh invoice:', error)
     return NextResponse.json(
-      { error: 'Failed to download invoice' },
+      { 
+        error: 'Failed to generate invoice',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
@@ -148,11 +74,8 @@ function generateFallbackInvoice(order: any): string {
   const formatCurrency = (amount: number) => `Rs. ${amount.toFixed(2)}`;
   const formatDate = (dateString: string) => new Date(dateString).toLocaleString('en-IN');
 
-  // Calculate GST breakdown
+  // No GST calculations - simple total amount
   const totalAmount = order.total_amount;
-  const subtotal = Math.round((totalAmount / 1.05) * 100) / 100;
-  const cgst = Math.round(((subtotal * 0.025) * 100)) / 100;
-  const sgst = Math.round(((subtotal * 0.025) * 100)) / 100;
 
   return `
 <!DOCTYPE html>
@@ -303,14 +226,7 @@ function generateFallbackInvoice(order: any): string {
             <span>Subtotal:</span>
             <span>${formatCurrency(subtotal)}</span>
         </div>
-        <div class="tax-row">
-            <span>CGST @2.5%:</span>
-            <span>${formatCurrency(cgst)}</span>
-        </div>
-        <div class="tax-row">
-            <span>SGST @2.5%:</span>
-            <span>${formatCurrency(sgst)}</span>
-        </div>
+
         <div class="tax-row tax-total">
             <span>Total Amount:</span>
             <span>${formatCurrency(totalAmount)}</span>

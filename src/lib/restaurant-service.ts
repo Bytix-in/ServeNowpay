@@ -140,7 +140,6 @@ export async function createRestaurant(data: CreateRestaurantData): Promise<Rest
       .single()
 
     if (restaurantError) {
-      console.error('Restaurant creation error:', restaurantError)
       throw new Error(`Failed to create restaurant: ${restaurantError.message}`)
     }
 
@@ -154,7 +153,6 @@ export async function createRestaurant(data: CreateRestaurantData): Promise<Rest
     }
 
   } catch (error) {
-    console.error('Error creating restaurant:', error)
     throw error
   }
 }
@@ -173,7 +171,6 @@ export async function getAllRestaurants() {
 
     return data
   } catch (error) {
-    console.error('Error fetching restaurants:', error)
     throw error
   }
 }
@@ -193,7 +190,6 @@ export async function getRestaurantById(id: string) {
 
     return data
   } catch (error) {
-    console.error('Error fetching restaurant:', error)
     throw error
   }
 }
@@ -214,7 +210,6 @@ export async function updateRestaurantStatus(id: string, status: 'active' | 'ina
 
     return data
   } catch (error) {
-    console.error('Error updating restaurant status:', error)
     throw error
   }
 }
