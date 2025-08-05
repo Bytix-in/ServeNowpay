@@ -427,41 +427,49 @@ export default function OrdersManagementPage() {
     updateOrderOptimistically
   } = useRealTimeOrders({
     restaurantId: user?.restaurantId || '', 
-   onNewOrder: (order) => {
-      // Show notification for all new orders
-      if (notificationPermission === 'granted') {
-        notificationManager.showOrderNotification({
-          id: order.id,
-          unique_order_id: order.unique_order_id,
-          customer_name: order.customer_name,
-          table_number: order.table_number,
-          total_amount: order.total_amount
-        });
-        notificationManager.playNotificationSound();
+   onNewOrder: async (order) => {
+      // Show notification only for orders with completed payment status
+      if (notificationPermission === 'granted' && order.payment_status === 'completed') {
+        try {
+          await notificationManager.showOrderNotification({
+            id: order.id,
+            unique_order_id: order.unique_order_id,
+            customer_name: order.customer_name,
+            table_number: order.table_number,
+            total_amount: order.total_amount
+          });
+          await notificationManager.playNotificationSound();
+        } catch (error) {
+          console.error('Notification error:', error);
+        }
       }
       
-      // Add to activity feed
+      // Add to activity feed for all orders (but specify if payment is completed)
       if ((window as any).addOrderActivity) {
         (window as any).addOrderActivity({
           type: 'new_order',
-          message: `New order received from ${order.customer_name}`,
+          message: `New order received from ${order.customer_name}${order.payment_status === 'completed' ? ' (PAID)' : ''}`,
           orderId: order.unique_order_id,
           customerName: order.customer_name
         });
       }
     },
-    onOrderUpdate: (updatedOrder, oldOrder) => {
+    onOrderUpdate: async (updatedOrder, oldOrder) => {
       // Show notification if payment status changed to completed
       if (oldOrder.payment_status !== 'completed' && updatedOrder.payment_status === 'completed') {
         if (notificationPermission === 'granted') {
-          notificationManager.showOrderNotification({
-            id: updatedOrder.id,
-            unique_order_id: updatedOrder.unique_order_id,
-            customer_name: updatedOrder.customer_name,
-            table_number: updatedOrder.table_number,
-            total_amount: updatedOrder.total_amount
-          });
-          notificationManager.playNotificationSound();
+          try {
+            await notificationManager.showOrderNotification({
+              id: updatedOrder.id,
+              unique_order_id: updatedOrder.unique_order_id,
+              customer_name: updatedOrder.customer_name,
+              table_number: updatedOrder.table_number,
+              total_amount: updatedOrder.total_amount
+            });
+            await notificationManager.playNotificationSound();
+          } catch (error) {
+            console.error('Notification error:', error);
+          }
         }
       }
       
@@ -1033,25 +1041,7 @@ export default function OrdersManagementPage() {
        
         {/* Real-time Status & Controls */}
         <div className="flex items-center gap-4">
-          {/* Connection Status */}
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
-            isConnected 
-              ? 'bg-green-50 text-green-700 border-green-200' 
-              : 'bg-red-50 text-red-700 border-red-200'
-          }`}>
-            {isConnected ? (
-              <motion.div 
-                className="w-2 h-2 rounded-full bg-green-500"
-                animate={{ opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-            ) : (
-              <div className="w-2 h-2 rounded-full bg-red-500"></div>
-            )}
-            <span className="text-sm font-medium">
-              {isConnected ? 'Live Updates' : 'Disconnected'}
-            </span>
-          </div>
+
 
           {/* Manual Refresh Button */}
           <button
@@ -1078,12 +1068,16 @@ export default function OrdersManagementPage() {
                 <span className="text-sm font-medium">Notifications ON</span>
               </div>
               <button
-                onClick={() => {
-                  notificationManager.showTestNotification();
-                  notificationManager.playNotificationSound();
+                onClick={async () => {
+                  try {
+                    await notificationManager.showTestNotification();
+                    await notificationManager.playNotificationSound();
+                  } catch (error) {
+                    console.error('Test notification error:', error);
+                  }
                 }}
                 className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100 transition text-xs"
-                title="Test notification"
+                title="Test notification (works on all devices)"
               >
                 🔔 Test
               </button>
@@ -1152,21 +1146,7 @@ export default function OrdersManagementPage() {
               {card.count}
             </motion.span>
             
-            {/* Live update indicator */}
-            <div className="flex items-center gap-1 mt-2">
-              {isConnected ? (
-                <motion.div 
-                  className="w-1 h-1 rounded-full bg-green-400"
-                  animate={{ opacity: [1, 0.5, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                />
-              ) : (
-                <div className="w-1 h-1 rounded-full bg-gray-400"></div>
-              )}
-              <span className="text-xs text-gray-500">
-                {isConnected ? 'Live' : 'Offline'}
-              </span>
-            </div>
+
           </motion.div>
         ))}
       </div>

@@ -98,6 +98,23 @@ export default function PricingPage() {
                         Staff Training (₹500 value)
                       </div>
                     </div>
+                    <div className="mt-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                      <p className="text-xs text-blue-300 font-medium mb-2">Pricing may vary based on:</p>
+                      <div className="space-y-1">
+                        <div className="flex items-center text-xs text-blue-200">
+                          <span className="w-1 h-1 bg-blue-400 rounded-full mr-2 flex-shrink-0"></span>
+                          Number of tables (additional QR stands if needed)
+                        </div>
+                        <div className="flex items-center text-xs text-blue-200">
+                          <span className="w-1 h-1 bg-blue-400 rounded-full mr-2 flex-shrink-0"></span>
+                          Multiple dashboard screens setup
+                        </div>
+                        <div className="flex items-center text-xs text-blue-200">
+                          <span className="w-1 h-1 bg-blue-400 rounded-full mr-2 flex-shrink-0"></span>
+                          Custom hardware requirements
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -156,7 +173,7 @@ export default function PricingPage() {
                 <h3 className="text-lg font-bold text-white mb-4">Your Investment</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <div className="text-2xl font-bold text-white">₹5,998</div>
+                    <div className="text-2xl font-bold text-white">₹3,999*</div>
                     <div className="text-sm text-gray-400">First Month Total</div>
                     <div className="text-xs text-gray-500">(Setup + Month 1)</div>
                   </div>
@@ -454,7 +471,7 @@ export default function PricingPage() {
                 className="bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 text-center"
               >
                 <h3 className="text-xl font-bold text-white mb-4">First Month</h3>
-                <div className="text-3xl font-bold text-white mb-2">₹5,998</div>
+                <div className="text-3xl font-bold text-white mb-2">₹3,999*</div>
                 <p className="text-gray-400 text-sm mb-4">Setup + First Month</p>
                 <div className="text-xs text-gray-400">Everything set up and live in 1-2 days</div>
               </motion.div>

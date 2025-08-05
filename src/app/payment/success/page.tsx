@@ -324,7 +324,7 @@ function PaymentSuccessContent() {
   }
 
   const goToProfile = () => {
-    router.push('/profile')
+    router.push('/auth/user-login')
   }
 
   const printInvoice = async () => {

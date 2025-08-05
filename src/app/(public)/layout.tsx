@@ -99,6 +99,18 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                     Pricing
                   </Link>
                   <Link 
+                    href="/docs" 
+                    className={`font-semibold transition-all duration-200 ease-out tracking-tight ${
+                      scrolled ? 'text-sm' : 'text-base'
+                    } ${
+                      pathname === '/docs' 
+                        ? 'text-white font-bold border-b-2 border-white pb-1' 
+                        : 'text-gray-300 hover:text-white'
+                    }`}
+                  >
+                    Docs
+                  </Link>
+                  <Link 
                     href="/contact" 
                     className={`font-semibold transition-all duration-200 ease-out tracking-tight ${
                       scrolled ? 'text-sm' : 'text-base'

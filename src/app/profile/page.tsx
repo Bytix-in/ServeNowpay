@@ -7,8 +7,8 @@ export default function ProfilePage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Redirect to the main user dashboard
-    router.replace('/user/dashboard')
+    // Redirect to user login page so users can authenticate first
+    router.replace('/auth/user-login')
   }, [router])
 
   return (
