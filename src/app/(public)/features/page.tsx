@@ -142,8 +142,34 @@ export default function FeaturesPage() {
               </div>
             </div>
 
+            {/* Enterprise Security - Small Card */}
+            <div className="md:col-span-2 lg:col-span-1 bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-10 h-10 bg-red-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 border border-red-500/30 group-hover:bg-red-500/30 transition-all duration-300">
+                <Shield className="w-5 h-5 text-red-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Security</h3>
+              <p className="text-xs text-gray-400 mb-3">Bank-level protection</p>
+              <div className="space-y-2">
+                <div className="text-xs text-gray-400">256-bit encryption</div>
+                <div className="text-xs text-gray-400">GDPR compliant</div>
+              </div>
+            </div>
+
+            {/* Real-time Order Management - Small Card */}
+            <div className="md:col-span-2 lg:col-span-1 bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-10 h-10 bg-yellow-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 border border-yellow-500/30 group-hover:bg-yellow-500/30 transition-all duration-300">
+                <Clock className="w-5 h-5 text-yellow-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Real-time Orders</h3>
+              <p className="text-xs text-gray-400 mb-3">Live tracking</p>
+              <div className="space-y-2">
+                <div className="text-xs text-gray-400">Push notifications</div>
+                <div className="text-xs text-gray-400">Kitchen display</div>
+              </div>
+            </div>
+
             {/* User Management - Wide Card */}
-            <div className="md:col-span-4 lg:col-span-3 bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+            <div className="md:col-span-4 lg:col-span-4 bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <div className="w-12 h-12 bg-orange-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-orange-500/30 group-hover:bg-orange-500/30 transition-all duration-300">
@@ -180,32 +206,6 @@ export default function FeaturesPage() {
                   <Check className="w-3 h-3 text-green-400 mr-2" />
                   Training modules
                 </div>
-              </div>
-            </div>
-
-            {/* Enterprise Security - Small Card */}
-            <div className="md:col-span-2 lg:col-span-1 bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
-              <div className="w-10 h-10 bg-red-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 border border-red-500/30 group-hover:bg-red-500/30 transition-all duration-300">
-                <Shield className="w-5 h-5 text-red-400" />
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2">Security</h3>
-              <p className="text-xs text-gray-400 mb-3">Bank-level protection</p>
-              <div className="space-y-2">
-                <div className="text-xs text-gray-400">256-bit encryption</div>
-                <div className="text-xs text-gray-400">GDPR compliant</div>
-              </div>
-            </div>
-
-            {/* Real-time Order Management - Small Card */}
-            <div className="md:col-span-2 lg:col-span-1 bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
-              <div className="w-10 h-10 bg-yellow-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 border border-yellow-500/30 group-hover:bg-yellow-500/30 transition-all duration-300">
-                <Clock className="w-5 h-5 text-yellow-400" />
-              </div>
-              <h3 className="text-lg font-bold text-white mb-2">Real-time Orders</h3>
-              <p className="text-xs text-gray-400 mb-3">Live tracking</p>
-              <div className="space-y-2">
-                <div className="text-xs text-gray-400">Push notifications</div>
-                <div className="text-xs text-gray-400">Kitchen display</div>
               </div>
             </div>
           </motion.div>
@@ -271,58 +271,28 @@ export default function FeaturesPage() {
               </p>
             </div>
 
-            {/* Lightning Fast Performance - Tall Card */}
-            <div className="md:col-span-2 lg:col-span-2 md:row-span-3 bg-black/80 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
-              <div className="w-14 h-14 bg-yellow-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-6 border border-yellow-500/30 group-hover:bg-yellow-500/30 transition-all duration-300">
-                <Zap className="w-7 h-7 text-yellow-400" />
+            {/* Lightning Fast Performance - Medium Card */}
+            <div className="md:col-span-2 lg:col-span-2 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-12 h-12 bg-yellow-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-yellow-500/30 group-hover:bg-yellow-500/30 transition-all duration-300">
+                <Zap className="w-6 h-6 text-yellow-400" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-6">Lightning Fast</h3>
-              <p className="text-sm text-gray-400 mb-6">Sub-second load times</p>
-              <div className="space-y-4">
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white text-sm font-medium">Page Load</span>
-                    <span className="text-green-400 text-xs">0.3s</span>
-                  </div>
-                  <div className="w-full bg-white/10 rounded-full h-2">
-                    <div className="bg-green-400 h-2 rounded-full w-full"></div>
-                  </div>
+              <h3 className="text-xl font-bold text-white mb-2">Lightning Fast</h3>
+              <p className="text-sm text-gray-400 mb-3">Sub-second load times</p>
+              <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                Optimized performance with instant page loads and real-time data synchronization.
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-white/5 p-2 rounded-lg border border-white/10 text-center">
+                  <div className="text-xs text-green-400 font-medium">0.3s</div>
+                  <div className="text-xs text-gray-400">Page Load</div>
                 </div>
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white text-sm font-medium">Order Processing</span>
-                    <span className="text-blue-400 text-xs">0.1s</span>
-                  </div>
-                  <div className="w-full bg-white/10 rounded-full h-2">
-                    <div className="bg-blue-400 h-2 rounded-full w-full"></div>
-                  </div>
+                <div className="bg-white/5 p-2 rounded-lg border border-white/10 text-center">
+                  <div className="text-xs text-blue-400 font-medium">0.1s</div>
+                  <div className="text-xs text-gray-400">Processing</div>
                 </div>
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white text-sm font-medium">Data Sync</span>
-                    <span className="text-purple-400 text-xs">Real-time</span>
-                  </div>
-                  <div className="text-xs text-gray-400">Instant updates</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Customer Review System - Wide Card */}
-            <div className="md:col-span-3 lg:col-span-3 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="w-12 h-12 bg-pink-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-pink-500/30 group-hover:bg-pink-500/30 transition-all duration-300">
-                    <Star className="w-6 h-6 text-pink-400" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Customer Review System</h3>
-                  <p className="text-sm text-gray-400">Seamless feedback collection</p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-yellow-400">4.8</div>
-                    <div className="flex text-yellow-400 text-sm">★★★★★</div>
-                    <p className="text-xs text-gray-400">Average rating</p>
-                  </div>
+                <div className="bg-white/5 p-2 rounded-lg border border-white/10 text-center">
+                  <div className="text-xs text-purple-400 font-medium">Real-time</div>
+                  <div className="text-xs text-gray-400">Data Sync</div>
                 </div>
               </div>
             </div>
@@ -352,6 +322,22 @@ export default function FeaturesPage() {
                 <div className="text-xs text-gray-400">Guided process</div>
               </div>
             </div>
+
+            {/* Customer Review System - Medium Card */}
+            <div className="md:col-span-2 lg:col-span-1 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-10 h-10 bg-pink-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 border border-pink-500/30 group-hover:bg-pink-500/30 transition-all duration-300">
+                <Star className="w-5 h-5 text-pink-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Customer Review System</h3>
+              <p className="text-xs text-gray-400 mb-3">Seamless feedback collection</p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400">Average rating</span>
+                  <span className="text-yellow-400 text-sm font-bold">4.8 ★★★★★</span>
+                </div>
+                <div className="text-xs text-gray-400">Real-time feedback</div>
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -376,10 +362,10 @@ export default function FeaturesPage() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 max-w-7xl mx-auto"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto"
           >
             {/* Point of Sale Systems - Large Card */}
-            <div className="md:col-span-2 lg:col-span-2 md:row-span-2 bg-black/80 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+            <div className="md:col-span-2 lg:col-span-2 bg-black/80 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
               <div className="w-16 h-16 bg-emerald-500/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 border border-emerald-500/30 group-hover:bg-emerald-500/30 transition-all duration-300">
                 <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -400,115 +386,66 @@ export default function FeaturesPage() {
               </div>
             </div>
 
-            {/* Payment Processors - Medium Card */}
-            <div className="md:col-span-2 lg:col-span-2 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
-              <div className="w-12 h-12 bg-blue-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-blue-500/30 group-hover:bg-blue-500/30 transition-all duration-300">
-                <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Payment Processors - Large Card */}
+            <div className="md:col-span-2 lg:col-span-2 bg-black/80 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-16 h-16 bg-blue-500/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 border border-blue-500/30 group-hover:bg-blue-500/30 transition-all duration-300">
+                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Payment Processors</h3>
-              <p className="text-sm text-gray-400 mb-3">Secure transactions</p>
-              <p className="text-gray-300 text-sm leading-relaxed mb-4">
-                Support for all major payment methods and processors.
+              <h3 className="text-2xl font-bold text-white mb-4">Payment Processors</h3>
+              <p className="text-sm text-gray-400 mb-4">Secure transactions</p>
+              <p className="text-gray-300 leading-relaxed mb-6">
+                Support for all major payment methods and processors with enterprise-grade security.
               </p>
-              <div className="flex space-x-2">
-                <div className="bg-white/5 px-3 py-1 rounded-lg border border-white/10">
-                  <div className="text-xs text-gray-400">Stripe</div>
-                </div>
-                <div className="bg-white/5 px-3 py-1 rounded-lg border border-white/10">
-                  <div className="text-xs text-gray-400">PayPal</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Delivery Platforms - Tall Card */}
-            <div className="md:col-span-2 lg:col-span-2 md:row-span-3 bg-black/80 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
-              <div className="w-14 h-14 bg-orange-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-6 border border-orange-500/30 group-hover:bg-orange-500/30 transition-all duration-300">
-                <svg className="w-7 h-7 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-6">Delivery Platforms</h3>
-              <p className="text-sm text-gray-400 mb-6">Third-party delivery</p>
-              <div className="space-y-4">
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white text-sm font-medium">UberEats</span>
-                    <span className="text-green-400 text-xs">✓ Connected</span>
-                  </div>
-                  <div className="text-xs text-gray-400">Auto menu sync</div>
-                </div>
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white text-sm font-medium">DoorDash</span>
-                    <span className="text-green-400 text-xs">✓ Connected</span>
-                  </div>
-                  <div className="text-xs text-gray-400">Order management</div>
-                </div>
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white text-sm font-medium">Grubhub</span>
-                    <span className="text-green-400 text-xs">✓ Connected</span>
-                  </div>
-                  <div className="text-xs text-gray-400">Real-time updates</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Accounting Software - Wide Card */}
-            <div className="md:col-span-4 lg:col-span-4 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="w-12 h-12 bg-purple-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-purple-500/30 group-hover:bg-purple-500/30 transition-all duration-300">
-                    <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Accounting Software</h3>
-                  <p className="text-sm text-gray-400">Financial management integration</p>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
-                    <div className="text-sm font-medium text-white">QuickBooks</div>
-                  </div>
-                  <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
-                    <div className="text-sm font-medium text-white">Xero</div>
-                  </div>
-                  <div className="bg-white/5 p-3 rounded-xl border border-white/10 text-center">
-                    <div className="text-sm font-medium text-white">FreshBooks</div>
+              <div className="grid grid-cols-1 gap-3">
+                <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-center">
+                  <div className="text-lg font-bold text-white mb-2">Cashfree</div>
+                  <div className="text-xs text-gray-400">Secure Indian Payment Gateway</div>
+                  <div className="flex justify-center space-x-2 mt-2">
+                    <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">UPI</span>
+                    <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">Cards</span>
+                    <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">Net Banking</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Inventory Management - Small Card */}
-            <div className="md:col-span-2 lg:col-span-1 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
-              <div className="w-10 h-10 bg-teal-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 border border-teal-500/30 group-hover:bg-teal-500/30 transition-all duration-300">
-                <svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Inventory Management - Medium Card */}
+            <div className="md:col-span-1 lg:col-span-2 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-12 h-12 bg-teal-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-teal-500/30 group-hover:bg-teal-500/30 transition-all duration-300">
+                <svg className="w-6 h-6 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">Inventory</h3>
-              <p className="text-xs text-gray-400 mb-3">Stock management</p>
+              <h3 className="text-xl font-bold text-white mb-2">Inventory</h3>
+              <p className="text-sm text-gray-400 mb-3">Stock management</p>
+              <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                Real-time inventory tracking with automated alerts and supplier integration.
+              </p>
               <div className="space-y-2">
-                <div className="text-xs text-gray-400">Auto tracking</div>
-                <div className="text-xs text-gray-400">Low stock alerts</div>
+                <div className="text-xs text-gray-400">• Auto tracking</div>
+                <div className="text-xs text-gray-400">• Low stock alerts</div>
+                <div className="text-xs text-gray-400">• Supplier sync</div>
               </div>
             </div>
 
-            {/* Marketing Tools - Small Card */}
-            <div className="md:col-span-2 lg:col-span-1 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
-              <div className="w-10 h-10 bg-pink-500/20 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 border border-pink-500/30 group-hover:bg-pink-500/30 transition-all duration-300">
-                <svg className="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Marketing Tools - Medium Card */}
+            <div className="md:col-span-1 lg:col-span-2 bg-black/80 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 group">
+              <div className="w-12 h-12 bg-pink-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 border border-pink-500/30 group-hover:bg-pink-500/30 transition-all duration-300">
+                <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">Marketing</h3>
-              <p className="text-xs text-gray-400 mb-3">Campaign tools</p>
+              <h3 className="text-xl font-bold text-white mb-2">Marketing</h3>
+              <p className="text-sm text-gray-400 mb-3">Campaign tools</p>
+              <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                Comprehensive marketing suite with email campaigns and social media integration.
+              </p>
               <div className="space-y-2">
-                <div className="text-xs text-gray-400">Email campaigns</div>
-                <div className="text-xs text-gray-400">Social media</div>
+                <div className="text-xs text-gray-400">• Email campaigns</div>
+                <div className="text-xs text-gray-400">• Social media</div>
+                <div className="text-xs text-gray-400">• Customer analytics</div>
               </div>
             </div>
           </motion.div>
