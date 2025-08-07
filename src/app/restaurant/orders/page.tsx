@@ -8,7 +8,6 @@ import { usePaidOrderNotifications } from '@/hooks/usePaidOrderNotifications';
 import { useRealTimeOrders } from '@/hooks/useRealTimeOrders';
 import OrderDetailsModal from '@/components/restaurant/OrderDetailsModal';
 import NotificationSetupGuide from '@/components/restaurant/NotificationSetupGuide';
-import AndroidNotificationTest from '@/components/restaurant/AndroidNotificationTest';
 
 
 
@@ -1076,9 +1075,6 @@ export default function OrdersManagementPage() {
           <NotificationSetupGuide />
         </div>
       </div>
-
-      {/* Android-specific testing component */}
-      <AndroidNotificationTest />
 
       {/* Print Error Display */}
       {printError && (
