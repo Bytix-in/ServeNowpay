@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { notificationManager } from '@/utils/notifications';
+import { usePaidOrderNotifications } from '@/hooks/usePaidOrderNotifications';
 import { useRealTimeOrders } from '@/hooks/useRealTimeOrders';
 import OrderDetailsModal from '@/components/restaurant/OrderDetailsModal';
+
 
 
 interface Order {
@@ -44,6 +45,12 @@ export default function OrdersManagementPage() {
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set());
   const { user } = useAuth();
+
+  // Initialize paid order notifications (after user is available)
+  usePaidOrderNotifications({
+    restaurantId: user?.restaurantId || '',
+    enabled: !!user?.restaurantId
+  });
 
   // Print state management
   const [isPrintingInvoice, setIsPrintingInvoice] = useState(false);
@@ -428,22 +435,6 @@ export default function OrdersManagementPage() {
   } = useRealTimeOrders({
     restaurantId: user?.restaurantId || '', 
    onNewOrder: async (order) => {
-      // Show notification only for orders with completed payment status
-      if (notificationPermission === 'granted' && order.payment_status === 'completed') {
-        try {
-          await notificationManager.showOrderNotification({
-            id: order.id,
-            unique_order_id: order.unique_order_id,
-            customer_name: order.customer_name,
-            table_number: order.table_number,
-            total_amount: order.total_amount
-          });
-          await notificationManager.playNotificationSound();
-        } catch (error) {
-          console.error('Notification error:', error);
-        }
-      }
-      
       // Add to activity feed for all orders (but specify if payment is completed)
       if ((window as any).addOrderActivity) {
         (window as any).addOrderActivity({
@@ -455,24 +446,6 @@ export default function OrdersManagementPage() {
       }
     },
     onOrderUpdate: async (updatedOrder, oldOrder) => {
-      // Show notification if payment status changed to completed
-      if (oldOrder.payment_status !== 'completed' && updatedOrder.payment_status === 'completed') {
-        if (notificationPermission === 'granted') {
-          try {
-            await notificationManager.showOrderNotification({
-              id: updatedOrder.id,
-              unique_order_id: updatedOrder.unique_order_id,
-              customer_name: updatedOrder.customer_name,
-              table_number: updatedOrder.table_number,
-              total_amount: updatedOrder.total_amount
-            });
-            await notificationManager.playNotificationSound();
-          } catch (error) {
-            console.error('Notification error:', error);
-          }
-        }
-      }
-      
       // Add to activity feed if status changed
       if (oldOrder.status !== updatedOrder.status) {
         if ((window as any).addOrderActivity) {
@@ -502,9 +475,11 @@ export default function OrdersManagementPage() {
     }
   });
 
-  // Check notification permission status
+  // Initialize notification permission and Cashfree SDK
   useEffect(() => {
-    setNotificationPermission(notificationManager.getPermission());
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
     
     // Load Cashfree SDK
     const script = document.createElement('script');
@@ -571,16 +546,16 @@ export default function OrdersManagementPage() {
     }
   }, [user?.restaurantId]);
 
-  // Function to request notification permission
+  // Function to request notification permission (simplified)
   const requestNotificationPermission = async () => {
     try {
-      const permission = await notificationManager.requestPermission();
-      setNotificationPermission(permission);
-      
-      if (permission === 'granted') {
-        notificationManager.showTestNotification();
-      } else if (permission === 'denied') {
-        alert('Notifications are blocked. Please enable them in your browser settings to receive order alerts.');
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        setNotificationPermission(permission);
+        
+        if (permission === 'denied') {
+          alert('Notifications are blocked. Please enable them in your browser settings to receive order alerts.');
+        }
       }
     } catch (error) {
       console.error('Error requesting notification permission:', error);
@@ -1016,6 +991,7 @@ export default function OrdersManagementPage() {
 
   return (
     <div className="p-8">
+
       {/* Header with Real-time Status */}
       <div className="flex items-center justify-between mb-8">
         <div>
