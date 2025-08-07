@@ -1,24 +1,24 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { productionNotificationService } from '@/utils/productionNotifications';
+import { crossPlatformNotificationManager } from '@/utils/crossPlatformNotifications';
 
 export default function NotificationStatus() {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isTestingNotification, setIsTestingNotification] = useState(false);
 
   useEffect(() => {
-    setPermission(productionNotificationService.getPermission());
+    setPermission(crossPlatformNotificationManager.getPermission());
   }, []);
 
   const handleEnableNotifications = async () => {
     try {
-      const newPermission = await productionNotificationService.requestPermission();
+      const newPermission = await crossPlatformNotificationManager.requestPermission();
       setPermission(newPermission);
       
       if (newPermission === 'granted') {
         setIsTestingNotification(true);
-        await productionNotificationService.showTestNotification();
+        await crossPlatformNotificationManager.showTestNotification();
         setTimeout(() => setIsTestingNotification(false), 2000);
       }
     } catch (error) {
@@ -34,7 +34,7 @@ export default function NotificationStatus() {
 
     try {
       setIsTestingNotification(true);
-      await productionNotificationService.showTestNotification();
+      await crossPlatformNotificationManager.showTestNotification();
       setTimeout(() => setIsTestingNotification(false), 2000);
     } catch (error) {
       console.error('Error testing notification:', error);
