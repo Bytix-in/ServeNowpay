@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { productionNotificationService } from '@/utils/productionNotifications';
+import { crossPlatformNotificationManager } from '@/utils/crossPlatformNotifications';
 
 interface Order {
   id: string;
@@ -59,14 +59,14 @@ export function useRealTimeOrders({
     }
   }, [restaurantId]);
 
-  // Production notification for paid orders only
+  // Cross-platform notification for paid orders only
   const showOrderNotification = useCallback(async (order: Order) => {
     // Only show notifications for paid orders
     if (order.payment_status !== 'completed') return;
 
     try {
-      // Use production notification service
-      await productionNotificationService.showPaidOrderNotification({
+      // Use cross-platform notification manager
+      await crossPlatformNotificationManager.showOrderNotification({
         id: order.id,
         unique_order_id: order.unique_order_id,
         customer_name: order.customer_name,
