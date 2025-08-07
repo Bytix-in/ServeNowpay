@@ -1,6 +1,8 @@
 // Enhanced cross-platform notification system for restaurant orders
 // Addresses specific issues with Android, iOS, Mac, and mobile browsers
 
+import { androidNotificationManager } from './androidNotificationFix';
+
 export interface OrderNotificationData {
   id: string;
   unique_order_id: string;
@@ -166,7 +168,18 @@ export class CrossPlatformNotificationManager {
   public async showOrderNotification(order: OrderNotificationData): Promise<void> {
     console.log('🔔 Attempting to show notification for order:', order.unique_order_id);
 
-    // Add to queue for processing
+    // Use Android-specific notification system for Android devices
+    if (this.deviceInfo?.isAndroid) {
+      console.log('🤖 Using Android-specific notification system');
+      try {
+        await androidNotificationManager.showAndroidNotification(order);
+        return;
+      } catch (error) {
+        console.log('⚠️ Android notification failed, falling back to standard system:', error);
+      }
+    }
+
+    // Add to queue for processing (non-Android devices)
     this.notificationQueue.push(order);
     
     if (!this.isProcessingQueue) {
@@ -457,6 +470,13 @@ export class CrossPlatformNotificationManager {
   // Test notification with device detection
   public async showTestNotification(): Promise<void> {
     console.log('🧪 Showing test notification');
+
+    // Use Android-specific test for Android devices
+    if (this.deviceInfo?.isAndroid) {
+      console.log('🤖 Using Android-specific test notification');
+      await androidNotificationManager.testAndroidNotification();
+      return;
+    }
 
     const testOrder: OrderNotificationData = {
       id: 'test-' + Date.now(),
