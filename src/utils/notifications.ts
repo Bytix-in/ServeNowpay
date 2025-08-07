@@ -1,8 +1,6 @@
 // Cross-platform notification utility for restaurant orders
 // Supports: Windows, Mac, Android, iOS, Chrome, Firefox, Safari, Edge
 
-import { androidBrowserNotificationManager } from './androidBrowserNotifications';
-
 export interface NotificationOptions {
   title: string;
   body: string;
@@ -166,23 +164,10 @@ export class OrderNotificationManager {
 
       let notification: Notification | null = null;
 
-      // Check if we should use service worker or regular notifications
-      let useServiceWorker = false;
-      
+      // Try service worker notifications first (better for mobile/PWA)
       if (this.serviceWorkerRegistration && 'showNotification' in this.serviceWorkerRegistration) {
         try {
-          // Test if service worker is ready and functional
-          await navigator.serviceWorker.ready;
-          useServiceWorker = true;
-        } catch (swError) {
-          console.log('Service worker not ready, using standard API');
-          useServiceWorker = false;
-        }
-      }
-
-      if (useServiceWorker) {
-        try {
-          await this.serviceWorkerRegistration!.showNotification(options.title, notificationOptions);
+          await this.serviceWorkerRegistration.showNotification(options.title, notificationOptions);
           // Create a mock notification object for consistency
           notification = {
             title: options.title,
@@ -193,30 +178,16 @@ export class OrderNotificationManager {
             onerror: null,
             onshow: null
           } as Notification;
-          console.log('✅ Service worker notification displayed');
         } catch (swError) {
-          console.log('Service worker notification failed, using standard API:', swError);
-          useServiceWorker = false;
+          console.log('Service worker notification failed, using standard API');
         }
       }
 
       // Fallback to standard Notification API
-      if (!useServiceWorker && !notification) {
+      if (!notification) {
         // Standard modern browsers
         if ('Notification' in window && Notification.permission === 'granted') {
-          try {
-            notification = new Notification(options.title, notificationOptions);
-            console.log('✅ Standard notification displayed');
-          } catch (standardError) {
-            console.log('Standard notification failed:', standardError);
-            // Try without some options that might cause issues
-            const basicOptions = {
-              body: options.body,
-              icon: options.icon || '/favicon.ico',
-              tag: options.tag
-            };
-            notification = new Notification(options.title, basicOptions);
-          }
+          notification = new Notification(options.title, notificationOptions);
         }
         // Legacy webkit notifications (older Safari)
         else if ('webkitNotifications' in window) {
@@ -322,26 +293,14 @@ export class OrderNotificationManager {
     table_number: string;
     total_amount: number;
   }): Promise<Notification | null> {
-    const deviceInfo = this.getDeviceInfo();
-    
-    // Use enhanced Android browser notifications for Android devices
-    if (deviceInfo.isAndroid) {
-      try {
-        console.log('📱 Using enhanced Android browser notification');
-        await androidBrowserNotificationManager.showOrderNotification(order);
-        return null; // Android browser notifications don't return Notification objects
-      } catch (error) {
-        console.log('⚠️ Android browser notification failed, using fallback:', error);
-        // Continue to regular notification fallback
-      }
-    }
-
     const formatCurrency = (amount: number) => {
       return new Intl.NumberFormat('en-IN', {
         style: 'currency',
         currency: 'INR'
       }).format(amount);
     };
+
+    const deviceInfo = this.getDeviceInfo();
     
     // Platform-specific notification content
     const title = deviceInfo.isMobile 
