@@ -61,17 +61,10 @@ export function useRealTimeOrders({
 
   // Cross-platform notification for paid orders only
   const showOrderNotification = useCallback(async (order: Order) => {
-    console.log('🔔 showOrderNotification called for order:', order.unique_order_id, 'payment_status:', order.payment_status);
-    
     // Only show notifications for paid orders
-    if (order.payment_status !== 'completed') {
-      console.log('⏭️ Skipping notification - payment not completed:', order.payment_status);
-      return;
-    }
+    if (order.payment_status !== 'completed') return;
 
     try {
-      console.log('📱 Attempting to show notification for paid order:', order.unique_order_id);
-      
       // Use cross-platform notification manager
       await crossPlatformNotificationManager.showOrderNotification({
         id: order.id,
@@ -80,10 +73,8 @@ export function useRealTimeOrders({
         table_number: order.table_number,
         total_amount: order.total_amount
       });
-      
-      console.log('✅ Notification sent successfully for order:', order.unique_order_id);
     } catch (error) {
-      console.error('❌ Error showing order notification:', error);
+      console.error('Error showing order notification:', error);
       // Notifications should fail silently in production
     }
   }, []);
@@ -117,13 +108,10 @@ export function useRealTimeOrders({
           filter: `restaurant_id=eq.${restaurantId}`
         },
         (payload) => {
-          console.log('📡 Real-time event received:', payload.eventType, payload);
           setLastUpdate(new Date());
           
           if (payload.eventType === 'INSERT') {
             const newOrder = payload.new as Order;
-            console.log('🆕 New order inserted:', newOrder.unique_order_id, 'payment_status:', newOrder.payment_status);
-            
             setOrders(prev => [newOrder, ...prev]);
             
             // Call custom handler first
@@ -131,20 +119,13 @@ export function useRealTimeOrders({
             
             // Show notification and increment count only for paid orders
             if (newOrder.payment_status === 'completed') {
-              console.log('💰 New paid order detected, showing notification');
               setNewOrdersCount(prev => prev + 1);
               showOrderNotification(newOrder);
-            } else {
-              console.log('⏭️ New order not paid yet, skipping notification');
             }
             
           } else if (payload.eventType === 'UPDATE') {
             const updatedOrder = payload.new as Order;
             const oldOrder = payload.old as Order;
-            
-            console.log('🔄 Order updated:', updatedOrder.unique_order_id, 
-              'old payment_status:', oldOrder.payment_status, 
-              'new payment_status:', updatedOrder.payment_status);
             
             setOrders(prev => prev.map(order => 
               order.id === payload.new.id ? updatedOrder : order
@@ -155,15 +136,11 @@ export function useRealTimeOrders({
             
             // Show notification if payment status changed to completed
             if (oldOrder.payment_status !== 'completed' && updatedOrder.payment_status === 'completed') {
-              console.log('💳 Payment completed! Showing notification');
               setNewOrdersCount(prev => prev + 1);
               showOrderNotification(updatedOrder);
-            } else {
-              console.log('⏭️ Payment status unchanged or not completed, skipping notification');
             }
             
           } else if (payload.eventType === 'DELETE') {
-            console.log('🗑️ Order deleted:', payload.old.id);
             setOrders(prev => prev.filter(order => order.id !== payload.old.id));
             onOrderDelete?.(payload.old.id);
           }
