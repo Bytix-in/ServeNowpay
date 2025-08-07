@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePaidOrderNotifications } from '@/hooks/usePaidOrderNotifications';
 import { useRealTimeOrders } from '@/hooks/useRealTimeOrders';
 import OrderDetailsModal from '@/components/restaurant/OrderDetailsModal';
+import NotificationSetup from '@/components/restaurant/NotificationSetup';
 
 
 
@@ -991,6 +992,10 @@ export default function OrdersManagementPage() {
 
   return (
     <div className="p-8">
+      {/* Notification Setup */}
+      <div className="mb-6">
+        <NotificationSetup />
+      </div>
 
       {/* Header with Real-time Status */}
       <div className="flex items-center justify-between mb-8">

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { PaymentDisabledBanner } from '@/components/restaurant/PaymentSetupBanner'
+import NotificationSetup from '@/components/restaurant/NotificationSetup'
 import EnhancedRevenueDashboard from '@/components/restaurant/EnhancedRevenueDashboard'
 import PeakHoursAnalysis from '@/components/restaurant/PeakHoursAnalysis'
 import MenuPerformanceRanking from '@/components/restaurant/MenuPerformanceRanking'
@@ -469,6 +470,9 @@ export default function RestaurantDashboard() {
 
       {/* Payment Setup Banners */}
       <PaymentDisabledBanner />
+
+      {/* Notification Setup */}
+      <NotificationSetup />
 
       {/* No Data Message */}
       {!loading && hasNoData && (
