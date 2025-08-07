@@ -7,7 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePaidOrderNotifications } from '@/hooks/usePaidOrderNotifications';
 import { useRealTimeOrders } from '@/hooks/useRealTimeOrders';
 import OrderDetailsModal from '@/components/restaurant/OrderDetailsModal';
-import NotificationSetupGuide from '@/components/restaurant/NotificationSetupGuide';
 
 
 
@@ -1047,8 +1046,8 @@ export default function OrdersManagementPage() {
               <button
                 onClick={async () => {
                   try {
-                    const { crossPlatformNotificationManager } = await import('@/utils/crossPlatformNotifications');
-                    await crossPlatformNotificationManager.showTestNotification();
+                    await notificationManager.showTestNotification();
+                    await notificationManager.playNotificationSound();
                   } catch (error) {
                     console.error('Test notification error:', error);
                   }
@@ -1072,7 +1071,6 @@ export default function OrdersManagementPage() {
               <span className="text-sm font-medium">🔔 Enable Notifications</span>
             </button>
           )}
-          <NotificationSetupGuide />
         </div>
       </div>
 
