@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { notificationManager } from '@/utils/notifications';
+import { productionNotificationService } from '@/utils/productionNotifications';
 
 interface Order {
   id: string;
@@ -59,36 +59,24 @@ export function useRealTimeOrders({
     }
   }, [restaurantId]);
 
-  // Show notification for new orders
-  const showOrderNotification = useCallback((order: Order) => {
-    const notification = notificationManager.showOrderNotification({
-      id: order.id,
-      unique_order_id: order.unique_order_id,
-      customer_name: order.customer_name,
-      table_number: order.table_number,
-      total_amount: order.total_amount
-    });
+  // Production notification for paid orders only
+  const showOrderNotification = useCallback(async (order: Order) => {
+    // Only show notifications for paid orders
+    if (order.payment_status !== 'completed') return;
 
-    if (notification) {
-      // Auto close notification after 15 seconds
-      setTimeout(() => {
-        notification.close();
-      }, 15000);
-
-      // Handle notification click
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-        // Scroll to the new order in the list
-        const orderElement = document.querySelector(`[data-order-id="${order.id}"]`);
-        if (orderElement) {
-          orderElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      };
+    try {
+      // Use production notification service
+      await productionNotificationService.showPaidOrderNotification({
+        id: order.id,
+        unique_order_id: order.unique_order_id,
+        customer_name: order.customer_name,
+        table_number: order.table_number,
+        total_amount: order.total_amount
+      });
+    } catch (error) {
+      console.error('Error showing order notification:', error);
+      // Notifications should fail silently in production
     }
-
-    // Play notification sound
-    notificationManager.playNotificationSound();
   }, []);
 
   // Reset new orders count
@@ -125,13 +113,13 @@ export function useRealTimeOrders({
           if (payload.eventType === 'INSERT') {
             const newOrder = payload.new as Order;
             setOrders(prev => [newOrder, ...prev]);
-            setNewOrdersCount(prev => prev + 1);
             
-            // Call custom handler
+            // Call custom handler first
             onNewOrder?.(newOrder);
             
-            // Show notification only if payment is completed
+            // Show notification and increment count only for paid orders
             if (newOrder.payment_status === 'completed') {
+              setNewOrdersCount(prev => prev + 1);
               showOrderNotification(newOrder);
             }
             
@@ -143,13 +131,13 @@ export function useRealTimeOrders({
               order.id === payload.new.id ? updatedOrder : order
             ));
             
-            // Call custom handler
+            // Call custom handler first
             onOrderUpdate?.(updatedOrder, oldOrder);
             
             // Show notification if payment status changed to completed
             if (oldOrder.payment_status !== 'completed' && updatedOrder.payment_status === 'completed') {
-              showOrderNotification(updatedOrder);
               setNewOrdersCount(prev => prev + 1);
+              showOrderNotification(updatedOrder);
             }
             
           } else if (payload.eventType === 'DELETE') {
