@@ -24,19 +24,38 @@ export class AndroidNotificationManager {
   private async initializeAndroidSupport() {
     console.log('🤖 Initializing Android notification support');
     
-    // Register service worker for better Android notification support
-    await this.registerServiceWorker();
+    try {
+      // Register service worker for better Android notification support
+      await this.registerServiceWorker();
+      console.log('✅ Service worker registration completed');
+    } catch (error) {
+      console.log('⚠️ Service worker registration failed:', error);
+    }
     
-    // Setup audio unlock for Android
-    this.setupAudioUnlock();
+    try {
+      // Setup audio unlock for Android
+      this.setupAudioUnlock();
+      console.log('✅ Audio unlock setup completed');
+    } catch (error) {
+      console.log('⚠️ Audio unlock setup failed:', error);
+    }
     
-    // Pre-load notification sound
-    this.preloadNotificationSound();
+    try {
+      // Pre-load notification sound
+      await this.preloadNotificationSound();
+      console.log('✅ Notification sound preload completed');
+    } catch (error) {
+      console.log('⚠️ Sound preload failed:', error);
+    }
   }
 
   private async registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-      try {
+    if (!('serviceWorker' in navigator)) {
+      console.log('⚠️ Service Worker not supported in this browser');
+      return;
+    }
+
+    try {
         // Create a more robust service worker for Android
         const swCode = `
           console.log('🔧 Service Worker: Starting for Android notifications');
@@ -112,7 +131,6 @@ export class AndroidNotificationManager {
         console.log('⚠️ Service Worker registration failed:', error);
       }
     }
-  }
 
   private setupAudioUnlock() {
     // Android Chrome requires user interaction to unlock audio
@@ -164,9 +182,19 @@ export class AndroidNotificationManager {
   }
 
   private async preloadNotificationSound() {
-    if (!this.audioContext) return;
-    
     try {
+      // Initialize audio context if not already done
+      if (!this.audioContext) {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContext) {
+          this.audioContext = new AudioContext();
+        } else {
+          console.log('⚠️ Audio Context not supported');
+          return;
+        }
+      }
+
+      if (!this.audioContext) return;
       // Create a notification sound buffer
       const sampleRate = this.audioContext.sampleRate;
       const duration = 0.5; // 500ms
@@ -209,62 +237,89 @@ export class AndroidNotificationManager {
     const body = `Order #${order.unique_order_id}\n${order.customer_name} - Table ${order.table_number}\n${formatCurrency(order.total_amount)}`;
 
     try {
-      // Try service worker notification first (better for Android)
+      // Check if we should use service worker or regular notifications
+      let useServiceWorker = false;
+      
       if (this.serviceWorkerRegistration && 'showNotification' in this.serviceWorkerRegistration) {
-        console.log('📱 Using Service Worker notification');
-        
-        await this.serviceWorkerRegistration.showNotification(title, {
-          body,
-          icon: '/favicon.ico',
-          badge: '/favicon.ico',
-          tag: `paid-order-${order.id}`,
-          requireInteraction: true,
-          silent: false, // Let Android handle the sound
-          vibrate: [300, 100, 300, 100, 300], // Strong vibration pattern
-          timestamp: Date.now(),
-          data: {
-            orderId: order.id,
-            orderNumber: order.unique_order_id,
-            url: '/restaurant/orders'
-          },
-          // Android-specific options
-          actions: [
-            {
-              action: 'view',
-              title: '👀 View Order',
-              icon: '/favicon.ico'
-            }
-          ]
-        });
-        
-        console.log('✅ Service Worker notification shown');
-        
-      } else {
+        try {
+          // Ensure service worker is ready
+          await navigator.serviceWorker.ready;
+          useServiceWorker = true;
+          console.log('📱 Service Worker is ready, using SW notification');
+        } catch (swError) {
+          console.log('⚠️ Service Worker not ready:', swError);
+          useServiceWorker = false;
+        }
+      }
+
+      if (useServiceWorker) {
+        try {
+          await this.serviceWorkerRegistration!.showNotification(title, {
+            body,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: `paid-order-${order.id}`,
+            requireInteraction: true,
+            silent: false, // Let Android handle the sound
+            vibrate: [300, 100, 300, 100, 300], // Strong vibration pattern
+            timestamp: Date.now(),
+            data: {
+              orderId: order.id,
+              orderNumber: order.unique_order_id,
+              url: '/restaurant/orders'
+            },
+            // Android-specific options
+            actions: [
+              {
+                action: 'view',
+                title: '👀 View Order',
+                icon: '/favicon.ico'
+              }
+            ]
+          });
+          
+          console.log('✅ Service Worker notification shown');
+          
+        } catch (swError) {
+          console.log('❌ Service Worker notification failed:', swError);
+          useServiceWorker = false;
+        }
+      }
+      
+      if (!useServiceWorker) {
         // Fallback to regular notification
         console.log('📱 Using regular notification API');
         
-        const notification = new Notification(title, {
-          body,
-          icon: '/favicon.ico',
-          badge: '/favicon.ico',
-          tag: `paid-order-${order.id}`,
-          requireInteraction: true,
-          silent: false,
-          vibrate: [300, 100, 300, 100, 300],
-          timestamp: Date.now()
-        });
+        try {
+          const notification = new Notification(title, {
+            body,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: `paid-order-${order.id}`,
+            requireInteraction: true,
+            silent: false,
+            vibrate: [300, 100, 300, 100, 300],
+            timestamp: Date.now()
+          });
 
-        notification.onclick = () => {
-          console.log('👆 Notification clicked');
-          window.focus();
-          if (window.location.pathname !== '/restaurant/orders') {
-            window.location.href = '/restaurant/orders';
-          }
-          notification.close();
-        };
+          notification.onclick = () => {
+            console.log('👆 Notification clicked');
+            window.focus();
+            if (window.location.pathname !== '/restaurant/orders') {
+              window.location.href = '/restaurant/orders';
+            }
+            notification.close();
+          };
 
-        // Auto-close after 20 seconds (longer for mobile)
-        setTimeout(() => notification.close(), 20000);
+          // Auto-close after 20 seconds (longer for mobile)
+          setTimeout(() => notification.close(), 20000);
+          
+          console.log('✅ Regular notification shown');
+          
+        } catch (regularError) {
+          console.log('❌ Regular notification failed:', regularError);
+          throw regularError; // This will trigger the fallback alert
+        }
       }
 
       // Play notification sound
