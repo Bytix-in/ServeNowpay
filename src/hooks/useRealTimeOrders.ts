@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { productionNotificationService } from '@/utils/productionNotifications';
 
 interface Order {
   id: string;
@@ -35,6 +34,12 @@ export function useRealTimeOrders({
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [newOrdersCount, setNewOrdersCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  
+  // Connection management for mobile
+  const subscriptionRef = useRef<any>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const maxReconnectAttempts = 5;
 
   // Fetch orders from database
   const fetchOrders = useCallback(async () => {
@@ -59,23 +64,93 @@ export function useRealTimeOrders({
     }
   }, [restaurantId]);
 
-  // Production notification for paid orders only
-  const showOrderNotification = useCallback(async (order: Order) => {
-    // Only show notifications for paid orders
-    if (order.payment_status !== 'completed') return;
+  // Mobile-friendly connection management
+  const setupRealtimeConnection = useCallback(() => {
+    if (!restaurantId || subscriptionRef.current) return;
 
-    try {
-      // Use production notification service
-      await productionNotificationService.showPaidOrderNotification({
-        id: order.id,
-        unique_order_id: order.unique_order_id,
-        customer_name: order.customer_name,
-        table_number: order.table_number,
-        total_amount: order.total_amount
+    console.log('Setting up real-time connection for restaurant:', restaurantId);
+
+    const subscription = supabase
+      .channel(`restaurant-orders-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `restaurant_id=eq.${restaurantId}`
+        },
+        (payload) => {
+          setLastUpdate(new Date());
+          setReconnectAttempts(0); // Reset on successful message
+          
+          if (payload.eventType === 'INSERT') {
+            const newOrder = payload.new as Order;
+            setOrders(prev => [newOrder, ...prev]);
+            onNewOrder?.(newOrder);
+            
+            // Increment count for all new orders
+            setNewOrdersCount(prev => prev + 1);
+            
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedOrder = payload.new as Order;
+            const oldOrder = payload.old as Order;
+            
+            setOrders(prev => prev.map(order => 
+              order.id === payload.new.id ? updatedOrder : order
+            ));
+            
+            onOrderUpdate?.(updatedOrder, oldOrder);
+            
+          } else if (payload.eventType === 'DELETE') {
+            setOrders(prev => prev.filter(order => order.id !== payload.old.id));
+            onOrderDelete?.(payload.old.id);
+          }
+        }
+      )
+      .on('system', {}, (payload) => {
+        console.log('Subscription status:', payload);
+        if (payload.type === 'connected') {
+          setIsConnected(true);
+          setError(null);
+        } else if (payload.type === 'disconnected') {
+          setIsConnected(false);
+          // Attempt reconnection on mobile network issues
+          if (reconnectAttempts < maxReconnectAttempts) {
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+            reconnectTimeoutRef.current = setTimeout(() => {
+              setReconnectAttempts(prev => prev + 1);
+              subscription.unsubscribe();
+              subscriptionRef.current = null;
+              setupRealtimeConnection();
+            }, delay);
+          } else {
+            setError('Connection lost. Please refresh the page.');
+          }
+        }
+      })
+      .subscribe((status) => {
+        console.log('Subscription result:', status);
+        if (status === 'SUBSCRIBED') {
+          setIsConnected(true);
+          setError(null);
+        } else if (status === 'CHANNEL_ERROR') {
+          setError('Connection error. Retrying...');
+        }
       });
-    } catch (error) {
-      console.error('Error showing order notification:', error);
-      // Notifications should fail silently in production
+
+    subscriptionRef.current = subscription;
+  }, [restaurantId, onNewOrder, onOrderUpdate, onOrderDelete, reconnectAttempts]);
+
+  // Cleanup connection
+  const cleanupConnection = useCallback(() => {
+    if (subscriptionRef.current) {
+      subscriptionRef.current.unsubscribe();
+      subscriptionRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
     }
   }, []);
 
@@ -89,73 +164,17 @@ export function useRealTimeOrders({
     fetchOrders();
   }, [fetchOrders]);
 
-  // Set up real-time subscription
+  // Set up real-time subscription with mobile-friendly reconnection
   useEffect(() => {
     if (!restaurantId) return;
 
     // Initial fetch
     fetchOrders();
 
-    // Set up real-time subscription
-    const subscription = supabase
-      .channel(`restaurant-orders-${restaurantId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders',
-          filter: `restaurant_id=eq.${restaurantId}`
-        },
-        (payload) => {
-          setLastUpdate(new Date());
-          
-          if (payload.eventType === 'INSERT') {
-            const newOrder = payload.new as Order;
-            setOrders(prev => [newOrder, ...prev]);
-            
-            // Call custom handler first
-            onNewOrder?.(newOrder);
-            
-            // Show notification and increment count only for paid orders
-            if (newOrder.payment_status === 'completed') {
-              setNewOrdersCount(prev => prev + 1);
-              showOrderNotification(newOrder);
-            }
-            
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedOrder = payload.new as Order;
-            const oldOrder = payload.old as Order;
-            
-            setOrders(prev => prev.map(order => 
-              order.id === payload.new.id ? updatedOrder : order
-            ));
-            
-            // Call custom handler first
-            onOrderUpdate?.(updatedOrder, oldOrder);
-            
-            // Show notification if payment status changed to completed
-            if (oldOrder.payment_status !== 'completed' && updatedOrder.payment_status === 'completed') {
-              setNewOrdersCount(prev => prev + 1);
-              showOrderNotification(updatedOrder);
-            }
-            
-          } else if (payload.eventType === 'DELETE') {
-            setOrders(prev => prev.filter(order => order.id !== payload.old.id));
-            onOrderDelete?.(payload.old.id);
-          }
-        }
-      )
-      .on('system', {}, (payload) => {
-        if (payload.type === 'connected') {
-          setIsConnected(true);
-        } else if (payload.type === 'disconnected') {
-          setIsConnected(false);
-        }
-      })
-      .subscribe();
+    // Set up real-time connection
+    setupRealtimeConnection();
 
-    // Auto-refresh every 30 seconds as backup
+    // Auto-refresh every 30 seconds as backup (more frequent on mobile)
     const refreshInterval = setInterval(() => {
       fetchOrders();
     }, 30000);
@@ -164,14 +183,47 @@ export function useRealTimeOrders({
     const resetCount = () => setNewOrdersCount(0);
     document.addEventListener('click', resetCount);
     document.addEventListener('keydown', resetCount);
+    document.addEventListener('touchstart', resetCount);
+
+    // Handle page visibility changes (mobile background/foreground)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Page became visible, refresh data and reconnect if needed
+        fetchOrders();
+        if (!isConnected) {
+          cleanupConnection();
+          setupRealtimeConnection();
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Handle online/offline events
+    const handleOnline = () => {
+      console.log('Network back online, reconnecting...');
+      cleanupConnection();
+      setupRealtimeConnection();
+      fetchOrders();
+    };
+    const handleOffline = () => {
+      console.log('Network offline');
+      setIsConnected(false);
+      setError('Network offline');
+    };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
-      subscription.unsubscribe();
+      cleanupConnection();
       clearInterval(refreshInterval);
       document.removeEventListener('click', resetCount);
       document.removeEventListener('keydown', resetCount);
+      document.removeEventListener('touchstart', resetCount);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
-  }, [restaurantId, fetchOrders, onNewOrder, onOrderUpdate, onOrderDelete, showOrderNotification]);
+  }, [restaurantId, fetchOrders, setupRealtimeConnection, cleanupConnection, isConnected]);
 
   // Calculate status counts
   const statusCounts = {

@@ -1,8 +1,9 @@
-// Production hook for paid order notifications
+// Enhanced mobile-compatible paid order notifications
 // Triggers only when payment_status = 'completed'
 
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { mobileNotificationService } from '@/utils/mobileNotificationService';
 
 interface PaidOrderNotificationHookProps {
   restaurantId: string;
@@ -26,94 +27,18 @@ export function usePaidOrderNotifications({
   enabled = true 
 }: PaidOrderNotificationHookProps) {
   
-  // Show browser notification with sound
+  // Show paid order notification with mobile compatibility
   const showPaidOrderNotification = useCallback(async (order: PaidOrder) => {
     try {
-      // Request permission if needed
-      if (Notification.permission === 'default') {
-        await Notification.requestPermission();
-      }
-
-      // Show notification only if permission granted
-      if (Notification.permission === 'granted') {
-        const formatCurrency = (amount: number) => `₹${amount.toFixed(2)}`;
-        
-        const notification = new Notification('💰 NEW PAID ORDER!', {
-          body: `Order #${order.unique_order_id}\n${order.customer_name} - Table ${order.table_number}\n${formatCurrency(order.total_amount)}`,
-          icon: '/favicon.ico',
-          badge: '/favicon.ico',
-          tag: `paid-order-${order.id}`,
-          requireInteraction: true,
-          silent: false,
-          vibrate: [200, 100, 200, 100, 400]
-        });
-
-        // Handle click - focus window
-        notification.onclick = () => {
-          window.focus();
-          notification.close();
-          if (window.location.pathname !== '/restaurant/orders') {
-            window.location.href = '/restaurant/orders';
-          }
-        };
-
-        // Auto close after 15 seconds
-        setTimeout(() => notification.close(), 15000);
-      }
-
-      // Play notification sound
-      await playNotificationSound();
-
+      await mobileNotificationService.showPaidOrderNotification({
+        id: order.id,
+        unique_order_id: order.unique_order_id,
+        customer_name: order.customer_name,
+        table_number: order.table_number,
+        total_amount: order.total_amount
+      });
     } catch (error) {
       console.error('Notification error:', error);
-    }
-  }, []);
-
-  // Play notification sound
-  const playNotificationSound = useCallback(async () => {
-    try {
-      // Create audio context for better sound
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioContext) {
-        const audioContext = new AudioContext();
-        
-        if (audioContext.state === 'suspended') {
-          await audioContext.resume();
-        }
-
-        // Create urgent chime sound
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        const now = audioContext.currentTime;
-        oscillator.frequency.setValueAtTime(1000, now);
-        oscillator.frequency.setValueAtTime(1200, now + 0.1);
-        oscillator.frequency.setValueAtTime(800, now + 0.2);
-        oscillator.frequency.setValueAtTime(1000, now + 0.3);
-        
-        gainNode.gain.setValueAtTime(0.6, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-        
-        oscillator.start(now);
-        oscillator.stop(now + 0.8);
-        
-        // Cleanup
-        setTimeout(() => audioContext.close().catch(() => {}), 1000);
-      } else {
-        // Fallback to HTML audio
-        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
-        audio.volume = 0.8;
-        await audio.play();
-      }
-    } catch (error) {
-      console.log('Audio failed, trying vibration');
-      // Fallback to vibration on mobile
-      if ('vibrate' in navigator) {
-        navigator.vibrate([200, 100, 200, 100, 400]);
-      }
     }
   }, []);
 
@@ -175,18 +100,9 @@ export function usePaidOrderNotifications({
 
   return {
     showTestNotification: async () => {
-      const testOrder: PaidOrder = {
-        id: 'test',
-        unique_order_id: 'TEST123',
-        customer_name: 'Test Customer',
-        customer_phone: '9999999999',
-        table_number: '1',
-        total_amount: 299.99,
-        payment_status: 'completed',
-        status: 'pending',
-        created_at: new Date().toISOString()
-      };
-      await showPaidOrderNotification(testOrder);
-    }
+      await mobileNotificationService.showTestNotification();
+    },
+    isNotificationEnabled: () => mobileNotificationService.isFullyEnabled(),
+    requestPermissions: () => mobileNotificationService.requestPermissions()
   };
 }
