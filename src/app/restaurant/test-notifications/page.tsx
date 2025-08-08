@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { mobileNotificationService } from '@/utils/mobileNotificationService';
+import NotificationDebug from '@/components/restaurant/NotificationDebug';
 import { Bell, Volume2, Smartphone, TestTube } from 'lucide-react';
 
 export default function TestNotificationsPage() {
@@ -67,6 +68,9 @@ export default function TestNotificationsPage() {
           Test the mobile-compatible notification system across different devices and browsers.
         </p>
       </div>
+
+      {/* Debug Panel */}
+      <NotificationDebug />
 
       {/* Current State */}
       <div className="bg-white rounded-lg shadow p-6 mb-8">

@@ -50,7 +50,15 @@ export default function NotificationSetup({ onSetupComplete }: NotificationSetup
   };
 
   const handleTestNotification = async () => {
+    console.log('Testing notification...');
+    const state = mobileNotificationService.getState();
+    console.log('Current state before test:', state);
+    
     await mobileNotificationService.showTestNotification();
+    
+    // Update state after test
+    const newState = mobileNotificationService.getState();
+    setNotificationState(newState);
   };
 
   if (!('Notification' in window)) {

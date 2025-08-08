@@ -37,11 +37,13 @@ class MobileNotificationService {
     // Check notification permission
     if (typeof window !== 'undefined' && 'Notification' in window) {
       this.state.notificationPermission = Notification.permission;
+      console.log('Initialized with notification permission:', this.state.notificationPermission);
     }
 
     // Listen for user interactions to enable audio
     const enableAudio = () => {
       if (!this.state.userInteracted) {
+        console.log('User interaction detected, initializing audio...');
         this.initializeAudioContext();
       }
     };
@@ -83,18 +85,36 @@ class MobileNotificationService {
     if (typeof window === 'undefined') return false;
     
     try {
+      console.log('Requesting permissions...');
+      
       // Initialize audio context
       const audioEnabled = await this.initializeAudioContext();
+      console.log('Audio enabled:', audioEnabled);
       
       // Request notification permission
       let notificationEnabled = false;
       if ('Notification' in window) {
-        const permission = await Notification.requestPermission();
-        this.state.notificationPermission = permission;
-        notificationEnabled = permission === 'granted';
+        console.log('Current notification permission:', Notification.permission);
+        
+        if (Notification.permission === 'default') {
+          console.log('Requesting notification permission...');
+          const permission = await Notification.requestPermission();
+          console.log('Permission result:', permission);
+          this.state.notificationPermission = permission;
+          notificationEnabled = permission === 'granted';
+        } else {
+          // Permission already granted or denied
+          this.state.notificationPermission = Notification.permission;
+          notificationEnabled = Notification.permission === 'granted';
+        }
+        
+        console.log('Notification enabled:', notificationEnabled);
       }
 
-      return audioEnabled && notificationEnabled;
+      const result = audioEnabled && notificationEnabled;
+      console.log('Final permissions result:', { audioEnabled, notificationEnabled, result });
+      
+      return result;
     } catch (error) {
       console.error('Failed to request permissions:', error);
       return false;
@@ -145,12 +165,25 @@ class MobileNotificationService {
   }
 
   private async showBrowserNotification(data: NotificationData): Promise<boolean> {
-    if (typeof window === 'undefined' || !('Notification' in window) || this.state.notificationPermission !== 'granted') {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      console.log('Browser notifications not supported');
+      return false;
+    }
+
+    // Check current permission
+    const currentPermission = Notification.permission;
+    console.log('Current notification permission:', currentPermission);
+    console.log('Stored permission state:', this.state.notificationPermission);
+
+    if (currentPermission !== 'granted') {
+      console.log('Notification permission not granted, current:', currentPermission);
       return false;
     }
 
     try {
       const formatCurrency = (amount: number) => `₹${amount.toFixed(2)}`;
+      
+      console.log('Creating browser notification for order:', data.unique_order_id);
       
       const notification = new Notification('💰 NEW PAID ORDER!', {
         body: `Order #${data.unique_order_id}\n${data.customer_name} - Table ${data.table_number}\n${formatCurrency(data.total_amount)}`,
@@ -162,8 +195,11 @@ class MobileNotificationService {
         tag: `paid-order-${data.id}`
       });
 
+      console.log('Browser notification created successfully');
+
       // Handle click
       notification.onclick = () => {
+        console.log('Notification clicked');
         window.focus();
         notification.close();
         // Navigate to orders if not already there
@@ -172,8 +208,16 @@ class MobileNotificationService {
         }
       };
 
+      // Handle error
+      notification.onerror = (error) => {
+        console.error('Notification error:', error);
+      };
+
       // Auto close after 10 seconds
-      setTimeout(() => notification.close(), 10000);
+      setTimeout(() => {
+        console.log('Auto-closing notification');
+        notification.close();
+      }, 10000);
 
       return true;
     } catch (error) {
@@ -266,8 +310,22 @@ class MobileNotificationService {
     );
   }
 
+  // Refresh permission state from browser
+  refreshPermissionState() {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      const currentPermission = Notification.permission;
+      if (this.state.notificationPermission !== currentPermission) {
+        console.log('Permission state changed:', this.state.notificationPermission, '->', currentPermission);
+        this.state.notificationPermission = currentPermission;
+      }
+    }
+  }
+
   // Get current state for UI
   getState() {
+    // Refresh permission state before returning
+    this.refreshPermissionState();
+    
     return {
       audioEnabled: this.state.audioInitialized && this.state.userInteracted,
       notificationPermission: this.state.notificationPermission,
