@@ -14,12 +14,7 @@ import {
   X, 
   User,
   Star,
-  Heart,
   Search,
-  Filter,
-  ChefHat,
-  Sparkles,
-  Eye,
   Home
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -32,6 +27,7 @@ type Restaurant = {
   id: string
   name: string
   slug: string
+  online_ordering_enabled: boolean | null
 }
 
 type CartItem = {
@@ -43,6 +39,7 @@ type CustomerInfo = {
   name: string
   phone: string
   tableNumber: string
+  address: string
 }
 
 export default function PublicMenuPage() {
@@ -58,7 +55,7 @@ export default function PublicMenuPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [favorites, setFavorites] = useState<Set<string>>(new Set())
+  const [orderType, setOrderType] = useState<'dine_in' | 'online'>('dine_in')
   
   // Cart state
   const [cart, setCart] = useState<CartItem[]>([])
@@ -67,7 +64,8 @@ export default function PublicMenuPage() {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: '',
     phone: '',
-    tableNumber: ''
+    tableNumber: '',
+    address: ''
   })
   const [orderLoading, setOrderLoading] = useState(false)
      const [selectedDish, setSelectedDish] = useState<MenuItem | null>(null)
@@ -85,7 +83,7 @@ export default function PublicMenuPage() {
         // First, fetch the restaurant by slug
         const { data: restaurantData, error: restaurantError } = await supabase
           .from('restaurants')
-          .select('id, name, slug')
+          .select('id, name, slug, online_ordering_enabled')
           .eq('slug', restaurantSlug)
           .single()
 
@@ -256,18 +254,7 @@ export default function PublicMenuPage() {
     return iconMap[categoryLower] || '🍴';
   };
 
-  // Toggle favorite
-  const toggleFavorite = (dishId: string) => {
-    setFavorites(prev => {
-      const newFavorites = new Set(prev)
-      if (newFavorites.has(dishId)) {
-        newFavorites.delete(dishId)
-      } else {
-        newFavorites.add(dishId)
-      }
-      return newFavorites
-    })
-  }
+
 
   // Cart functions
   const addToCart = (dish: MenuItem) => {
@@ -317,10 +304,7 @@ export default function PublicMenuPage() {
     setShowCheckout(false)
   }
 
-  const viewDishDetails = (dish: MenuItem) => {
-    setSelectedDish(dish)
-    setShowDishDetails(true)
-  }
+
 
   const handleGetStarted = () => {
     setShowWelcome(false)
@@ -343,7 +327,9 @@ export default function PublicMenuPage() {
           restaurant_id: restaurant.id,
           customer_name: customerInfo.name,
           customer_phone: customerInfo.phone,
-          table_number: customerInfo.tableNumber,
+          table_number: orderType === 'dine_in' ? customerInfo.tableNumber : null,
+          customer_address: orderType === 'online' ? customerInfo.address : null,
+          order_type: orderType,
           items: cart.map(item => ({
             dish_id: item.dish.id,
             dish_name: item.dish.name,
@@ -423,7 +409,7 @@ export default function PublicMenuPage() {
 
       // Clear cart after initiating payment
       clearCart()
-      setCustomerInfo({ name: '', phone: '', tableNumber: '' })
+      setCustomerInfo({ name: '', phone: '', tableNumber: '', address: '' })
 
     } catch (err) {
       console.error('Error placing order:', err)
@@ -783,6 +769,41 @@ export default function PublicMenuPage() {
         )}
         </div>
 
+        {/* Enhanced Floating Go to Cart Button */}
+        {getCartItemCount() > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 100, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 100, scale: 0.9 }}
+            className="fixed bottom-20 left-4 right-4 z-40"
+          >
+            <motion.button
+              onClick={() => setShowCart(true)}
+              className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-4 px-6 rounded-2xl shadow-xl flex items-center justify-between font-semibold border border-purple-500"
+              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.02 }}
+            >
+              <div className="flex items-center gap-3">
+                <motion.div 
+                  className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                </motion.div>
+                <div className="flex flex-col items-start">
+                  <span className="text-lg">Go to Cart</span>
+                  <span className="text-sm text-purple-200">{getCartItemCount()} items added</span>
+                </div>
+              </div>
+              <div className="flex items-center bg-white/20 px-3 py-2 rounded-xl">
+                <IndianRupee className="w-5 h-5" />
+                <span className="text-lg font-bold">{getCartTotal().toFixed(2)}</span>
+              </div>
+            </motion.button>
+          </motion.div>
+        )}
+
         {/* Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50 shadow-lg">
           <div className="flex items-center justify-around max-w-md mx-auto">
@@ -831,9 +852,9 @@ export default function PublicMenuPage() {
       {/* Cart Modal */}
       {showCart && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
-          <div className="bg-white w-full sm:max-w-md sm:mx-4 rounded-t-lg sm:rounded-lg max-h-[90vh] overflow-hidden">
-            {/* Cart Header */}
-            <div className="flex items-center justify-between p-4 border-b">
+          <div className="bg-white w-full sm:max-w-md sm:mx-4 rounded-t-lg sm:rounded-lg max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Cart Header - Fixed */}
+            <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
               <h2 className="text-lg font-semibold">Your Order</h2>
               <Button
                 onClick={() => setShowCart(false)}
@@ -845,8 +866,13 @@ export default function PublicMenuPage() {
               </Button>
             </div>
 
-            {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto p-4 max-h-96">
+            {/* Scrollable Cart Items */}
+            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 relative">
+              {/* Scroll indicator gradients */}
+              <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-white to-transparent pointer-events-none z-10"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white to-transparent pointer-events-none z-10"></div>
+              
+              <div className="p-4">
               {cart.map((item) => (
                 <div key={item.dish.id} className="flex items-center justify-between py-3 border-b last:border-b-0">
                   <div className="flex-1">
@@ -880,10 +906,11 @@ export default function PublicMenuPage() {
                   </div>
                 </div>
               ))}
+              </div>
             </div>
 
-            {/* Cart Footer */}
-            <div className="p-4 border-t bg-gray-50">
+            {/* Cart Footer - Fixed */}
+            <div className="p-4 border-t bg-gray-50 flex-shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-lg font-semibold">Total:</span>
                 <div className="flex items-center text-purple-600 font-bold text-xl">
@@ -918,9 +945,9 @@ export default function PublicMenuPage() {
       {/* Checkout Modal */}
       {showCheckout && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
-          <div className="bg-white w-full sm:max-w-md sm:mx-4 rounded-t-lg sm:rounded-lg max-h-[90vh] overflow-hidden">
-            {/* Checkout Header */}
-            <div className="flex items-center justify-between p-4 border-b">
+          <div className="bg-white w-full sm:max-w-md sm:mx-4 rounded-t-lg sm:rounded-lg max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Checkout Header - Fixed */}
+            <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
               <h2 className="text-lg font-semibold">Order Details</h2>
               <Button
                 onClick={() => setShowCheckout(false)}
@@ -932,40 +959,146 @@ export default function PublicMenuPage() {
               </Button>
             </div>
 
-            {/* Customer Info Form */}
-            <div className="p-4 space-y-4">
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 relative">
+              {/* Scroll indicator gradient */}
+              <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-white to-transparent pointer-events-none z-10"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white to-transparent pointer-events-none z-10"></div>
+              
+              {/* Customer Info Form */}
+              <div className="p-4 space-y-6">
+              {/* Order Type Selection - Always show, but disable online if not enabled */}
               <div>
-                <Label htmlFor="customerName">Your Name</Label>
+                <Label className="text-base font-semibold text-gray-900 mb-3 block">Choose Order Type</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <motion.button
+                    onClick={() => setOrderType('dine_in')}
+                    className={`py-4 px-4 rounded-xl border-2 transition-all ${
+                      orderType === 'dine_in'
+                        ? 'border-purple-600 bg-purple-50 text-purple-700 shadow-md'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }`}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        orderType === 'dine_in' ? 'bg-purple-100' : 'bg-gray-100'
+                      }`}>
+                        <Utensils className="w-6 h-6" />
+                      </div>
+                      <div className="text-center">
+                        <span className="text-sm font-semibold block">Dine In</span>
+                        <span className="text-xs text-gray-500">Eat at restaurant</span>
+                      </div>
+                    </div>
+                  </motion.button>
+                  
+                  <motion.button
+                    onClick={() => restaurant?.online_ordering_enabled && setOrderType('online')}
+                    disabled={!restaurant?.online_ordering_enabled}
+                    className={`py-4 px-4 rounded-xl border-2 transition-all ${
+                      !restaurant?.online_ordering_enabled
+                        ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                        : orderType === 'online'
+                        ? 'border-purple-600 bg-purple-50 text-purple-700 shadow-md'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }`}
+                    whileTap={restaurant?.online_ordering_enabled ? { scale: 0.98 } : {}}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        !restaurant?.online_ordering_enabled
+                          ? 'bg-gray-100'
+                          : orderType === 'online' 
+                          ? 'bg-purple-100' 
+                          : 'bg-gray-100'
+                      }`}>
+                        <ShoppingCart className="w-6 h-6" />
+                      </div>
+                      <div className="text-center">
+                        <span className="text-sm font-semibold block">Order Online</span>
+                        <span className="text-xs text-gray-500">
+                          {restaurant?.online_ordering_enabled ? 'Home delivery' : 'Not available'}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.button>
+                </div>
+                
+                {!restaurant?.online_ordering_enabled && (
+                  <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-amber-700">
+                      <span className="font-medium">Online ordering is currently unavailable.</span> 
+                      Please choose dine-in option.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="customerName" className="text-base font-medium text-gray-900">
+                  Your Name <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="customerName"
                   type="text"
-                  placeholder="Enter your name"
+                  placeholder="Enter your full name"
                   value={customerInfo.name}
                   onChange={(e) => setCustomerInfo(prev => ({ ...prev, name: e.target.value }))}
+                  className="mt-2 py-3 px-4 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-0"
                 />
               </div>
 
               <div>
-                <Label htmlFor="customerPhone">Phone Number</Label>
+                <Label htmlFor="customerPhone" className="text-base font-medium text-gray-900">
+                  Phone Number <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="customerPhone"
                   type="tel"
-                  placeholder="Enter your phone number"
+                  placeholder="Enter your 10-digit phone number"
                   value={customerInfo.phone}
                   onChange={(e) => setCustomerInfo(prev => ({ ...prev, phone: e.target.value }))}
+                  className="mt-2 py-3 px-4 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-0"
                 />
               </div>
 
-              <div>
-                <Label htmlFor="tableNumber">Table Number</Label>
-                <Input
-                  id="tableNumber"
-                  type="text"
-                  placeholder="Enter table number"
-                  value={customerInfo.tableNumber}
-                  onChange={(e) => setCustomerInfo(prev => ({ ...prev, tableNumber: e.target.value }))}
-                />
-              </div>
+              {/* Conditional Field - Table Number or Address */}
+              {orderType === 'dine_in' ? (
+                <div>
+                  <Label htmlFor="tableNumber" className="text-base font-medium text-gray-900">
+                    Table Number <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="tableNumber"
+                    type="text"
+                    placeholder="e.g., Table 5, A1, etc."
+                    value={customerInfo.tableNumber}
+                    onChange={(e) => setCustomerInfo(prev => ({ ...prev, tableNumber: e.target.value }))}
+                    className="mt-2 py-3 px-4 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-0"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Please enter your table number as shown on your table
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <Label htmlFor="customerAddress" className="text-base font-medium text-gray-900">
+                    Delivery Address <span className="text-red-500">*</span>
+                  </Label>
+                  <textarea
+                    id="customerAddress"
+                    placeholder="Enter your complete delivery address with landmarks"
+                    value={customerInfo.address}
+                    onChange={(e) => setCustomerInfo(prev => ({ ...prev, address: e.target.value }))}
+                    className="mt-2 w-full py-3 px-4 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-0 resize-none"
+                    rows={3}
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Include house number, street, area, and nearby landmarks
+                  </p>
+                </div>
+              )}
 
               {/* Order Summary */}
               <div className="bg-gray-50 p-3 rounded-lg">
@@ -986,11 +1119,12 @@ export default function PublicMenuPage() {
                     <span>{getCartTotal().toFixed(2)}</span>
                   </div>
                 </div>
+                </div>
               </div>
             </div>
 
-            {/* Checkout Footer */}
-            <div className="p-4 border-t bg-gray-50">
+            {/* Checkout Footer - Fixed */}
+            <div className="p-4 border-t bg-gray-50 flex-shrink-0">
               <div className="flex gap-2">
                 <Button
                   onClick={() => {
@@ -1004,7 +1138,13 @@ export default function PublicMenuPage() {
                 </Button>
                 <Button
                   onClick={placeOrder}
-                  disabled={!customerInfo.name || !customerInfo.phone || !customerInfo.tableNumber || orderLoading}
+                  disabled={
+                    !customerInfo.name || 
+                    !customerInfo.phone || 
+                    (orderType === 'dine_in' && !customerInfo.tableNumber) ||
+                    (orderType === 'online' && !customerInfo.address) ||
+                    orderLoading
+                  }
                   className="flex-1 bg-purple-600 hover:bg-purple-700"
                 >
                   {orderLoading ? 'Placing Order...' : 'Place Order'}

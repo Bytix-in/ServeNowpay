@@ -31,16 +31,32 @@ export async function POST(request: NextRequest) {
       customer_name,
       customer_phone,
       table_number,
+      customer_address,
+      order_type = 'dine_in', // 'dine_in' or 'online'
       items,
       total_amount,
       payment_method = 'online' // Default to online for payment API
     } = body
 
-
-
-    if (!restaurant_id || !customer_name || !customer_phone || !table_number || !items || !total_amount) {
+    // Validate required fields based on order type
+    if (!restaurant_id || !customer_name || !customer_phone || !items || !total_amount) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Validate order type specific fields
+    if (order_type === 'dine_in' && !table_number) {
+      return NextResponse.json(
+        { error: 'Table number is required for dine-in orders' },
+        { status: 400 }
+      )
+    }
+
+    if (order_type === 'online' && !customer_address) {
+      return NextResponse.json(
+        { error: 'Customer address is required for online orders' },
         { status: 400 }
       )
     }
@@ -84,7 +100,9 @@ export async function POST(request: NextRequest) {
           restaurant_id,
           customer_name,
           customer_phone,
-          table_number,
+          table_number: order_type === 'dine_in' ? table_number : null,
+          customer_address: order_type === 'online' ? customer_address : null,
+          order_type,
           payment_method,
           items,
           total_amount,
@@ -120,7 +138,9 @@ export async function POST(request: NextRequest) {
       restaurant_id,
       customer_name,
       customer_phone,
-      table_number,
+      table_number: order_type === 'dine_in' ? table_number : null,
+      customer_address: order_type === 'online' ? customer_address : null,
+      order_type,
       payment_method,
       items,
       total_amount,

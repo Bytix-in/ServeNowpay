@@ -15,7 +15,9 @@ interface Order {
   id: string;
   customer_name: string;
   customer_phone: string;
-  table_number: string;
+  table_number: string | null;
+  customer_address: string | null;
+  order_type: string;
   items: any[];
   total_amount: number;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'served';
@@ -1140,25 +1142,34 @@ export default function OrdersManagementPage() {
       >
         + Add Order
       </button>     
- {/* Orders List with Real-time Updates */}
-      <div className="max-w-4xl bg-white rounded-xl shadow p-8 border mx-auto">
+ {/* Dine-In Orders Section */}
+      <div className="max-w-4xl bg-white rounded-xl shadow p-8 border mx-auto mb-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            All Orders ({orders.length})
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Dine-In Orders ({orders.filter(order => order.order_type === 'dine_in').length})
+              </h2>
+              <p className="text-sm text-gray-500">Restaurant table orders</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
             {isConnected && (
-              <span className="flex items-center gap-1 text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
+              <span className="flex items-center gap-1 text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
                 <motion.div 
-                  className="w-2 h-2 bg-green-500 rounded-full"
+                  className="w-2 h-2 bg-blue-500 rounded-full"
                   animate={{ opacity: [1, 0.5, 1] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 />
                 Real-time
               </span>
             )}
-          </h2>
-          
-          <div className="flex items-center gap-4">
-            {/* Auto-refresh indicator */}
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <span>Auto-refresh:</span>
               <motion.div 
@@ -1188,12 +1199,12 @@ export default function OrdersManagementPage() {
               Try Again
             </button>
           </div>
-        ) : orders.length === 0 ? (
+        ) : orders.filter(order => order.order_type === 'dine_in').length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <span className="text-6xl mb-4">🗒️</span>
-            <p className="text-lg font-semibold mb-2">No orders yet</p>
+            <span className="text-6xl mb-4">🍽️</span>
+            <p className="text-lg font-semibold mb-2">No Dine-In Orders</p>
             <p className="text-gray-500 mb-6">
-              Orders will appear here when customers place them through your menu
+              Table orders will appear here when customers place them at your restaurant
             </p>
             <div className="bg-gray-50 rounded-lg p-6 w-full max-w-xl">
               <h3 className="font-semibold mb-2">Real-time Order Management Features:</h3>
@@ -1208,7 +1219,9 @@ export default function OrdersManagementPage() {
           </div>        )
  : (
           <div className="max-h-96 overflow-y-auto pr-2 space-y-4">
-            {orders.map((order, index) => {
+            {orders
+              .filter(order => order.order_type === 'dine_in')
+              .map((order, index) => {
               const isNewOrder = order.status === 'pending' && order.payment_status === 'completed';
               const orderAge = Date.now() - new Date(order.created_at).getTime();
               const isRecentOrder = orderAge < 60000; // Less than 1 minute old
@@ -1414,6 +1427,260 @@ export default function OrdersManagementPage() {
                 </motion.div>
               );
             })}
+          </div>
+        )}
+      </div>
+
+      {/* Online Orders Section */}
+      <div className="max-w-4xl bg-white rounded-xl shadow p-8 border mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Online Orders ({orders.filter(order => order.order_type === 'online').length})
+              </h2>
+              <p className="text-sm text-gray-500">Delivery orders</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {isConnected && (
+              <span className="flex items-center gap-1 text-sm text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+                <motion.div 
+                  className="w-2 h-2 bg-purple-500 rounded-full"
+                  animate={{ opacity: [1, 0.5, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+                Real-time
+              </span>
+            )}
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span>Auto-refresh:</span>
+              <motion.div 
+                className="w-2 h-2 bg-purple-400 rounded-full"
+                animate={{ opacity: [1, 0.5, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+              <span>30s</span>
+            </div>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+            <p className="text-gray-600">Loading online orders...</p>
+          </div>
+        ) : orders.filter(order => order.order_type === 'online').length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <svg className="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Online Orders</h3>
+            <p className="text-gray-600">Delivery orders will appear here when customers place them</p>
+          </div>
+        ) : (
+          <div className="max-h-96 overflow-y-auto pr-2 space-y-4">
+            {orders
+              .filter(order => order.order_type === 'online')
+              .map((order, index) => {
+                const isNewOrder = order.status === 'pending' && order.payment_status === 'completed';
+                const orderAge = Date.now() - new Date(order.created_at).getTime();
+                const isRecentOrder = orderAge < 60000;
+                
+                return (
+                  <motion.div
+                    key={order.id}
+                    data-order-id={order.id}
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ 
+                      opacity: 1, 
+                      y: 0, 
+                      scale: 1,
+                      borderColor: isNewOrder ? '#a855f7' : '#e5e7eb'
+                    }}
+                    transition={{ delay: index * 0.05 }}
+                    className={`border rounded-lg p-4 hover:shadow-md transition-all duration-300 relative ${
+                      isNewOrder ? 'border-purple-300 bg-purple-50' : 'border-gray-200'
+                    } ${isRecentOrder ? 'ring-2 ring-purple-200 ring-opacity-50' : ''}`}
+                  >
+                    {isNewOrder && (
+                      <div className="absolute -top-2 -right-2 bg-purple-500 text-white text-xs px-2 py-1 rounded-full animate-bounce">
+                        NEW!
+                      </div>
+                    )}
+                    
+                    {isRecentOrder && (
+                      <div className="absolute -top-1 -left-1 w-3 h-3 bg-purple-400 rounded-full animate-ping"></div>
+                    )}
+
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="font-mono font-bold text-purple-600 cursor-pointer hover:text-purple-800 transition"
+                             onClick={() => {
+                               setSelectedOrderId(order.id);
+                               setShowOrderDetails(true);
+                             }}
+                             title="Click to view details">
+                          #{order.unique_order_id}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {formatTime(order.created_at)}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                          {getStatusLabel(order.status)}
+                        </span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          order.payment_status === 'completed' ? 'bg-green-100 text-green-800' :
+                          order.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          order.payment_status === 'verifying' ? 'bg-blue-100 text-blue-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {order.payment_status === 'completed' ? 'PAID' :
+                           order.payment_status === 'pending' ? 'PENDING' :
+                           order.payment_status === 'verifying' ? 'VERIFYING' :
+                           order.payment_status === 'not_configured' ? 'NOT_CONFIGURED' :
+                           'FAILED'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm text-gray-500">Customer</p>
+                        <p className="font-medium">{order.customer_name}</p>
+                        <p className="text-sm text-gray-600">{order.customer_phone}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Delivery Address</p>
+                        <div className="bg-purple-100 px-3 py-2 rounded-lg">
+                          <p className="font-medium text-purple-900 text-sm">📍 {order.customer_address}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Total</p>
+                        <p className="font-bold text-lg text-green-600">₹{order.total_amount.toFixed(2)}</p>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-500 mb-2">Items ({order.items?.length || 0})</p>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        {order.items && order.items.length > 0 ? (
+                          <div className="space-y-1">
+                            {order.items.map((item: any, idx: number) => (
+                              <div key={idx} className="flex justify-between text-sm">
+                                <span>{item.dish_name} x{item.quantity}</span>
+                                <span className="font-medium">₹{(item.price * item.quantity).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500">No items found</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        {order.payment_status === 'completed' && (
+                          <>
+                            {order.status === 'pending' && (
+                              <button
+                                onClick={() => updateOrderStatus(order.id, 'in_progress')}
+                                disabled={updatingOrders.has(order.id)}
+                                className={`px-3 py-1 text-xs rounded transition flex items-center gap-1 ${
+                                  updatingOrders.has(order.id)
+                                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                                    : 'bg-purple-600 text-white hover:bg-purple-700'
+                                }`}
+                              >
+                                {updatingOrders.has(order.id) ? (
+                                  <>
+                                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                                    Updating...
+                                  </>
+                                ) : (
+                                  'Start Preparing'
+                                )}
+                              </button>
+                            )}
+                            
+                            {order.status === 'in_progress' && (
+                              <button
+                                onClick={() => updateOrderStatus(order.id, 'completed')}
+                                disabled={updatingOrders.has(order.id)}
+                                className={`px-3 py-1 text-xs rounded transition flex items-center gap-1 ${
+                                  updatingOrders.has(order.id)
+                                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                                    : 'bg-green-600 text-white hover:bg-green-700'
+                                }`}
+                              >
+                                {updatingOrders.has(order.id) ? (
+                                  <>
+                                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                                    Updating...
+                                  </>
+                                ) : (
+                                  'Mark Ready'
+                                )}
+                              </button>
+                            )}
+                            
+                            {order.status === 'completed' && (
+                              <button
+                                onClick={() => updateOrderStatus(order.id, 'served')}
+                                disabled={updatingOrders.has(order.id)}
+                                className={`px-3 py-1 text-xs rounded transition flex items-center gap-1 ${
+                                  updatingOrders.has(order.id)
+                                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                                    : 'bg-orange-600 text-white hover:bg-orange-700'
+                                }`}
+                              >
+                                {updatingOrders.has(order.id) ? (
+                                  <>
+                                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                                    Updating...
+                                  </>
+                                ) : (
+                                  'Mark Delivered'
+                                )}
+                              </button>
+                            )}
+                          </>
+                        )} 
+                       
+                        {(order.payment_status === 'pending' || order.payment_status === 'verifying') && (
+                          <div className="flex items-center gap-2">
+                            <motion.div 
+                              className="w-2 h-2 bg-yellow-500 rounded-full"
+                              animate={{ opacity: [1, 0.5, 1] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            />
+                            <span className="text-xs text-yellow-700 font-medium">
+                              {order.payment_status === 'pending' ? 'Awaiting Payment' : 'Verifying Payment'}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {order.payment_status === 'failed' && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <span className="text-xs text-red-700 font-medium">Payment Failed</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
           </div>
         )}
       </div>

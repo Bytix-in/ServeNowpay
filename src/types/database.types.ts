@@ -41,6 +41,7 @@ export type Database = {
           is_logged_in: boolean | null
           last_login_at: string | null
           login_session_token: string | null
+          online_ordering_enabled: boolean | null
           created_at: string
           updated_at: string
         }
@@ -61,6 +62,7 @@ export type Database = {
           is_logged_in?: boolean | null
           last_login_at?: string | null
           login_session_token?: string | null
+          online_ordering_enabled?: boolean | null
           created_at?: string
           updated_at?: string
         }
@@ -81,6 +83,7 @@ export type Database = {
           is_logged_in?: boolean | null
           last_login_at?: string | null
           login_session_token?: string | null
+          online_ordering_enabled?: boolean | null
           updated_at?: string
         }
       }
@@ -136,7 +139,9 @@ export type Database = {
           restaurant_id: string
           customer_name: string
           customer_phone: string
-          table_number: string
+          table_number: string | null
+          customer_address: string | null
+          order_type: string
           items: any
           total_amount: number
           status: string
@@ -152,7 +157,9 @@ export type Database = {
           restaurant_id: string
           customer_name: string
           customer_phone: string
-          table_number: string
+          table_number?: string | null
+          customer_address?: string | null
+          order_type?: string
           items: any
           total_amount: number
           status?: string
@@ -168,7 +175,9 @@ export type Database = {
           restaurant_id?: string
           customer_name?: string
           customer_phone?: string
-          table_number?: string
+          table_number?: string | null
+          customer_address?: string | null
+          order_type?: string
           items?: any
           total_amount?: number
           status?: string
