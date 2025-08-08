@@ -27,12 +27,15 @@ class MobileNotificationService {
   };
 
   constructor() {
-    this.initializeService();
+    // Only initialize on client side
+    if (typeof window !== 'undefined') {
+      this.initializeService();
+    }
   }
 
   private initializeService() {
     // Check notification permission
-    if ('Notification' in window) {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
       this.state.notificationPermission = Notification.permission;
     }
 
@@ -43,14 +46,16 @@ class MobileNotificationService {
       }
     };
 
-    // Add listeners for various interaction types
-    ['click', 'touchstart', 'keydown'].forEach(event => {
-      document.addEventListener(event, enableAudio, { once: true, passive: true });
-    });
+    // Add listeners for various interaction types (client-side only)
+    if (typeof document !== 'undefined') {
+      ['click', 'touchstart', 'keydown'].forEach(event => {
+        document.addEventListener(event, enableAudio, { once: true, passive: true });
+      });
+    }
   }
 
   private async initializeAudioContext(): Promise<boolean> {
-    if (this.state.audioInitialized) return true;
+    if (this.state.audioInitialized || typeof window === 'undefined') return true;
 
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -75,6 +80,8 @@ class MobileNotificationService {
   }
 
   async requestPermissions(): Promise<boolean> {
+    if (typeof window === 'undefined') return false;
+    
     try {
       // Initialize audio context
       const audioEnabled = await this.initializeAudioContext();
@@ -95,8 +102,8 @@ class MobileNotificationService {
   }
 
   private async playNotificationSound(): Promise<boolean> {
-    if (!this.state.audioContext || !this.state.userInteracted) {
-      console.warn('Audio not available - no user interaction');
+    if (typeof window === 'undefined' || !this.state.audioContext || !this.state.userInteracted) {
+      console.warn('Audio not available - no user interaction or server-side');
       return false;
     }
 
@@ -138,7 +145,7 @@ class MobileNotificationService {
   }
 
   private async showBrowserNotification(data: NotificationData): Promise<boolean> {
-    if (!('Notification' in window) || this.state.notificationPermission !== 'granted') {
+    if (typeof window === 'undefined' || !('Notification' in window) || this.state.notificationPermission !== 'granted') {
       return false;
     }
 
@@ -176,7 +183,7 @@ class MobileNotificationService {
   }
 
   private triggerVibration(): boolean {
-    if ('vibrate' in navigator) {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try {
         navigator.vibrate([200, 100, 200, 100, 400]);
         return true;
@@ -231,7 +238,7 @@ class MobileNotificationService {
       result.status === 'fulfilled' && result.value === true
     );
     
-    if (!anyWorked) {
+    if (!anyWorked && typeof window !== 'undefined') {
       console.warn('All notification methods failed, focusing window');
       window.focus();
     }

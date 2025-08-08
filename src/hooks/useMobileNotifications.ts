@@ -32,6 +32,7 @@ export function useMobileNotifications() {
     if (audioContextRef.current.initialized) return true;
 
     try {
+      if (typeof window === 'undefined') return false;
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContext) return false;
 
@@ -58,7 +59,7 @@ export function useMobileNotifications() {
 
   // Request notification permission
   const requestNotificationPermission = useCallback(async (): Promise<boolean> => {
-    if (!('Notification' in window)) {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
       console.warn('Notifications not supported');
       return false;
     }
@@ -138,7 +139,7 @@ y notification sound with mobile compatibility
 
   // Show browser notification
   const showNotification = useCallback(async (options: NotificationOptions): Promise<boolean> => {
-    if (!('Notification' in window)) {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
       console.warn('Notifications not supported');
       return false;
     }
@@ -184,14 +185,14 @@ y notification sound with mobile compatibility
     await showNotification(options);
     
     // Additional vibration for mobile devices
-    if ('vibrate' in navigator) {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       navigator.vibrate(options.vibrate || [200, 100, 200, 100, 400]);
     }
   }, [playNotificationSound, showNotification]);
 
   // Check if notifications are supported and enabled
   const isNotificationSupported = useCallback((): boolean => {
-    return 'Notification' in window;
+    return typeof window !== 'undefined' && 'Notification' in window;
   }, []);
 
   const isNotificationEnabled = useCallback((): boolean => {
@@ -200,7 +201,7 @@ y notification sound with mobile compatibility
 
   // Initialize on mount
   useEffect(() => {
-    if ('Notification' in window) {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
       setNotificationPermission(Notification.permission);
     }
   }, []);

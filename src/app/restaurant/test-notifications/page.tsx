@@ -138,12 +138,12 @@ export default function TestNotificationsPage() {
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-semibold mb-4">Device Information</h2>
         <div className="space-y-2 text-sm">
-          <p><strong>User Agent:</strong> {navigator.userAgent}</p>
-          <p><strong>Platform:</strong> {navigator.platform}</p>
-          <p><strong>Notification Support:</strong> {'Notification' in window ? 'Yes' : 'No'}</p>
-          <p><strong>Audio Context Support:</strong> {window.AudioContext || (window as any).webkitAudioContext ? 'Yes' : 'No'}</p>
-          <p><strong>Vibration Support:</strong> {'vibrate' in navigator ? 'Yes' : 'No'}</p>
-          <p><strong>Online:</strong> {navigator.onLine ? 'Yes' : 'No'}</p>
+          <p><strong>User Agent:</strong> {typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A'}</p>
+          <p><strong>Platform:</strong> {typeof navigator !== 'undefined' ? navigator.platform : 'N/A'}</p>
+          <p><strong>Notification Support:</strong> {typeof window !== 'undefined' && 'Notification' in window ? 'Yes' : 'No'}</p>
+          <p><strong>Audio Context Support:</strong> {typeof window !== 'undefined' && (window.AudioContext || (window as any).webkitAudioContext) ? 'Yes' : 'No'}</p>
+          <p><strong>Vibration Support:</strong> {typeof navigator !== 'undefined' && 'vibrate' in navigator ? 'Yes' : 'No'}</p>
+          <p><strong>Online:</strong> {typeof navigator !== 'undefined' ? (navigator.onLine ? 'Yes' : 'No') : 'N/A'}</p>
         </div>
       </div>
     </div>
