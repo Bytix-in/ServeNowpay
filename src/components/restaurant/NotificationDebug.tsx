@@ -43,6 +43,25 @@ export default function NotificationDebug() {
       }
 
       if (Notification.permission === 'granted') {
+        // Try service worker notification first (more reliable)
+        if ('serviceWorker' in navigator) {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            await registration.showNotification('🧪 Service Worker Test', {
+              body: 'This is a service worker notification test',
+              icon: '/favicon.ico',
+              requireInteraction: false,
+              tag: 'test-sw-notification'
+            });
+            console.log('Service worker notification created');
+            alert('Service worker notification sent successfully!');
+            return;
+          } catch (swError) {
+            console.log('Service worker notification failed, trying direct:', swError);
+          }
+        }
+
+        // Fallback to direct notification
         const notification = new Notification('🧪 Direct Test Notification', {
           body: 'This is a direct browser notification test',
           icon: '/favicon.ico',
@@ -56,12 +75,13 @@ export default function NotificationDebug() {
 
         setTimeout(() => notification.close(), 5000);
         console.log('Direct notification created');
+        alert('Direct notification sent successfully!');
       } else {
         alert('Notification permission not granted: ' + Notification.permission);
       }
     } catch (error) {
       console.error('Direct notification test failed:', error);
-      alert('Direct notification test failed: ' + error);
+      alert('Direct notification test failed: ' + error.message);
     }
   };
 

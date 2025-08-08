@@ -180,22 +180,36 @@ class MobileNotificationService {
       return false;
     }
 
+    const formatCurrency = (amount: number) => `₹${amount.toFixed(2)}`;
+    const notificationOptions = {
+      body: `Order #${data.unique_order_id}\n${data.customer_name} - Table ${data.table_number}\n${formatCurrency(data.total_amount)}`,
+      icon: '/favicon.ico',
+      badge: '/favicon.ico',
+      requireInteraction: true,
+      silent: false,
+      vibrate: [200, 100, 200, 100, 400],
+      tag: `paid-order-${data.id}`
+    };
+
     try {
-      const formatCurrency = (amount: number) => `₹${amount.toFixed(2)}`;
-      
       console.log('Creating browser notification for order:', data.unique_order_id);
       
-      const notification = new Notification('💰 NEW PAID ORDER!', {
-        body: `Order #${data.unique_order_id}\n${data.customer_name} - Table ${data.table_number}\n${formatCurrency(data.total_amount)}`,
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        requireInteraction: true,
-        silent: false,
-        vibrate: [200, 100, 200, 100, 400],
-        tag: `paid-order-${data.id}`
-      });
+      // Try service worker notification first (more reliable on some browsers)
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          await registration.showNotification('💰 NEW PAID ORDER!', notificationOptions);
+          console.log('Service worker notification created successfully');
+          return true;
+        } catch (swError) {
+          console.log('Service worker notification failed, trying direct:', swError);
+        }
+      }
 
-      console.log('Browser notification created successfully');
+      // Fallback to direct notification
+      const notification = new Notification('💰 NEW PAID ORDER!', notificationOptions);
+
+      console.log('Direct browser notification created successfully');
 
       // Handle click
       notification.onclick = () => {
@@ -222,7 +236,22 @@ class MobileNotificationService {
       return true;
     } catch (error) {
       console.error('Failed to show browser notification:', error);
-      return false;
+      
+      // If direct notification fails, try a simple fallback
+      try {
+        console.log('Trying simple notification fallback...');
+        const simpleNotification = new Notification('💰 NEW PAID ORDER!', {
+          body: `Order #${data.unique_order_id} from ${data.customer_name}`,
+          icon: '/favicon.ico'
+        });
+        
+        setTimeout(() => simpleNotification.close(), 8000);
+        console.log('Simple notification fallback successful');
+        return true;
+      } catch (fallbackError) {
+        console.error('All notification methods failed:', fallbackError);
+        return false;
+      }
     }
   }
 
@@ -247,7 +276,81 @@ class MobileNotificationService {
         console.error('Popup notification failed:', error);
       }
     }
-    return false;
+    
+    // Fallback: Create a simple DOM notification
+    try {
+      this.createDOMNotification(data);
+      return true;
+    } catch (error) {
+      console.error('DOM notification failed:', error);
+      return false;
+    }
+  }
+
+  private createDOMNotification(data: NotificationData): void {
+    // Create a simple DOM-based notification as ultimate fallback
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      z-index: 10000;
+      max-width: 350px;
+      font-family: system-ui, -apple-system, sans-serif;
+      cursor: pointer;
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+    `;
+    
+    const formatCurrency = (amount: number) => `₹${amount.toFixed(2)}`;
+    
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="font-size: 24px;">💰</div>
+        <div>
+          <div style="font-weight: bold; margin-bottom: 4px;">NEW PAID ORDER!</div>
+          <div style="font-size: 14px; opacity: 0.9;">
+            Order #${data.unique_order_id}<br>
+            ${data.customer_name} - Table ${data.table_number}<br>
+            ${formatCurrency(data.total_amount)}
+          </div>
+        </div>
+        <div style="margin-left: auto; font-size: 18px; cursor: pointer;" onclick="this.parentElement.parentElement.remove()">×</div>
+      </div>
+    `;
+    
+    // Add click handler
+    notification.onclick = () => {
+      window.focus();
+      if (window.location.pathname !== '/restaurant/orders') {
+        window.location.href = '/restaurant/orders';
+      }
+      notification.remove();
+    };
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+      notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Auto remove after 8 seconds
+    setTimeout(() => {
+      notification.style.transform = 'translateX(400px)';
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 300);
+    }, 8000);
+    
+    console.log('DOM notification created as fallback');
   }
 
   // Register popup callback for fallback notifications
