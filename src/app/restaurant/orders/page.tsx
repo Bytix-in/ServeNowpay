@@ -8,7 +8,6 @@ import { usePaidOrderNotifications } from '@/hooks/usePaidOrderNotifications';
 import { useRealTimeOrders } from '@/hooks/useRealTimeOrders';
 import OrderDetailsModal from '@/components/restaurant/OrderDetailsModal';
 import NotificationSetup from '@/components/restaurant/NotificationSetup';
-import NotificationDebug from '@/components/restaurant/NotificationDebug';
 
 
 
@@ -996,7 +995,6 @@ export default function OrdersManagementPage() {
       {/* Notification Setup */}
       <div className="mb-6">
         <NotificationSetup />
-        <NotificationDebug />
       </div>
 
       {/* Header with Real-time Status */}
