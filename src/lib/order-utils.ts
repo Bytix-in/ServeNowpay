@@ -270,13 +270,30 @@ async function generateUniqueOrderIdWithRetry(maxRetries = 5): Promise<string> {
  */
 export async function createOrderWithValidation(orderData: any): Promise<{ success: boolean; order?: any; error?: string }> {
   try {
-    const requiredFields = ['restaurant_id', 'customer_name', 'customer_phone', 'table_number', 'items', 'total_amount']
-    const missingFields = requiredFields.filter(field => !orderData[field])
+    // Base required fields
+    const baseRequiredFields = ['restaurant_id', 'customer_name', 'customer_phone', 'items', 'total_amount']
+    const missingBaseFields = baseRequiredFields.filter(field => !orderData[field])
     
-    if (missingFields.length > 0) {
+    if (missingBaseFields.length > 0) {
       return {
         success: false,
-        error: `Missing required fields: ${missingFields.join(', ')}`
+        error: `Missing required fields: ${missingBaseFields.join(', ')}`
+      }
+    }
+
+    // Validate order type specific fields
+    const orderType = orderData.order_type || 'dine_in'
+    if (orderType === 'dine_in' && !orderData.table_number) {
+      return {
+        success: false,
+        error: 'Table number is required for dine-in orders'
+      }
+    }
+
+    if (orderType === 'online' && !orderData.customer_address) {
+      return {
+        success: false,
+        error: 'Customer address is required for online orders'
       }
     }
 
@@ -285,6 +302,7 @@ export async function createOrderWithValidation(orderData: any): Promise<{ succe
 
     const enhancedOrderData = {
       ...orderData,
+      order_type: orderData.order_type || 'dine_in',
       status: orderData.status || 'pending',
       payment_status: orderData.payment_status || 'pending',
       unique_order_id: uniqueOrderId,

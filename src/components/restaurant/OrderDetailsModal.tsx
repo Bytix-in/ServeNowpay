@@ -15,7 +15,9 @@ interface OrderDetails {
   id: string;
   customer_name: string;
   customer_phone: string;
-  table_number: string;
+  table_number: string | null;
+  customer_address: string | null;
+  order_type: string;
   items: any[];
   total_amount: number;
   status: string;
@@ -216,6 +218,25 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }: OrderDet
                     </div>
                   </div>
                   
+                  {/* Order Type Badge */}
+                  <div className="mb-6 flex justify-center">
+                    {order.order_type === 'online' ? (
+                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 border-2 border-purple-200 rounded-full">
+                        <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
+                        <span className="text-purple-700 font-semibold text-sm">
+                          🚚 Online Order - Delivery
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-full">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span className="text-blue-700 font-semibold text-sm">
+                          🍽️ Dine In Order
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-white rounded-lg p-4 border border-gray-100">
                       <h4 className="font-semibold text-gray-700 mb-2">Customer Information</h4>
@@ -224,8 +245,27 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }: OrderDet
                     </div>
                     
                     <div className="bg-white rounded-lg p-4 border border-gray-100">
-                      <h4 className="font-semibold text-gray-700 mb-2">Table Information</h4>
-                      <p className="font-medium text-gray-900">Table {order.table_number}</p>
+                      {order.order_type === 'online' ? (
+                        <>
+                          <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            📍 Delivery Address
+                          </h4>
+                          <div className="bg-gray-50 p-3 rounded-lg border">
+                            <p className="font-medium text-gray-900 leading-relaxed text-sm">
+                              {order.customer_address || 'Address not provided'}
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            🏪 Table Information
+                          </h4>
+                          <div className="bg-gray-50 p-3 rounded-lg border text-center">
+                            <p className="font-bold text-2xl text-gray-900">Table {order.table_number}</p>
+                          </div>
+                        </>
+                      )}
                     </div>
                     
                     <div className="bg-white rounded-lg p-4 border border-gray-100">

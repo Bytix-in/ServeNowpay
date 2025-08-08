@@ -65,7 +65,9 @@ interface RecentOrder {
   unique_order_id: string
   customer_name: string
   customer_phone: string
-  table_number: string
+  table_number: string | null
+  customer_address: string | null
+  order_type: string
   total_amount: number
   status: string
   payment_status: string
@@ -109,6 +111,8 @@ export default function RestaurantDashboard() {
   const [chartPeriod, setChartPeriod] = useState<'7days' | '30days' | '90days'>('30days')
   const [downloadingInvoice, setDownloadingInvoice] = useState<string | null>(null)
   const [hasNoData, setHasNoData] = useState(false)
+  const [onlineOrderingEnabled, setOnlineOrderingEnabled] = useState<boolean>(false)
+  const [updatingOnlineOrdering, setUpdatingOnlineOrdering] = useState(false)
 
   // Generate chart data from orders
   const generateChartData = (orders: RecentOrder[], period: '7days' | '30days' | '90days') => {
@@ -234,6 +238,7 @@ export default function RestaurantDashboard() {
 
     // Initial fetch
     fetchDashboardStats()
+    fetchOnlineOrderingStatus()
 
     // Set up real-time subscription
     const subscription = supabase
@@ -356,6 +361,87 @@ export default function RestaurantDashboard() {
     }
   }
 
+  // Fix restaurant data - refresh and validate data
+  const fixRestaurantData = async () => {
+    if (!user?.restaurantId) return
+    
+    try {
+      setLoading(true)
+      // Refresh dashboard stats
+      await fetchDashboardStats()
+    } catch (error) {
+      console.error('Error fixing restaurant data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch online ordering status
+  const fetchOnlineOrderingStatus = async () => {
+    if (!user?.restaurantId) return
+
+    try {
+      const response = await fetch(`/api/restaurant/online-ordering?restaurant_id=${user.restaurantId}`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch online ordering status')
+      }
+
+      setOnlineOrderingEnabled(data.enabled)
+    } catch (error) {
+      console.error('Error fetching online ordering status:', error)
+    }
+  }
+
+  // Toggle online ordering
+  const toggleOnlineOrdering = async () => {
+    if (!user?.restaurantId) {
+      console.error('No restaurant ID found in user context:', user)
+      alert('Restaurant ID not found. Please refresh the page and try again.')
+      return
+    }
+
+    try {
+      setUpdatingOnlineOrdering(true)
+      const newStatus = !onlineOrderingEnabled
+
+      console.log('Toggling online ordering:', { 
+        restaurantId: user.restaurantId, 
+        currentStatus: onlineOrderingEnabled, 
+        newStatus 
+      })
+
+      const response = await fetch('/api/restaurant/online-ordering', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          restaurant_id: user.restaurantId,
+          enabled: newStatus
+        })
+      })
+
+      const data = await response.json()
+      console.log('API response:', { status: response.status, data })
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update online ordering status')
+      }
+
+      setOnlineOrderingEnabled(newStatus)
+      
+      // Show success message
+      alert(data.message)
+    } catch (error) {
+      console.error('Error updating online ordering status:', error)
+      alert(`Failed to update online ordering status: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setUpdatingOnlineOrdering(false)
+    }
+  }
+
   // Get current period stats for display
   const getCurrentPeriodStats = () => {
     const totalOrders = orderAnalyticsData.reduce((sum, day) => sum + day.orders, 0)
@@ -447,6 +533,30 @@ export default function RestaurantDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            {/* Online Ordering Toggle */}
+            <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-lg border">
+              <div className="flex items-center gap-2">
+                <Bike className="w-4 h-4 text-gray-600" />
+                <span className="text-sm font-medium text-gray-700">Online Orders</span>
+              </div>
+              <button
+                onClick={toggleOnlineOrdering}
+                disabled={updatingOnlineOrdering}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                  onlineOrderingEnabled ? 'bg-purple-600' : 'bg-gray-300'
+                } ${updatingOnlineOrdering ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    onlineOrderingEnabled ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className={`text-xs font-medium ${onlineOrderingEnabled ? 'text-green-600' : 'text-gray-500'}`}>
+                {onlineOrderingEnabled ? 'ON' : 'OFF'}
+              </span>
+            </div>
+            
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span>Live Data</span>
@@ -459,7 +569,6 @@ export default function RestaurantDashboard() {
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               <span className="text-sm">Refresh</span>
             </button>
-
           </div>
         </div>
         <div className="mt-2 text-xs text-gray-400">
@@ -628,6 +737,62 @@ export default function RestaurantDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Order Type Breakdown */}
+      {!loading && recentOrders.length > 0 && (
+        <div className="bg-white p-6 rounded-3xl shadow border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Types Today</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Utensils className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-blue-900">Dine In</p>
+                  <p className="text-xs text-blue-600">Restaurant orders</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-blue-900">
+                  {recentOrders.filter(order => order.order_type === 'dine_in' || !order.order_type).length}
+                </p>
+                <p className="text-xs text-blue-600">orders</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between p-4 bg-purple-50 rounded-xl border border-purple-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Bike className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-purple-900">Online</p>
+                  <p className="text-xs text-purple-600">Delivery orders</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-purple-900">
+                  {recentOrders.filter(order => order.order_type === 'online').length}
+                </p>
+                <p className="text-xs text-purple-600">orders</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Online Ordering Status:</span>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${onlineOrderingEnabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <span className={`font-medium ${onlineOrderingEnabled ? 'text-green-600' : 'text-gray-500'}`}>
+                  {onlineOrderingEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Analytics Quick Access */}
       <div className="bg-gradient-to-r from-purple-50 to-indigo-100 p-6 rounded-3xl border border-purple-200">
@@ -891,7 +1056,7 @@ export default function RestaurantDashboard() {
                   <span className="text-sm font-medium text-gray-700">Customer</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-sm font-medium text-gray-700">Table</span>
+                  <span className="text-sm font-medium text-gray-700">Table/Address</span>
                 </div>
                 <div className="flex items-center">
                   <span className="text-sm font-medium text-gray-700">Date & Time</span>
@@ -930,7 +1095,25 @@ export default function RestaurantDashboard() {
                       <p className="text-xs text-gray-500">{order.customer_phone}</p>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-900">Table {order.table_number}</span>
+                      {order.order_type === 'online' ? (
+                        <div>
+                          <div className="flex items-center gap-1 mb-1">
+                            <Bike className="w-3 h-3 text-purple-600" />
+                            <span className="text-xs font-medium text-purple-600">Online Order</span>
+                          </div>
+                          <span className="text-sm text-gray-900 line-clamp-2" title={order.customer_address}>
+                            {order.customer_address}
+                          </span>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-center gap-1 mb-1">
+                            <Utensils className="w-3 h-3 text-blue-600" />
+                            <span className="text-xs font-medium text-blue-600">Dine In</span>
+                          </div>
+                          <span className="text-sm text-gray-900">Table {order.table_number}</span>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <span className="text-sm text-gray-600">{formatDateTime(order.created_at)}</span>
@@ -939,23 +1122,11 @@ export default function RestaurantDashboard() {
                       <span className="text-sm font-medium text-gray-900">
                         {formatCurrency(order.total_amount)}
                       </span>
-                      <div className="flex items-center gap-1 mt-1">
-                        <div className={`w-2 h-2 rounded-full ${order.payment_status === 'completed' ? 'bg-green-500' :
-                          order.payment_status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}></div>
-                        <span className="text-xs text-gray-500">
-                          {order.payment_status === 'completed' ? 'Paid' :
-                            order.payment_status === 'pending' ? 'Pending' : 'Failed'}
-                        </span>
-                      </div>
                     </div>
                     <div>
-                      <span className={`text-sm font-medium ${getStatusColor(order.status)}`}>
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                         {getStatusLabel(order.status)}
                       </span>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {order.items?.length || 0} items
-                      </div>
                     </div>
                     <div>
                       {order.payment_status === 'completed' ? (
@@ -964,22 +1135,19 @@ export default function RestaurantDashboard() {
                             e.stopPropagation()
                             downloadInvoice(order)
                           }}
-                          variant="outline"
                           size="sm"
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                          variant="outline"
                           disabled={downloadingInvoice === order.id}
+                          className="text-xs"
                         >
                           {downloadingInvoice === order.id ? (
-                            <RefreshCw className="w-3 h-3 animate-spin" />
+                            <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-600"></div>
                           ) : (
-                            <>
-                              <Download className="w-3 h-3 mr-1" />
-                              {order.invoice_generated ? 'Download' : 'Generate'}
-                            </>
+                            <Download className="w-3 h-3" />
                           )}
                         </Button>
                       ) : (
-                        <span className="text-xs text-gray-400">Payment pending</span>
+                        <span className="text-xs text-gray-400">N/A</span>
                       )}
                     </div>
                   </div>
