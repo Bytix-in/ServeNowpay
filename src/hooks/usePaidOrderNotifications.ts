@@ -30,6 +30,16 @@ export function usePaidOrderNotifications({
   // Show paid order notification with mobile compatibility
   const showPaidOrderNotification = useCallback(async (order: PaidOrder) => {
     try {
+      console.log('🔔 Showing paid order notification for:', order.unique_order_id);
+      console.log('Order details:', {
+        id: order.id,
+        unique_order_id: order.unique_order_id,
+        customer_name: order.customer_name,
+        table_number: order.table_number,
+        total_amount: order.total_amount,
+        payment_status: order.payment_status
+      });
+      
       await mobileNotificationService.showPaidOrderNotification({
         id: order.id,
         unique_order_id: order.unique_order_id,
@@ -37,8 +47,10 @@ export function usePaidOrderNotifications({
         table_number: order.table_number,
         total_amount: order.total_amount
       });
+      
+      console.log('✅ Paid order notification completed');
     } catch (error) {
-      console.error('Notification error:', error);
+      console.error('❌ Notification error:', error);
     }
   }, []);
 
