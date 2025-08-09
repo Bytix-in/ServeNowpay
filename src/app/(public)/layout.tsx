@@ -4,7 +4,6 @@ import { ReactNode, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Comfortaa } from 'next/font/google'
-import { Menu, X } from 'lucide-react'
 import Footer from '@/components/Footer'
 
 const comfortaa = Comfortaa({ subsets: ['latin'] })
@@ -12,7 +11,6 @@ const comfortaa = Comfortaa({ subsets: ['latin'] })
 export default function PublicLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     let ticking = false
@@ -30,21 +28,6 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
-
-  // Close mobile menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element
-      if (isMobileMenuOpen && !target.closest('header')) {
-        setIsMobileMenuOpen(false)
-      }
-    }
-
-    if (isMobileMenuOpen) {
-      document.addEventListener('click', handleClickOutside)
-      return () => document.removeEventListener('click', handleClickOutside)
-    }
-  }, [isMobileMenuOpen])
 
   return (
     <div className={`min-h-screen bg-gray-50 ${comfortaa.className}`}>
@@ -74,7 +57,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                 }`}>ServeNow</span>
               </div>
 
-              {/* Navigation Links - Desktop */}
+              {/* Navigation Links */}
               <div className="hidden md:flex items-center">
                 <div className={`flex transition-all duration-300 ease-out ${
                   scrolled ? 'space-x-6' : 'space-x-8'
@@ -142,100 +125,15 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                 </div>
               </div>
 
-              {/* Mobile Menu Button & Access Portal */}
-              <div className="flex items-center space-x-3">
-                {/* Access Portal Button */}
+              {/* Access Portal Button */}
+              <div>
                 <Link 
                   href="/access" 
                   className={`bg-white text-black font-medium hover:bg-gray-100 transition-all duration-200 ease-out ${
-                    scrolled ? 'px-3 py-1.5 rounded-full text-xs' : 'px-4 py-2 rounded-lg text-sm'
+                    scrolled ? 'px-4 py-2 rounded-full text-sm' : 'px-5 py-2.5 rounded-lg text-sm'
                   }`}
                 >
                   {scrolled ? 'Access' : 'Access Portal'}
-                </Link>
-
-                {/* Mobile Menu Button */}
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="md:hidden p-2 text-white hover:text-gray-300 transition-colors duration-200"
-                  aria-label="Toggle mobile menu"
-                >
-                  {isMobileMenuOpen ? (
-                    <X className={scrolled ? 'w-5 h-5' : 'w-6 h-6'} />
-                  ) : (
-                    <Menu className={scrolled ? 'w-5 h-5' : 'w-6 h-6'} />
-                  )}
-                </button>
-              </div>
-            </nav>
-          </div>
-        </div>
-
-        {/* Mobile Navigation Dropdown */}
-        <div className={`md:hidden transition-all duration-300 ease-out overflow-hidden ${
-          isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-        }`}>
-          <div className={`mx-auto transition-all duration-300 ease-out ${
-            scrolled 
-              ? 'mt-2 max-w-5xl bg-black/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 mx-4' 
-              : 'max-w-full bg-black/90 backdrop-blur-md border-b border-white/10'
-          }`}>
-            <nav className="px-6 py-4">
-              <div className="flex flex-col space-y-4">
-                <Link 
-                  href="/" 
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`font-semibold transition-all duration-200 ease-out tracking-tight text-base py-2 ${
-                    pathname === '/' 
-                      ? 'text-white font-bold border-l-4 border-white pl-4' 
-                      : 'text-gray-300 hover:text-white hover:pl-2'
-                  }`}
-                >
-                  Home
-                </Link>
-                <Link 
-                  href="/features" 
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`font-semibold transition-all duration-200 ease-out tracking-tight text-base py-2 ${
-                    pathname === '/features' 
-                      ? 'text-white font-bold border-l-4 border-white pl-4' 
-                      : 'text-gray-300 hover:text-white hover:pl-2'
-                  }`}
-                >
-                  Features
-                </Link>
-                <Link 
-                  href="/pricing" 
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`font-semibold transition-all duration-200 ease-out tracking-tight text-base py-2 ${
-                    pathname === '/pricing' 
-                      ? 'text-white font-bold border-l-4 border-white pl-4' 
-                      : 'text-gray-300 hover:text-white hover:pl-2'
-                  }`}
-                >
-                  Pricing
-                </Link>
-                <Link 
-                  href="/docs" 
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`font-semibold transition-all duration-200 ease-out tracking-tight text-base py-2 ${
-                    pathname === '/docs' 
-                      ? 'text-white font-bold border-l-4 border-white pl-4' 
-                      : 'text-gray-300 hover:text-white hover:pl-2'
-                  }`}
-                >
-                  Docs
-                </Link>
-                <Link 
-                  href="/contact" 
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`font-semibold transition-all duration-200 ease-out tracking-tight text-base py-2 ${
-                    pathname === '/contact' 
-                      ? 'text-white font-bold border-l-4 border-white pl-4' 
-                      : 'text-gray-300 hover:text-white hover:pl-2'
-                  }`}
-                >
-                  Contact
                 </Link>
               </div>
             </nav>
