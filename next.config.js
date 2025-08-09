@@ -10,35 +10,23 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Webpack configuration to handle chunk loading issues
+  // Simplified webpack configuration
   webpack: (config, { dev, isServer }) => {
-    // Prevent chunk loading errors
-    config.optimization = {
-      ...config.optimization,
-      splitChunks: {
-        ...config.optimization.splitChunks,
-        cacheGroups: {
-          ...config.optimization.splitChunks?.cacheGroups,
-          default: false,
-          vendors: false,
-          // Bundle all vendor code together
-          vendor: {
-            name: 'vendor',
-            chunks: 'all',
-            test: /node_modules/,
-            priority: 20,
-          },
-          // Bundle common code
-          common: {
-            name: 'common',
-            minChunks: 2,
-            chunks: 'all',
-            priority: 10,
-            reuseExistingChunk: true,
-            enforce: true,
+    // Only apply optimizations in production
+    if (!dev && !isServer) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+            },
           },
         },
-      },
+      }
     }
     return config
   },

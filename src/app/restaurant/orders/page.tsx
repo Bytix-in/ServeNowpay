@@ -401,7 +401,6 @@ export default function OrdersManagementPage() {
       };
 
     } catch (error) {
-      console.error('Print invoice error:', error);
       setPrintError(error instanceof Error ? error.message : 'Failed to print invoice');
       alert(`Failed to print invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
@@ -538,7 +537,7 @@ export default function OrdersManagementPage() {
       if (error) throw error;
       setMenuItems(data || []);
     } catch (error) {
-      console.error('Error fetching menu items:', error);
+      // Silently handle menu fetch errors
     }
   };
 
@@ -561,7 +560,6 @@ export default function OrdersManagementPage() {
         }
       }
     } catch (error) {
-      console.error('Error requesting notification permission:', error);
       alert('Failed to request notification permission. Please check your browser settings.');
     }
   };
@@ -580,13 +578,11 @@ export default function OrdersManagementPage() {
           .single();
 
         if (error) {
-          console.error('Error checking payment status:', error);
           return false;
         }
 
         return order.payment_status === 'completed';
       } catch (error) {
-        console.error('Error monitoring payment:', error);
         return false;
       }
     };
@@ -689,7 +685,6 @@ export default function OrdersManagementPage() {
           .single();
 
         if (error) {
-          console.error('Database error:', error);
           throw new Error(`Failed to create cash order: ${error.message}`);
         }
 
@@ -739,7 +734,6 @@ export default function OrdersManagementPage() {
         const result = await response.json();
 
         if (!response.ok) {
-          console.error('Payment API error:', result);
           let errorMessage = result.error || 'Failed to create payment';
           
           // Provide more specific error messages
@@ -811,8 +805,6 @@ export default function OrdersManagementPage() {
       }
 
     } catch (error) {
-      console.error('Error creating manual order:', error);
-      
       let userMessage = 'Unknown error';
       if (error instanceof Error) {
         userMessage = error.message;
@@ -917,8 +909,6 @@ export default function OrdersManagementPage() {
       }
 
     } catch (error) {
-      console.error('Error updating order status:', error);
-      
       // Revert optimistic update on error
       updateOrderOptimistically(orderId, { 
         status: order.status, 
@@ -1056,7 +1046,7 @@ export default function OrdersManagementPage() {
                     await notificationManager.showTestNotification();
                     await notificationManager.playNotificationSound();
                   } catch (error) {
-                    console.error('Test notification error:', error);
+                    // Silently handle test notification errors
                   }
                 }}
                 className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100 transition text-xs"
@@ -1143,44 +1133,38 @@ export default function OrdersManagementPage() {
         + Add Order
       </button>     
  {/* Dine-In Orders Section */}
-      <div className="max-w-4xl bg-white rounded-xl shadow p-8 border mx-auto mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
+      {/* Orders Sections - Side by Side Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Dine-In Orders Section */}
+        <div className="bg-white rounded-xl shadow p-6 border">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  🍽️ Dine-In Orders ({orders.filter(order => order.order_type === 'dine_in' || !order.order_type).length})
+                </h2>
+                <p className="text-sm text-gray-500">Restaurant table orders</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                Dine-In Orders ({orders.filter(order => order.order_type === 'dine_in').length})
-              </h2>
-              <p className="text-sm text-gray-500">Restaurant table orders</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            {isConnected && (
-              <span className="flex items-center gap-1 text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                <motion.div 
-                  className="w-2 h-2 bg-blue-500 rounded-full"
-                  animate={{ opacity: [1, 0.5, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                />
-                Real-time
-              </span>
-            )}
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <span>Auto-refresh:</span>
-              <motion.div 
-                className="w-2 h-2 bg-blue-400 rounded-full"
-                animate={{ opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-              <span>30s</span>
+            
+            <div className="flex items-center gap-2">
+              {isConnected && (
+                <span className="flex items-center gap-1 text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                  <motion.div 
+                    className="w-2 h-2 bg-blue-500 rounded-full"
+                    animate={{ opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  />
+                  Real-time
+                </span>
+              )}
             </div>
           </div>
-        </div>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -1199,7 +1183,7 @@ export default function OrdersManagementPage() {
               Try Again
             </button>
           </div>
-        ) : orders.filter(order => order.order_type === 'dine_in').length === 0 ? (
+        ) : orders.filter(order => order.order_type === 'dine_in' || !order.order_type).length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <span className="text-6xl mb-4">🍽️</span>
             <p className="text-lg font-semibold mb-2">No Dine-In Orders</p>
@@ -1220,7 +1204,7 @@ export default function OrdersManagementPage() {
  : (
           <div className="max-h-96 overflow-y-auto pr-2 space-y-4">
             {orders
-              .filter(order => order.order_type === 'dine_in')
+              .filter(order => order.order_type === 'dine_in' || !order.order_type)
               .map((order, index) => {
               const isNewOrder = order.status === 'pending' && order.payment_status === 'completed';
               const orderAge = Date.now() - new Date(order.created_at).getTime();
@@ -1429,47 +1413,38 @@ export default function OrdersManagementPage() {
             })}
           </div>
         )}
-      </div>
-
-      {/* Online Orders Section */}
-      <div className="max-w-4xl bg-white rounded-xl shadow p-8 border mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                Online Orders ({orders.filter(order => order.order_type === 'online').length})
-              </h2>
-              <p className="text-sm text-gray-500">Delivery orders</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            {isConnected && (
-              <span className="flex items-center gap-1 text-sm text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
-                <motion.div 
-                  className="w-2 h-2 bg-purple-500 rounded-full"
-                  animate={{ opacity: [1, 0.5, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                />
-                Real-time
-              </span>
-            )}
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <span>Auto-refresh:</span>
-              <motion.div 
-                className="w-2 h-2 bg-purple-400 rounded-full"
-                animate={{ opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-              <span>30s</span>
-            </div>
-          </div>
         </div>
+
+        {/* Online Orders Section */}
+        <div className="bg-white rounded-xl shadow p-6 border">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  🚚 Online Orders ({orders.filter(order => order.order_type === 'online').length})
+                </h2>
+                <p className="text-sm text-gray-500">Delivery orders</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {isConnected && (
+                <span className="flex items-center gap-1 text-sm text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+                  <motion.div 
+                    className="w-2 h-2 bg-purple-500 rounded-full"
+                    animate={{ opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  />
+                  Real-time
+                </span>
+              )}
+            </div>
+          </div>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -1683,6 +1658,7 @@ export default function OrdersManagementPage() {
               })}
           </div>
         )}
+        </div>
       </div>
 
       {/* Order Details Modal */}

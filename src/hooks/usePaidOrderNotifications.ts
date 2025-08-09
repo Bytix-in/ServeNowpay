@@ -30,16 +30,6 @@ export function usePaidOrderNotifications({
   // Show paid order notification with mobile compatibility
   const showPaidOrderNotification = useCallback(async (order: PaidOrder) => {
     try {
-      console.log('🔔 Showing paid order notification for:', order.unique_order_id);
-      console.log('Order details:', {
-        id: order.id,
-        unique_order_id: order.unique_order_id,
-        customer_name: order.customer_name,
-        table_number: order.table_number,
-        total_amount: order.total_amount,
-        payment_status: order.payment_status
-      });
-      
       await mobileNotificationService.showPaidOrderNotification({
         id: order.id,
         unique_order_id: order.unique_order_id,
@@ -47,10 +37,8 @@ export function usePaidOrderNotifications({
         table_number: order.table_number,
         total_amount: order.total_amount
       });
-      
-      console.log('✅ Paid order notification completed');
     } catch (error) {
-      console.error('❌ Notification error:', error);
+      // Silently handle notification errors in production
     }
   }, []);
 
@@ -58,7 +46,7 @@ export function usePaidOrderNotifications({
   useEffect(() => {
     if (!restaurantId || !enabled) return;
 
-    console.log('Setting up paid order notifications for restaurant:', restaurantId);
+
 
     // Listen specifically for payment_status = 'completed'
     const subscription = supabase
@@ -72,15 +60,11 @@ export function usePaidOrderNotifications({
           filter: `restaurant_id=eq.${restaurantId}`
         },
         async (payload) => {
-          console.log('Order change detected:', payload);
-
           if (payload.eventType === 'INSERT') {
             const newOrder = payload.new as PaidOrder;
-            console.log('New order:', newOrder.unique_order_id, 'Payment status:', newOrder.payment_status);
             
             // Show notification only for paid orders
             if (newOrder.payment_status === 'completed') {
-              console.log('🔔 Showing notification for paid order:', newOrder.unique_order_id);
               await showPaidOrderNotification(newOrder);
             }
             
@@ -88,24 +72,16 @@ export function usePaidOrderNotifications({
             const updatedOrder = payload.new as PaidOrder;
             const oldOrder = payload.old as PaidOrder;
             
-            console.log('Order updated:', updatedOrder.unique_order_id, 
-              'Old payment status:', oldOrder.payment_status, 
-              'New payment status:', updatedOrder.payment_status);
-            
             // Show notification if payment status changed to completed
             if (oldOrder.payment_status !== 'completed' && updatedOrder.payment_status === 'completed') {
-              console.log('🔔 Payment completed! Showing notification for:', updatedOrder.unique_order_id);
               await showPaidOrderNotification(updatedOrder);
             }
           }
         }
       )
-      .subscribe((status) => {
-        console.log('Subscription status:', status);
-      });
+      .subscribe();
 
     return () => {
-      console.log('Cleaning up paid order notifications');
       subscription.unsubscribe();
     };
   }, [restaurantId, enabled, showPaidOrderNotification]);

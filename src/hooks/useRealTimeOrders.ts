@@ -68,7 +68,7 @@ export function useRealTimeOrders({
   const setupRealtimeConnection = useCallback(() => {
     if (!restaurantId || subscriptionRef.current) return;
 
-    console.log('Setting up real-time connection for restaurant:', restaurantId);
+
 
     const subscription = supabase
       .channel(`restaurant-orders-${restaurantId}`)
@@ -109,7 +109,6 @@ export function useRealTimeOrders({
         }
       )
       .on('system', {}, (payload) => {
-        console.log('Subscription status:', payload);
         if (payload.type === 'connected') {
           setIsConnected(true);
           setError(null);
@@ -130,7 +129,6 @@ export function useRealTimeOrders({
         }
       })
       .subscribe((status) => {
-        console.log('Subscription result:', status);
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
           setError(null);
@@ -200,13 +198,11 @@ export function useRealTimeOrders({
 
     // Handle online/offline events
     const handleOnline = () => {
-      console.log('Network back online, reconnecting...');
       cleanupConnection();
       setupRealtimeConnection();
       fetchOrders();
     };
     const handleOffline = () => {
-      console.log('Network offline');
       setIsConnected(false);
       setError('Network offline');
     };

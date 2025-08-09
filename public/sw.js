@@ -5,20 +5,16 @@ const CACHE_NAME = 'servenowpay-notifications-v1';
 
 // Install event
 self.addEventListener('install', (event) => {
-  console.log('Service worker installing...');
   self.skipWaiting();
 });
 
 // Activate event
 self.addEventListener('activate', (event) => {
-  console.log('Service worker activating...');
   event.waitUntil(self.clients.claim());
 });
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event.notification.tag);
-  
   event.notification.close();
   
   // Focus or open the app window
@@ -41,13 +37,11 @@ self.addEventListener('notificationclick', (event) => {
 
 // Handle notification close
 self.addEventListener('notificationclose', (event) => {
-  console.log('Notification closed:', event.notification.tag);
+  // Notification closed
 });
 
 // Handle push events (for future use)
 self.addEventListener('push', (event) => {
-  console.log('Push event received:', event);
-  
   if (event.data) {
     const data = event.data.json();
     
@@ -65,5 +59,3 @@ self.addEventListener('push', (event) => {
     );
   }
 });
-
-console.log('Service worker loaded successfully');

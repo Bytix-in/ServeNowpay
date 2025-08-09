@@ -8,17 +8,13 @@
         "build:production": "NODE_ENV=production next build",
         "start": "next start",
         "lint": "next lint",
-        "lint:fix": "next lint --fix",
-        "format": "prettier --write .",
-        "format:check": "prettier --check .",
-        "setup-webhooks": "node setup-webhooks.js"
+        "lint:fix": "next lint --fix"
     },
     "overrides": {
         "postprocessing": {
             "three": "^0.178.0"
         }
     },
-
     "resolutions": {
         "three": "^0.178.0"
     },
@@ -43,7 +39,7 @@
         "jspdf": "^3.0.1",
         "lucide-react": "^0.363.0",
         "nanoid": "^5.1.5",
-        "next": "14.2.5",
+        "next": "^14.2.31",
         "node-fetch": "^2.7.0",
         "postprocessing": "^6.37.6",
         "react": "^18",
