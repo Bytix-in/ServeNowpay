@@ -56,7 +56,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               : 'max-w-full bg-black/85 backdrop-blur-md border-b border-white/10'
           }`}
         >
-          <div className={`px-6 transition-all duration-300 ease-out ${scrolled ? 'py-3' : 'py-4'}`}>
+          <div className={`px-4 sm:px-6 transition-all duration-300 ease-out ${scrolled ? 'py-3' : 'py-4'}`}>
             <nav className="flex items-center justify-between">
               {/* Logo */}
               <div className="flex items-center space-x-2.5">
@@ -147,11 +147,11 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                 {/* Access Portal Button */}
                 <Link 
                   href="/access" 
-                  className={`bg-white text-black font-medium hover:bg-gray-100 transition-all duration-200 ease-out ${
-                    scrolled ? 'px-3 py-1.5 rounded-full text-xs' : 'px-4 py-2 rounded-lg text-sm'
+                  className={`bg-white text-black font-medium hover:bg-gray-100 transition-all duration-200 ease-out whitespace-nowrap ${
+                    scrolled ? 'px-3 py-1.5 rounded-full text-xs sm:px-4 sm:py-2 sm:text-sm' : 'px-4 py-2 rounded-lg text-xs sm:px-5 sm:py-2.5 sm:text-sm'
                   }`}
                 >
-                  {scrolled ? 'Access' : 'Access Portal'}
+                  Access Portal
                 </Link>
 
                 {/* Mobile Menu Button */}
