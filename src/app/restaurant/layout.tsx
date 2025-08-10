@@ -53,14 +53,11 @@ function RestaurantLayoutContent({
             <Menu className="w-6 h-6 text-gray-500" />
           </button>
           {!collapsed && (
-            <>
-              <img 
-                src="/servenow-white.svg" 
-                alt="ServeNow Logo" 
-                className="w-12 h-12 ml-2"
-              />
-              <span className="font-bold text-gray-800 text-2xl">ServeNow</span>
-            </>
+            <img 
+              src="/Logo-White2.png" 
+              alt="ServeNow Logo" 
+              className="w-12 h-12 ml-2"
+            />
           )}
         </div>
         {/* User Profile */}
