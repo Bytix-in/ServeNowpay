@@ -71,7 +71,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
                 <img
                   src="/logo-black.png"
                   alt="ServeNow Logo"
-                  className={`transition-all duration-300 ease-out ${scrolled ? 'w-8 h-8' : 'w-10 h-10'
+                  className={`transition-all duration-300 ease-out ${scrolled ? 'w-12 h-12' : 'w-16 h-16'
                     }`}
                 />
               </div>
