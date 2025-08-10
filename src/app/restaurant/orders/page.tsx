@@ -867,6 +867,67 @@ export default function OrdersManagementPage() {
     );
   };
 
+  // Update payment status for cash orders
+  const updatePaymentStatus = async (orderId: string, newPaymentStatus: 'completed' | 'pending') => {
+    // Prevent multiple simultaneous updates for the same order
+    if (updatingOrders.has(orderId)) return;
+    
+    // Find the order
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+
+    // Add to updating set
+    setUpdatingOrders(prev => new Set(prev).add(orderId));
+
+    // Optimistic update - immediately update the UI
+    updateOrderOptimistically(orderId, { 
+      payment_status: newPaymentStatus, 
+      updated_at: new Date().toISOString() 
+    });
+
+    try {
+      // Make the database update
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          payment_status: newPaymentStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      // Add to activity feed
+      if ((window as any).addOrderActivity) {
+        (window as any).addOrderActivity({
+          type: 'payment_completed',
+          message: `Payment ${newPaymentStatus === 'completed' ? 'confirmed' : 'marked as pending'} for order from ${order.customer_name}`,
+          orderId: order.unique_order_id,
+          customerName: order.customer_name,
+          paymentStatus: newPaymentStatus
+        });
+      }
+
+    } catch (error) {
+      // Revert optimistic update on error
+      updateOrderOptimistically(orderId, { 
+        payment_status: order.payment_status, 
+        updated_at: order.updated_at 
+      });
+      
+      alert('Failed to update payment status. Please try again.');
+    } finally {
+      // Remove from updating set after a short delay to show success state
+      setTimeout(() => {
+        setUpdatingOrders(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(orderId);
+          return newSet;
+        });
+      }, 1000);
+    }
+  };
+
   // Update order status with optimistic updates and state tracking
   const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
     // Prevent multiple simultaneous updates for the same order

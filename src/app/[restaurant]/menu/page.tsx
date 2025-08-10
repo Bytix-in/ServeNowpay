@@ -68,8 +68,10 @@ export default function PublicMenuPage() {
     address: ''
   })
   const [orderLoading, setOrderLoading] = useState(false)
-     const [selectedDish, setSelectedDish] = useState<MenuItem | null>(null)
+  const [selectedDish, setSelectedDish] = useState<MenuItem | null>(null)
   const [showDishDetails, setShowDishDetails] = useState(false)
+  const [cashPaymentEnabled, setCashPaymentEnabled] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<'online' | 'cash'>('online')
 
   // Fetch restaurant and menu data
   useEffect(() => {

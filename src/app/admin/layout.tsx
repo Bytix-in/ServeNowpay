@@ -88,14 +88,16 @@ export default function AdminLayout({
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r flex flex-col h-screen fixed">
         {/* Logo and title */}
-        <div className="p-4 border-b">
-          <div className="flex items-center gap-3">
-            <div className="bg-black rounded-md p-2">
-              <div className="w-5 h-5 bg-white rounded-sm"></div>
-            </div>
+        <div className="p-6 border-b">
+          <div className="flex items-center gap-5">
+            <img 
+              src="/servenow-white.svg" 
+              alt="ServeNow Logo" 
+              className="w-14 h-14"
+            />
             <div>
-              <h1 className="font-bold text-lg">ServeNow Admin</h1>
-              <p className="text-gray-500 text-sm">Management Portal</p>
+              <h1 className="font-bold text-2xl text-gray-900">ServeNow Admin</h1>
+              <p className="text-gray-600 text-base">Management Portal</p>
             </div>
           </div>
         </div>

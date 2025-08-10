@@ -36,7 +36,7 @@ export default function PricingPage() {
             </h1>
             
             <p className="text-lg text-gray-200 max-w-2xl mx-auto leading-relaxed drop-shadow-md">
-              Just ₹66/day - less than 2 cups of chai! Complete restaurant management system with everything you need to get started.
+              Just ₹50/day - less than 2 cups of chai! Complete restaurant management system with everything you need to get started.
             </p>
           </motion.div>
         </section>
@@ -76,7 +76,7 @@ export default function PricingPage() {
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">First: One-Time Setup</h3>
                     <div className="mb-4">
-                      <span className="text-3xl font-bold text-white">₹3,999</span>
+                      <span className="text-3xl font-bold text-white">₹2,999</span>
                       <span className="text-gray-400 text-sm ml-2">one-time only</span>
                     </div>
                     <p className="text-sm text-gray-400 mb-4">Everything to get you started:</p>
@@ -129,10 +129,10 @@ export default function PricingPage() {
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">Then: Monthly Subscription</h3>
                     <div className="mb-4">
-                      <span className="text-3xl font-bold text-white">₹1,999</span>
+                      <span className="text-3xl font-bold text-white">₹1,499</span>
                       <span className="text-gray-400 text-sm ml-2">/month</span>
                     </div>
-                    <p className="text-sm text-gray-400 mb-4">Just ₹66/day for full access:</p>
+                    <p className="text-sm text-gray-400 mb-4">Just ₹50/day for full access:</p>
                     <div className="space-y-2">
                       <div className="flex items-center text-xs text-gray-300">
                         <Check className="w-3 h-3 text-green-400 mr-2 flex-shrink-0" />
@@ -159,11 +159,11 @@ export default function PricingPage() {
               <div className="flex items-center justify-center mb-8">
                 <div className="flex items-center space-x-4">
                   <div className="bg-blue-500/20 px-4 py-2 rounded-full border border-blue-500/30">
-                    <span className="text-blue-400 font-semibold">Pay ₹3,999 Once</span>
+                    <span className="text-blue-400 font-semibold">Pay ₹2,999 Once</span>
                   </div>
                   <ArrowRight className="w-6 h-6 text-gray-400" />
                   <div className="bg-green-500/20 px-4 py-2 rounded-full border border-green-500/30">
-                    <span className="text-green-400 font-semibold">Then ₹1,999/month</span>
+                    <span className="text-green-400 font-semibold">Then ₹1,499/month</span>
                   </div>
                 </div>
               </div>
@@ -173,17 +173,17 @@ export default function PricingPage() {
                 <h3 className="text-lg font-bold text-white mb-4">Your Investment</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <div className="text-2xl font-bold text-white">₹3,999*</div>
+                    <div className="text-2xl font-bold text-white">₹2,999*</div>
                     <div className="text-sm text-gray-400">First Month Total</div>
                     <div className="text-xs text-gray-500">(Setup + Month 1)</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-green-400">₹1,999</div>
+                    <div className="text-2xl font-bold text-green-400">₹1,499</div>
                     <div className="text-sm text-gray-400">Every Month After</div>
                     <div className="text-xs text-gray-500">(Cancel anytime)</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-blue-400">₹66</div>
+                    <div className="text-2xl font-bold text-blue-400">₹50</div>
                     <div className="text-sm text-gray-400">Per Day</div>
                     <div className="text-xs text-gray-500">(Less than 2 chai!)</div>
                   </div>
@@ -212,7 +212,7 @@ export default function PricingPage() {
             >
               <h2 className="text-3xl font-bold text-white mb-6">Return on Investment (ROI)</h2>
               <p className="text-gray-300 max-w-2xl mx-auto">
-                See how ServeNow pays for itself in just 3-4 days with increased efficiency and revenue.
+                See how ServeNow pays for itself in just 2-3 days with increased efficiency and revenue.
               </p>
             </motion.div>
 
@@ -243,7 +243,7 @@ export default function PricingPage() {
                     </div>
                     <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
                       <div className="text-sm text-gray-400 mb-1">Setup Fee Recovery</div>
-                      <div className="text-2xl font-bold text-blue-400">3-4 days</div>
+                      <div className="text-2xl font-bold text-blue-400">2-3 days</div>
                     </div>
                   </div>
                 </div>
@@ -471,7 +471,7 @@ export default function PricingPage() {
                 className="bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 text-center"
               >
                 <h3 className="text-xl font-bold text-white mb-4">First Month</h3>
-                <div className="text-3xl font-bold text-white mb-2">₹3,999*</div>
+                <div className="text-3xl font-bold text-white mb-2">₹2,999*</div>
                 <p className="text-gray-400 text-sm mb-4">Setup + First Month</p>
                 <div className="text-xs text-gray-400">Everything set up and live in 1-2 days</div>
               </motion.div>
@@ -483,7 +483,7 @@ export default function PricingPage() {
                 className="bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 text-center"
               >
                 <h3 className="text-xl font-bold text-white mb-4">Ongoing Monthly</h3>
-                <div className="text-3xl font-bold text-green-400 mb-2">₹1,999</div>
+                <div className="text-3xl font-bold text-green-400 mb-2">₹1,499</div>
                 <p className="text-gray-400 text-sm mb-4">No hidden charges</p>
                 <div className="text-xs text-gray-400">Cancel anytime</div>
               </motion.div>
@@ -495,7 +495,7 @@ export default function PricingPage() {
                 className="bg-black/80 backdrop-blur-lg p-6 rounded-3xl shadow-2xl border border-white/10 hover:border-white/30 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all duration-500 text-center"
               >
                 <h3 className="text-xl font-bold text-white mb-4">Daily Cost</h3>
-                <div className="text-3xl font-bold text-blue-400 mb-2">₹66</div>
+                <div className="text-3xl font-bold text-blue-400 mb-2">₹50</div>
                 <p className="text-gray-400 text-sm mb-4">Per day</p>
                 <div className="text-xs text-gray-400">Less than 2 cups of chai!</div>
               </motion.div>
