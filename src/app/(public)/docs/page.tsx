@@ -106,6 +106,7 @@ const docSections: DocSection[] = [
 export default function DocsPage() {
   const [activeSection, setActiveSection] = useState('introduction')
   const [searchQuery, setSearchQuery] = useState('')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const renderContent = () => {
     switch (activeSection) {
@@ -113,8 +114,8 @@ export default function DocsPage() {
         return (
           <div className="space-y-8">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-4">How ServeNow Works</h1>
-              <p className="text-xl text-gray-300 leading-relaxed">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">How ServeNow Works</h1>
+              <p className="text-base sm:text-lg lg:text-xl text-gray-300 leading-relaxed">
                 ServeNow transforms traditional restaurant operations into a seamless digital experience.
                 Here's a comprehensive overview of how the entire system works from customer interaction to order fulfillment.
               </p>
@@ -126,13 +127,13 @@ export default function DocsPage() {
                 Complete System Overview
               </h2>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <div className="bg-black/60 p-6 rounded-xl border border-white/10">
-                  <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
-                    <Smartphone className="w-6 h-6 text-blue-400" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                <div className="bg-black/60 p-4 sm:p-6 rounded-xl border border-white/10">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-3 sm:mb-4">
+                    <Smartphone className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">Customer Side</h3>
-                  <p className="text-gray-400 text-sm">Customers scan QR codes, browse digital menus, place orders, and make payments through their mobile devices.</p>
+                  <h3 className="text-base sm:text-lg font-bold text-white mb-2">Customer Side</h3>
+                  <p className="text-gray-400 text-xs sm:text-sm">Customers scan QR codes, browse digital menus, place orders, and make payments through their mobile devices.</p>
                 </div>
 
                 <div className="bg-black/60 p-6 rounded-xl border border-white/10">
@@ -209,15 +210,15 @@ export default function DocsPage() {
               <div className="space-y-8">
                 {/* Flow Diagram */}
                 <div className="relative">
-                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     {/* Step 1: Restaurant Registration */}
-                    <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 p-6 rounded-2xl border border-blue-500/30 relative">
-                      <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
-                        <Users className="w-6 h-6 text-white" />
+                    <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 p-4 sm:p-6 rounded-2xl border border-blue-500/30 relative">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
+                        <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                       </div>
-                      <h3 className="text-lg font-bold text-white mb-2">Restaurant Registration</h3>
-                      <p className="text-blue-200 text-sm mb-3">Restaurant signs up for ServeNow</p>
-                      <div className="space-y-2 text-xs text-blue-100">
+                      <h3 className="text-base sm:text-lg font-bold text-white mb-2">Restaurant Registration</h3>
+                      <p className="text-blue-200 text-xs sm:text-sm mb-3">Restaurant signs up for ServeNow</p>
+                      <div className="space-y-1 sm:space-y-2 text-xs text-blue-100">
                         <div>• Restaurant details entry</div>
                         <div>• Contact information setup</div>
                         <div>• Business verification</div>
@@ -4323,19 +4324,49 @@ export default function DocsPage() {
 
   return (
     <div className="min-h-screen bg-black pt-24">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        {/* Mobile Menu Button */}
+        <div className="lg:hidden mb-6">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="flex items-center space-x-2 bg-black/40 backdrop-blur-lg border border-white/10 rounded-lg px-4 py-2 text-white hover:bg-black/60 transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+            <span>Documentation Menu</span>
+          </button>
+        </div>
+
+        <div className="flex gap-4 lg:gap-8 relative">
+          {/* Mobile Sidebar Overlay */}
+          {sidebarOpen && (
+            <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setSidebarOpen(false)} />
+          )}
+          
           {/* Sidebar */}
-          <div className="w-80 flex-shrink-0">
-            <div className="sticky top-32 space-y-6">
+          <div className={`w-72 sm:w-80 flex-shrink-0 lg:block ${
+            sidebarOpen 
+              ? 'fixed top-0 left-0 h-full bg-black/95 backdrop-blur-xl border-r border-white/10 z-50 overflow-y-auto' 
+              : 'hidden'
+          } lg:relative lg:bg-transparent lg:border-0 lg:z-auto lg:overflow-visible`}>
+            <div className="sticky top-32 space-y-4 lg:space-y-6 p-4 lg:p-0">
+              {/* Mobile Close Button */}
+              <div className="lg:hidden flex justify-between items-center mb-4 pt-20">
+                <h3 className="text-white font-semibold">Documentation</h3>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="text-white hover:text-gray-300 transition-colors"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
-                  placeholder="Search documentation..."
+                  placeholder="Search docs..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-black/40 border-white/10 text-white placeholder-gray-400"
+                  className="pl-10 bg-black/40 border-white/10 text-white placeholder-gray-400 text-sm"
                 />
               </div>
 
@@ -4343,7 +4374,7 @@ export default function DocsPage() {
               <nav className="space-y-2">
                 {docSections.map((section) => (
                   <div key={section.id} className="space-y-1">
-                    <div className="flex items-center text-white font-medium py-2 px-3 rounded-lg bg-black/20 border border-white/10">
+                    <div className="flex items-center text-white font-medium py-2 px-3 rounded-lg bg-black/20 border border-white/10 text-sm">
                       {section.icon}
                       <span className="ml-2">{section.title}</span>
                     </div>
@@ -4352,8 +4383,11 @@ export default function DocsPage() {
                         {section.subsections.map((subsection) => (
                           <button
                             key={subsection.id}
-                            onClick={() => setActiveSection(subsection.id)}
-                            className={`w-full text-left py-2 px-3 rounded-lg transition-colors ${activeSection === subsection.id
+                            onClick={() => {
+                              setActiveSection(subsection.id)
+                              setSidebarOpen(false) // Close mobile menu when item is selected
+                            }}
+                            className={`w-full text-left py-2 px-3 rounded-lg transition-colors text-sm ${activeSection === subsection.id
                               ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                               : 'text-gray-400 hover:text-white hover:bg-white/5'
                               }`}
@@ -4376,7 +4410,7 @@ export default function DocsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="bg-black/20 backdrop-blur-lg rounded-2xl border border-white/10 p-8"
+              className="bg-black/20 backdrop-blur-lg rounded-2xl border border-white/10 p-4 sm:p-6 lg:p-8"
             >
               {renderContent()}
             </motion.div>

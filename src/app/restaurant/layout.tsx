@@ -43,7 +43,7 @@ function RestaurantLayoutContent({
     <div className="flex min-h-screen bg-gray-100 font-sans">
       {/* Sidebar */}
       <aside className={`fixed left-0 top-0 h-full transition-all duration-300 bg-white shadow-lg border-r flex flex-col ${collapsed ? 'w-16' : 'w-56'} rounded-r-3xl ml-0 z-40`}>
-        <div className="p-4 border-b flex items-center gap-2">
+        <div className="p-6 border-b flex items-center gap-3">
           <button
             className="p-1 rounded-full hover:bg-gray-100 transition cursor-pointer"
             onClick={() => setCollapsed(!collapsed)}
@@ -54,10 +54,12 @@ function RestaurantLayoutContent({
           </button>
           {!collapsed && (
             <>
-              <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center ml-2">
-                <span className="text-white font-bold">S</span>
-              </div>
-              <span className="font-bold text-green-600 text-lg">ServeNow</span>
+              <img 
+                src="/servenow-white.svg" 
+                alt="ServeNow Logo" 
+                className="w-12 h-12 ml-2"
+              />
+              <span className="font-bold text-gray-800 text-2xl">ServeNow</span>
             </>
           )}
         </div>

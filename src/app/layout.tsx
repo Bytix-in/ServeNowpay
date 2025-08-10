@@ -10,6 +10,15 @@ const comfortaa = Comfortaa({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'ServeNow - Restaurant Management SaaS',
   description: 'Modern restaurant management platform built with Next.js 14',
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/ServeNow-Black.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/ServeNow-Black.svg',
+  },
 }
 
 export default function RootLayout({
