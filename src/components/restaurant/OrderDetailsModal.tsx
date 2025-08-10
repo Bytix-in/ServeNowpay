@@ -19,6 +19,7 @@ interface OrderDetails {
   customer_address: string | null;
   customer_note: string | null;
   order_type: string;
+  payment_method?: string;
   items: any[];
   total_amount: number;
   status: string;
@@ -120,9 +121,10 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }: OrderDet
     }
   };
 
-  const getPaymentStatusLabel = (status: string) => {
+  const getPaymentStatusLabel = (status: string, paymentMethod?: string) => {
     switch (status) {
-      case 'completed': return 'Paid';
+      case 'completed': 
+        return `Paid${paymentMethod ? ` (${paymentMethod === 'cash' ? 'Cash' : 'Online'})` : ''}`;
       case 'pending': return 'Payment Pending';
       case 'verifying': return 'Verifying Payment';
       case 'failed': return 'Payment Failed';
@@ -214,7 +216,7 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }: OrderDet
                         {getStatusLabel(order.status)}
                       </span>
                       <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPaymentStatusColor(order.payment_status)}`}>
-                        {getPaymentStatusLabel(order.payment_status)}
+                        {getPaymentStatusLabel(order.payment_status, order.payment_method)}
                       </span>
                     </div>
                   </div>
@@ -340,9 +342,22 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }: OrderDet
                           <div className="flex justify-between items-center">
                             <span className="text-gray-600">Status:</span>
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(order.payment_status)}`}>
-                              {getPaymentStatusLabel(order.payment_status)}
+                              {getPaymentStatusLabel(order.payment_status, order.payment_method)}
                             </span>
                           </div>
+                          
+                          {order.payment_method && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-600">Payment Method:</span>
+                              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                order.payment_method === 'cash' 
+                                  ? 'bg-green-100 text-green-800 border-green-200' 
+                                  : 'bg-blue-100 text-blue-800 border-blue-200'
+                              }`}>
+                                {order.payment_method === 'cash' ? '💵 Cash Payment' : '💳 Online Payment'}
+                              </span>
+                            </div>
+                          )}
                           
                           {order.payment_status === 'completed' && (
                             <div className="bg-green-50 border border-green-200 rounded-lg p-3">

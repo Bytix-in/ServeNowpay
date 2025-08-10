@@ -20,6 +20,7 @@ export interface InvoiceData {
   total_amount: number;
   order_status: string;
   payment_status: string;
+  payment_method?: string;
   order_date: string;
   restaurant_name: string;
   restaurant_address?: string;
@@ -83,6 +84,21 @@ export const InvoiceTemplate = React.forwardRef<HTMLDivElement, InvoiceTemplateP
           >
             Payment: {formatStatus(data.payment_status)}
           </span>
+          {data.payment_method ? (
+            <span 
+              className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                data.payment_method === 'cash' 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-blue-100 text-blue-800'
+              }`}
+            >
+              Method: {data.payment_method === 'cash' ? 'Cash Payment' : 'Online Payment'}
+            </span>
+          ) : (
+            <span className="px-4 py-2 rounded-full text-sm font-semibold bg-gray-100 text-gray-800">
+              Method: Not Specified
+            </span>
+          )}
         </div>
 
         {/* Restaurant and Customer Info */}
@@ -163,10 +179,12 @@ export const InvoiceTemplate = React.forwardRef<HTMLDivElement, InvoiceTemplateP
               <span className="font-medium">{formatCurrency(data.subtotal)}</span>
             </div>
             
-            <div className="flex justify-between items-center">
-              <span>Payment Gateway Charge (2%):</span>
-              <span className="font-medium">{formatCurrency(data.payment_gateway_charge)}</span>
-            </div>
+            {data.payment_method === 'online' && data.payment_gateway_charge > 0 && (
+              <div className="flex justify-between items-center">
+                <span>Payment Gateway Charge (2%):</span>
+                <span className="font-medium">{formatCurrency(data.payment_gateway_charge)}</span>
+              </div>
+            )}
 
             <div className="border-t-2 border-purple-600 pt-3 mt-3">
               <div className="flex justify-between items-center text-xl font-bold text-purple-600">
