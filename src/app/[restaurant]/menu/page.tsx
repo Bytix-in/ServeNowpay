@@ -15,7 +15,8 @@ import {
   User,
   Star,
   Search,
-  Home
+  Home,
+  Bell
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -40,6 +41,7 @@ type CustomerInfo = {
   phone: string
   tableNumber: string
   address: string
+  note: string
 }
 
 export default function PublicMenuPage() {
@@ -65,13 +67,24 @@ export default function PublicMenuPage() {
     name: '',
     phone: '',
     tableNumber: '',
-    address: ''
+    address: '',
+    note: ''
   })
   const [orderLoading, setOrderLoading] = useState(false)
   const [selectedDish, setSelectedDish] = useState<MenuItem | null>(null)
   const [showDishDetails, setShowDishDetails] = useState(false)
   const [cashPaymentEnabled, setCashPaymentEnabled] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'cash'>('online')
+  
+  // Waiter call state
+  const [isCallingWaiter, setIsCallingWaiter] = useState(false)
+  const [showWaiterCallModal, setShowWaiterCallModal] = useState(false)
+  const [waiterCallInfo, setWaiterCallInfo] = useState({
+    customerName: '',
+    tableNumber: '',
+    customerPhone: '',
+    message: 'Customer is requesting assistance'
+  })
 
   // Fetch restaurant and menu data
   useEffect(() => {
@@ -306,6 +319,56 @@ export default function PublicMenuPage() {
     setShowCheckout(false)
   }
 
+  // Call waiter function
+  const callWaiter = async () => {
+    if (!restaurant || !waiterCallInfo.customerName || !waiterCallInfo.tableNumber) {
+      alert('Please fill in your name and table number to call the waiter.')
+      return
+    }
+
+    try {
+      setIsCallingWaiter(true)
+
+      const response = await fetch('/api/call-waiter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          restaurant_id: restaurant.id,
+          customer_name: waiterCallInfo.customerName,
+          table_number: waiterCallInfo.tableNumber,
+          customer_phone: waiterCallInfo.customerPhone,
+          message: waiterCallInfo.message
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to call waiter')
+      }
+
+      const result = await response.json()
+
+      if (result.success) {
+        alert('Waiter has been notified! They will be with you shortly.')
+        setShowWaiterCallModal(false)
+        setWaiterCallInfo({
+          customerName: '',
+          tableNumber: '',
+          customerPhone: '',
+          message: 'Customer is requesting assistance'
+        })
+      } else {
+        throw new Error(result.error || 'Failed to call waiter')
+      }
+    } catch (error) {
+      console.error('Error calling waiter:', error)
+      alert(error instanceof Error ? error.message : 'Failed to call waiter. Please try again.')
+    } finally {
+      setIsCallingWaiter(false)
+    }
+  }
+
 
 
   const handleGetStarted = () => {
@@ -331,6 +394,7 @@ export default function PublicMenuPage() {
           customer_phone: customerInfo.phone,
           table_number: orderType === 'dine_in' ? customerInfo.tableNumber : null,
           customer_address: orderType === 'online' ? customerInfo.address : null,
+          customer_note: customerInfo.note,
           order_type: orderType,
           items: cart.map(item => ({
             dish_id: item.dish.id,
@@ -411,7 +475,7 @@ export default function PublicMenuPage() {
 
       // Clear cart after initiating payment
       clearCart()
-      setCustomerInfo({ name: '', phone: '', tableNumber: '', address: '' })
+      setCustomerInfo({ name: '', phone: '', tableNumber: '', address: '', note: '' })
 
     } catch (err) {
       console.error('Error placing order:', err)
@@ -468,16 +532,29 @@ export default function PublicMenuPage() {
     <div className="min-h-screen bg-white relative pb-20">
       {/* Modern Header Section */}
       <div className="bg-white px-4 py-6 sticky top-0 z-40 border-b border-gray-200 shadow-sm">
-        {/* Header with Menu title and profile */}
+        {/* Header with Menu title, Call Waiter button, and profile */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-purple-700">Menu</h1>
-          <motion.div 
-            className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-purple-200 transition-colors"
-            whileTap={{ scale: 0.95 }}
-            onClick={() => router.push('/auth/user-login')}
-          >
-            <User className="w-6 h-6 text-purple-700" />
-          </motion.div>
+          <div className="flex items-center gap-3">
+            {/* Call Waiter Button */}
+            <motion.button
+              className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-full shadow-md transition-colors"
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowWaiterCallModal(true)}
+            >
+              <Bell className="w-4 h-4" />
+              <span className="text-sm font-medium">Call Waiter</span>
+            </motion.button>
+            
+            {/* Profile Button */}
+            <motion.div 
+              className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-purple-200 transition-colors"
+              whileTap={{ scale: 0.95 }}
+              onClick={() => router.push('/auth/user-login')}
+            >
+              <User className="w-6 h-6 text-purple-700" />
+            </motion.div>
+          </div>
         </div>
 
         {/* Search Bar */}
@@ -1102,6 +1179,25 @@ export default function PublicMenuPage() {
                 </div>
               )}
 
+              {/* Customer Note Field */}
+              <div>
+                <Label htmlFor="customerNote" className="text-base font-medium text-gray-900">
+                  Special Instructions (Optional)
+                </Label>
+                <textarea
+                  id="customerNote"
+                  placeholder="Any special requests or dietary preferences? (e.g., less spicy, no onions, extra sauce)"
+                  value={customerInfo.note}
+                  onChange={(e) => setCustomerInfo(prev => ({ ...prev, note: e.target.value }))}
+                  className="mt-2 w-full py-3 px-4 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-0 resize-none"
+                  rows={3}
+                  maxLength={500}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Let us know how you'd like your food prepared (max 500 characters)
+                </p>
+              </div>
+
               {/* Order Summary */}
               <div className="bg-gray-50 p-3 rounded-lg">
                 <h3 className="font-medium mb-2">Order Summary</h3>
@@ -1252,6 +1348,131 @@ export default function PublicMenuPage() {
                 >
                   <Plus className="w-4 h-4 mr-1" />
                   Add to Cart
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Call Waiter Modal */}
+      {showWaiterCallModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-white rounded-xl shadow-xl max-w-md w-full"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-orange-500" />
+                <h2 className="text-xl font-semibold text-gray-900">Call Waiter</h2>
+              </div>
+              <Button
+                onClick={() => setShowWaiterCallModal(false)}
+                variant="outline"
+                size="sm"
+                className="p-1"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-4">
+              <div className="text-center mb-4">
+                <div className="text-4xl mb-2">🙋‍♂️</div>
+                <p className="text-gray-600">Need assistance? Let us know your details and we'll send a waiter to your table.</p>
+              </div>
+
+              {/* Customer Name */}
+              <div>
+                <Label htmlFor="waiter-customer-name" className="text-sm font-medium text-gray-700">
+                  Your Name *
+                </Label>
+                <Input
+                  id="waiter-customer-name"
+                  type="text"
+                  placeholder="Enter your name"
+                  value={waiterCallInfo.customerName}
+                  onChange={(e) => setWaiterCallInfo(prev => ({ ...prev, customerName: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+
+              {/* Table Number */}
+              <div>
+                <Label htmlFor="waiter-table-number" className="text-sm font-medium text-gray-700">
+                  Table Number *
+                </Label>
+                <Input
+                  id="waiter-table-number"
+                  type="text"
+                  placeholder="e.g., T1, Table 5, A12"
+                  value={waiterCallInfo.tableNumber}
+                  onChange={(e) => setWaiterCallInfo(prev => ({ ...prev, tableNumber: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+
+              {/* Phone Number (Optional) */}
+              <div>
+                <Label htmlFor="waiter-phone" className="text-sm font-medium text-gray-700">
+                  Phone Number (Optional)
+                </Label>
+                <Input
+                  id="waiter-phone"
+                  type="tel"
+                  placeholder="Your phone number"
+                  value={waiterCallInfo.customerPhone}
+                  onChange={(e) => setWaiterCallInfo(prev => ({ ...prev, customerPhone: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+
+              {/* Message */}
+              <div>
+                <Label htmlFor="waiter-message" className="text-sm font-medium text-gray-700">
+                  What do you need help with?
+                </Label>
+                <textarea
+                  id="waiter-message"
+                  rows={3}
+                  placeholder="e.g., Need menu recommendations, ready to order, need extra napkins..."
+                  value={waiterCallInfo.message}
+                  onChange={(e) => setWaiterCallInfo(prev => ({ ...prev, message: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => setShowWaiterCallModal(false)}
+                  variant="outline"
+                  className="flex-1 border-gray-300 text-gray-700"
+                  disabled={isCallingWaiter}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={callWaiter}
+                  disabled={!waiterCallInfo.customerName || !waiterCallInfo.tableNumber || isCallingWaiter}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  {isCallingWaiter ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Calling...
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="w-4 h-4 mr-2" />
+                      Call Waiter
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

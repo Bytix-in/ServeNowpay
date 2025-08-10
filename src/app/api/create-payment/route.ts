@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       customer_phone,
       table_number,
       customer_address,
+      customer_note,
       order_type = 'dine_in', // 'dine_in' or 'online'
       items,
       total_amount,
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
           customer_phone,
           table_number: order_type === 'dine_in' ? table_number : null,
           customer_address: order_type === 'online' ? customer_address : null,
+          customer_note: customer_note || null,
           order_type,
           payment_method,
           items,
@@ -140,6 +142,7 @@ export async function POST(request: NextRequest) {
       customer_phone,
       table_number: order_type === 'dine_in' ? table_number : null,
       customer_address: order_type === 'online' ? customer_address : null,
+      customer_note: customer_note || null,
       order_type,
       payment_method,
       items,

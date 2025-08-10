@@ -6,8 +6,10 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePaidOrderNotifications } from '@/hooks/usePaidOrderNotifications';
 import { useRealTimeOrders } from '@/hooks/useRealTimeOrders';
+import { useWaiterCallNotifications } from '@/hooks/useWaiterCallNotifications';
 import OrderDetailsModal from '@/components/restaurant/OrderDetailsModal';
 import NotificationSetup from '@/components/restaurant/NotificationSetup';
+import { notificationManager } from "@/utils/notifications";
 
 
 
@@ -17,6 +19,7 @@ interface Order {
   customer_phone: string;
   table_number: string | null;
   customer_address: string | null;
+  customer_note: string | null;
   order_type: string;
   items: any[];
   total_amount: number;
@@ -53,6 +56,39 @@ export default function OrdersManagementPage() {
   usePaidOrderNotifications({
     restaurantId: user?.restaurantId || '',
     enabled: !!user?.restaurantId
+  });
+
+  // Initialize waiter call notifications
+  const {
+    calls: waiterCalls,
+    loading: waiterCallsLoading,
+    isConnected: waiterCallsConnected,
+    updateCallStatus
+  } = useWaiterCallNotifications({
+    restaurantId: user?.restaurantId || '',
+    enabled: !!user?.restaurantId,
+    onNewCall: (call) => {
+      console.log('🔔 New waiter call received:', call);
+      // Add to activity feed
+      if ((window as any).addOrderActivity) {
+        (window as any).addOrderActivity({
+          type: 'waiter_call',
+          message: `${call.customer_name} at Table ${call.table_number} is calling for assistance`,
+          orderId: call.id,
+          customerName: call.customer_name,
+          tableNumber: call.table_number
+        });
+      }
+    }
+  });
+
+  // Debug logging
+  console.log('🏪 Restaurant Dashboard Debug:', {
+    restaurantId: user?.restaurantId,
+    waiterCalls: waiterCalls,
+    waiterCallsLoading,
+    waiterCallsConnected,
+    userInfo: user
   });
 
   // Print state management
@@ -413,6 +449,7 @@ export default function OrdersManagementPage() {
     customerName: '',
     customerPhone: '',
     tableNumber: '',
+    customerNote: '',
     paymentMethod: 'cash' as 'cash' | 'online',
     items: [] as { menuItem: MenuItem; quantity: number }[]
   });
@@ -661,6 +698,7 @@ export default function OrdersManagementPage() {
           customer_name: manualOrder.customerName,
           customer_phone: manualOrder.customerPhone,
           table_number: manualOrder.tableNumber,
+          customer_note: manualOrder.customerNote || null,
           payment_method: 'cash', // Cash payment method
           items: manualOrder.items.map(item => ({
             dish_id: item.menuItem.id,
@@ -693,6 +731,7 @@ export default function OrdersManagementPage() {
           customerName: '',
           customerPhone: '',
           tableNumber: '',
+          customerNote: '',
           paymentMethod: 'cash',
           items: []
         });
@@ -711,6 +750,7 @@ export default function OrdersManagementPage() {
           customer_name: manualOrder.customerName,
           customer_phone: manualOrder.customerPhone,
           table_number: manualOrder.tableNumber,
+          customer_note: manualOrder.customerNote,
           payment_method: 'online', // Online payment method
           items: manualOrder.items.map(item => ({
             dish_id: item.menuItem.id,
@@ -753,6 +793,7 @@ export default function OrdersManagementPage() {
               customerName: '',
               customerPhone: '',
               tableNumber: '',
+              customerNote: '',
               paymentMethod: 'cash',
               items: []
             });
@@ -782,6 +823,7 @@ export default function OrdersManagementPage() {
               customerName: '',
               customerPhone: '',
               tableNumber: '',
+              customerNote: '',
               paymentMethod: 'cash',
               items: []
             });
@@ -1185,6 +1227,117 @@ export default function OrdersManagementPage() {
         ))}
       </div>
 
+      {/* Waiter Calls Section - Always show when connected */}
+      {(waiterCalls.length > 0 || waiterCallsConnected) && (
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                  <span className="text-xl">🙋‍♂️</span>
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    🔔 Waiter Calls ({waiterCalls.length})
+                    <motion.div 
+                      className="w-2 h-2 bg-orange-500 rounded-full"
+                      animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
+                      transition={{ duration: 1, repeat: Infinity }}
+                    />
+                  </h2>
+                  <p className="text-sm text-gray-600">Customers requesting assistance</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Test Sound Button */}
+                <button
+                  onClick={async () => {
+                    try {
+                      await notificationManager.playNotificationSound();
+                      await notificationManager.showNotification({
+                        title: '🔔 Test Waiter Call',
+                        body: 'This is how waiter call notifications will sound and look!',
+                        tag: 'test-waiter-call',
+                        requireInteraction: false,
+                        icon: '/favicon.ico'
+                      });
+                    } catch (error) {
+                      console.error('Test notification failed:', error);
+                    }
+                  }}
+                  className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs rounded-full transition-colors"
+                >
+                  🔊 Test Sound
+                </button>
+                <div className="text-sm text-gray-500">
+                  {waiterCallsConnected ? '🟢 Live' : '🔴 Offline'}
+                  <div className="text-xs mt-1">
+                    Calls: {waiterCalls.length} | Loading: {waiterCallsLoading ? 'Yes' : 'No'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {waiterCalls.length === 0 ? (
+                <div className="col-span-full text-center py-8">
+                  <div className="text-4xl mb-2">👂</div>
+                  <p className="text-gray-500">Listening for waiter calls...</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Status: {waiterCallsConnected ? 'Connected' : 'Connecting...'}
+                  </p>
+                </div>
+              ) : (
+                waiterCalls.map((call) => (
+                <motion.div
+                  key={call.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-white border border-orange-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{call.customer_name}</h3>
+                      <p className="text-sm text-gray-600">Table {call.table_number}</p>
+                      {call.customer_phone && (
+                        <p className="text-xs text-gray-500">📞 {call.customer_phone}</p>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {new Date(call.created_at).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded italic">
+                      "{call.message}"
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => updateCallStatus(call.id, 'acknowledged')}
+                      className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xs py-2 px-3 rounded transition-colors"
+                    >
+                      ✓ Acknowledge
+                    </button>
+                    <button
+                      onClick={() => updateCallStatus(call.id, 'completed')}
+                      className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-2 px-3 rounded transition-colors"
+                    >
+                      ✅ Complete
+                    </button>
+                  </div>
+                </motion.div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       
       <button 
@@ -1830,6 +1983,24 @@ export default function OrdersManagementPage() {
                     placeholder="Enter table number"
                   />
                 </div>
+              </div>
+
+              {/* Customer Note */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Special Instructions (Optional)
+                </label>
+                <textarea
+                  value={manualOrder.customerNote}
+                  onChange={(e) => setManualOrder(prev => ({ ...prev, customerNote: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  placeholder="Any special requests or dietary preferences? (e.g., less spicy, no onions, extra sauce)"
+                  rows={3}
+                  maxLength={500}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Let the kitchen know how the customer wants their food prepared (max 500 characters)
+                </p>
               </div>
 
               {/* Payment Method Selection */}

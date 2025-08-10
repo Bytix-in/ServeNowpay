@@ -45,3 +45,6 @@ update-order-workflow.sql
 /scripts
 
 /docs
+
+# database migrations
+database_migrations/

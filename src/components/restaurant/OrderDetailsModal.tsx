@@ -17,6 +17,7 @@ interface OrderDetails {
   customer_phone: string;
   table_number: string | null;
   customer_address: string | null;
+  customer_note: string | null;
   order_type: string;
   items: any[];
   total_amount: number;
@@ -273,6 +274,23 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }: OrderDet
                       <p className="font-bold text-2xl text-green-600">{formatCurrency(order.total_amount)}</p>
                     </div>
                   </div>
+
+                  {/* Customer Note Section */}
+                  {order.customer_note && (
+                    <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
+                        📝 Special Instructions from Customer
+                      </h4>
+                      <div className="bg-white p-3 rounded-lg border border-amber-100">
+                        <p className="text-gray-900 leading-relaxed">
+                          "{order.customer_note}"
+                        </p>
+                      </div>
+                      <p className="text-amber-700 text-sm mt-2 font-medium">
+                        ⚠️ Please ensure the kitchen team sees these instructions
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Order Items */}
