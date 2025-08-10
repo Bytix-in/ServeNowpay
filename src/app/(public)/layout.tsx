@@ -64,18 +64,16 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
               : 'max-w-full bg-black/85 backdrop-blur-md border-b border-white/10'
             }`}
         >
-          <div className={`px-4 sm:px-6 transition-all duration-300 ease-out ${scrolled ? 'py-3' : 'py-4'}`}>
+          <div className={`px-4 sm:px-6 transition-all duration-300 ease-out ${scrolled ? 'py-2' : 'py-3'}`}>
             <nav className="flex items-center justify-between">
               {/* Logo */}
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center">
                 <img
                   src="/logo-black.png"
                   alt="ServeNow Logo"
-                  className={`transition-all duration-300 ease-out ${scrolled ? 'w-12 h-12' : 'w-16 h-16'
+                  className={`transition-all duration-300 ease-out ${scrolled ? 'w-8 h-8' : 'w-10 h-10'
                     }`}
                 />
-                <span className={`font-black text-white tracking-tight transition-all duration-300 ease-out ${scrolled ? 'text-2xl' : 'text-3xl'
-                  }`}>ServeNow</span>
               </div>
 
               {/* Navigation Links */}
