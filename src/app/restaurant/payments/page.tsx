@@ -25,6 +25,7 @@ type PaymentSettings = {
   cashfree_client_id: string | null
   cashfree_environment: string
   is_payment_enabled: boolean
+  cash_payment_enabled?: boolean
 }
 
 export default function PaymentSettingsPage() {
@@ -183,11 +184,37 @@ export default function PaymentSettingsPage() {
 
       setPaymentSettings(prev => prev ? { ...prev, is_payment_enabled: newStatus } : null)
       
-      alert(`Payments ${newStatus ? 'enabled' : 'disabled'} successfully!`)
+      alert(`Online payments ${newStatus ? 'enabled' : 'disabled'} successfully!`)
 
     } catch (error) {
       console.error('Error updating payment status:', error)
       alert('Failed to update payment status')
+    }
+  }
+
+  const toggleCashPaymentStatus = async () => {
+    if (!paymentSettings?.id) return
+
+    try {
+      const newStatus = !paymentSettings.cash_payment_enabled
+
+      const { error } = await supabase
+        .from('payment_settings')
+        .update({ 
+          cash_payment_enabled: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', paymentSettings.id)
+
+      if (error) throw error
+
+      setPaymentSettings(prev => prev ? { ...prev, cash_payment_enabled: newStatus } : null)
+      
+      alert(`Cash payments ${newStatus ? 'enabled' : 'disabled'} successfully!`)
+
+    } catch (error) {
+      console.error('Error updating cash payment status:', error)
+      alert('Failed to update cash payment status')
     }
   }
 
@@ -253,27 +280,59 @@ export default function PaymentSettingsPage() {
             </div>
           </div>
         ) : (
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Payment Status</h3>
-                <p className="text-gray-600">
-                  Payments are currently {paymentSettings.is_payment_enabled ? 'enabled' : 'disabled'} for your restaurant
-                </p>
+          <div className="space-y-6 mb-6">
+            {/* Online Payment Status */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Online Payment Status</h3>
+                  <p className="text-gray-600">
+                    Online payments are currently {paymentSettings.is_payment_enabled ? 'enabled' : 'disabled'} for your restaurant
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  {paymentSettings.is_payment_enabled ? (
+                    <CheckCircle className="w-6 h-6 text-green-500" />
+                  ) : (
+                    <XCircle className="w-6 h-6 text-red-500" />
+                  )}
+                  <Button
+                    onClick={togglePaymentStatus}
+                    variant={paymentSettings.is_payment_enabled ? "outline" : "default"}
+                    size="sm"
+                  >
+                    {paymentSettings.is_payment_enabled ? 'Disable' : 'Enable'} Online Payments
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                {paymentSettings.is_payment_enabled ? (
-                  <CheckCircle className="w-6 h-6 text-green-500" />
-                ) : (
-                  <XCircle className="w-6 h-6 text-red-500" />
-                )}
-                <Button
-                  onClick={togglePaymentStatus}
-                  variant={paymentSettings.is_payment_enabled ? "outline" : "default"}
-                  size="sm"
-                >
-                  {paymentSettings.is_payment_enabled ? 'Disable' : 'Enable'} Payments
-                </Button>
+            </div>
+
+            {/* Cash Payment Status */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Cash Payment Option</h3>
+                  <p className="text-gray-600">
+                    Cash payment option is currently {paymentSettings.cash_payment_enabled ? 'enabled' : 'disabled'} for your restaurant
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    When enabled, customers can choose to pay with cash and place orders without online payment
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  {paymentSettings.cash_payment_enabled ? (
+                    <CheckCircle className="w-6 h-6 text-green-500" />
+                  ) : (
+                    <XCircle className="w-6 h-6 text-red-500" />
+                  )}
+                  <Button
+                    onClick={toggleCashPaymentStatus}
+                    variant={paymentSettings.cash_payment_enabled ? "outline" : "default"}
+                    size="sm"
+                  >
+                    {paymentSettings.cash_payment_enabled ? 'Disable' : 'Enable'} Cash Payments
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

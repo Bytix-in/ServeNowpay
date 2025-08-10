@@ -16,7 +16,8 @@ import {
   Star,
   Search,
   Home,
-  Bell
+  Bell,
+  CreditCard
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -141,6 +142,32 @@ export default function PublicMenuPage() {
       fetchRestaurantAndMenu()
     }
   }, [restaurantSlug])
+
+  // Fetch cash payment setting
+  useEffect(() => {
+    const fetchCashPaymentSetting = async () => {
+      if (!restaurant?.id) return
+
+      try {
+        const { data: paymentSettings, error } = await supabase
+          .from('payment_settings')
+          .select('cash_payment_enabled')
+          .eq('restaurant_id', restaurant.id)
+          .single()
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching payment settings:', error)
+          return
+        }
+
+        setCashPaymentEnabled(paymentSettings?.cash_payment_enabled || false)
+      } catch (err) {
+        console.error('Error fetching cash payment setting:', err)
+      }
+    }
+
+    fetchCashPaymentSetting()
+  }, [restaurant?.id])
 
   // Filter dishes based on search and category
   useEffect(() => {
@@ -394,7 +421,50 @@ export default function PublicMenuPage() {
     try {
       setOrderLoading(true)
 
-      // Create payment order
+      // For cash payments, place order directly without payment processing
+      if (paymentMethod === 'cash') {
+        const response = await fetch('/api/create-cash-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            restaurant_id: restaurant.id,
+            customer_name: customerInfo.name,
+            customer_phone: customerInfo.phone,
+            table_number: orderType === 'dine_in' ? customerInfo.tableNumber : null,
+            customer_address: orderType === 'online' ? customerInfo.address : null,
+            customer_note: customerInfo.note,
+            order_type: orderType,
+            payment_method: 'cash',
+            items: cart.map(item => ({
+              dish_id: item.dish.id,
+              dish_name: item.dish.name,
+              quantity: item.quantity,
+              price: item.dish.price,
+              total: item.dish.price * item.quantity
+            })),
+            total_amount: getCartSubtotal() // No gateway charges for cash
+          })
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to place order')
+        }
+
+        const orderData = await response.json()
+        
+        // Clear cart and redirect to success page
+        clearCart()
+        setCustomerInfo({ name: '', phone: '', tableNumber: '', address: '', note: '' })
+        
+        alert('Order placed successfully! Please have exact change ready.')
+        window.location.href = `/payment/success?order_id=${orderData.order_id}&payment_method=cash`
+        return
+      }
+
+      // For online payments, create payment order
       const response = await fetch('/api/create-payment', {
         method: 'POST',
         headers: {
@@ -408,6 +478,7 @@ export default function PublicMenuPage() {
           customer_address: orderType === 'online' ? customerInfo.address : null,
           customer_note: customerInfo.note,
           order_type: orderType,
+          payment_method: 'online',
           items: cart.map(item => ({
             dish_id: item.dish.id,
             dish_name: item.dish.name,
@@ -1226,6 +1297,81 @@ export default function PublicMenuPage() {
                 </p>
               </div>
 
+              {/* Payment Method Selection - Only show if cash payment is enabled */}
+              {cashPaymentEnabled && (
+                <div>
+                  <Label className="text-base font-medium text-gray-900 mb-3 block">
+                    Payment Method <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="grid grid-cols-1 gap-3">
+                    {/* Online Payment Option */}
+                    <motion.button
+                      onClick={() => setPaymentMethod('online')}
+                      className={`py-4 px-4 rounded-xl border-2 transition-all ${
+                        paymentMethod === 'online'
+                          ? 'border-purple-600 bg-purple-50 text-purple-700 shadow-md'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      }`}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          paymentMethod === 'online' ? 'bg-purple-100' : 'bg-gray-100'
+                        }`}>
+                          <CreditCard className="w-5 h-5" />
+                        </div>
+                        <div className="text-left">
+                          <span className="text-sm font-semibold block">Online Payment</span>
+                          <span className="text-xs text-gray-500">Pay securely with UPI, Card, or Net Banking</span>
+                        </div>
+                      </div>
+                    </motion.button>
+                    
+                    {/* Cash Payment Option */}
+                    <motion.button
+                      onClick={() => setPaymentMethod('cash')}
+                      className={`py-4 px-4 rounded-xl border-2 transition-all ${
+                        paymentMethod === 'cash'
+                          ? 'border-purple-600 bg-purple-50 text-purple-700 shadow-md'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      }`}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          paymentMethod === 'cash' ? 'bg-purple-100' : 'bg-gray-100'
+                        }`}>
+                          <span className="text-lg">💵</span>
+                        </div>
+                        <div className="text-left">
+                          <span className="text-sm font-semibold block">Cash Payment</span>
+                          <span className="text-xs text-gray-500">Pay with cash when order is delivered/served</span>
+                        </div>
+                      </div>
+                    </motion.button>
+                  </div>
+                  
+                  {/* Payment method info */}
+                  {paymentMethod === 'online' && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-700">
+                        <span className="font-medium">Secure Online Payment:</span> 
+                        You'll be redirected to our secure payment gateway to complete your payment.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {paymentMethod === 'cash' && (
+                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-700">
+                        <span className="font-medium">Cash Payment:</span> 
+                        Your order will be placed immediately. Please have exact change ready when your order arrives.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Order Summary */}
               <div className="bg-gray-50 p-3 rounded-lg">
                 <h3 className="font-medium mb-2">Order Summary</h3>
@@ -1246,18 +1392,20 @@ export default function PublicMenuPage() {
                       <span>{getCartSubtotal().toFixed(2)}</span>
                     </div>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Payment Gateway Charge (2%):</span>
-                    <div className="flex items-center">
-                      <IndianRupee className="w-3 h-3" />
-                      <span>{getPaymentGatewayCharge().toFixed(2)}</span>
+                  {paymentMethod === 'online' && (
+                    <div className="flex justify-between text-sm">
+                      <span>Payment Gateway Charge (2%):</span>
+                      <div className="flex items-center">
+                        <IndianRupee className="w-3 h-3" />
+                        <span>{getPaymentGatewayCharge().toFixed(2)}</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div className="flex justify-between font-semibold pt-1 border-t">
                     <span>Total:</span>
                     <div className="flex items-center text-purple-600">
                       <IndianRupee className="w-4 h-4" />
-                      <span>{getFinalTotal().toFixed(2)}</span>
+                      <span>{paymentMethod === 'cash' ? getCartSubtotal().toFixed(2) : getFinalTotal().toFixed(2)}</span>
                     </div>
                   </div>
                 </div>

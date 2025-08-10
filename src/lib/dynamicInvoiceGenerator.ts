@@ -58,6 +58,7 @@ export async function fetchInvoiceData(orderId: string): Promise<InvoiceData> {
         total_amount,
         status,
         payment_status,
+        payment_method,
         created_at,
         restaurants (
           name,
@@ -124,13 +125,14 @@ export async function fetchInvoiceData(orderId: string): Promise<InvoiceData> {
     // Calculate subtotal from order items
     const subtotal = items.reduce((sum, item) => sum + item.total_price, 0)
     
-    // Calculate payment gateway charge (2%)
-    const paymentGatewayCharge = subtotal * 0.02
+    // For online payments, calculate gateway charge from subtotal
+    // For cash payments, no gateway charge
+    const paymentGatewayCharge = (order.payment_method === 'online') ? subtotal * 0.02 : 0
     
-    // Total amount should be subtotal + payment gateway charge
+    // Use the stored total amount from database (already calculated correctly during order placement)
     const totalAmount = order.total_amount
 
-    return {
+    const invoiceData = {
       order_id: order.id,
       unique_order_id: order.unique_order_id || order.id.slice(-8),
       customer_name: order.customer_name,
@@ -139,6 +141,7 @@ export async function fetchInvoiceData(orderId: string): Promise<InvoiceData> {
       total_amount: totalAmount,
       order_status: order.status,
       payment_status: order.payment_status,
+      payment_method: order.payment_method || 'online', // Default to online if null
       order_date: order.created_at,
       restaurant_name: order.restaurants?.name || 'Restaurant',
       restaurant_address: order.restaurants?.address,
@@ -148,6 +151,11 @@ export async function fetchInvoiceData(orderId: string): Promise<InvoiceData> {
       payment_gateway_charge: paymentGatewayCharge,
       items
     }
+
+    // Debug log to check payment method
+    console.log('Invoice data payment_method:', invoiceData.payment_method)
+    
+    return invoiceData
 
   } catch (error) {
     throw error
@@ -387,6 +395,11 @@ export function generateInvoiceHTML(invoiceData: InvoiceData): string {
         <span class="status-badge status-${getStatusClass(invoiceData.payment_status)}">
             Payment: ${formatStatus(invoiceData.payment_status)}
         </span>
+        ${invoiceData.payment_method ? `
+        <span class="status-badge ${invoiceData.payment_method === 'cash' ? 'status-completed' : 'status-pending'}">
+            Method: ${invoiceData.payment_method === 'cash' ? 'Cash Payment' : 'Online Payment'}
+        </span>
+        ` : ''}
     </div>
 
     <div class="invoice-grid">
@@ -427,10 +440,12 @@ export function generateInvoiceHTML(invoiceData: InvoiceData): string {
             <span><strong>${formatCurrency(invoiceData.subtotal)}</strong></span>
         </div>
         
+        ${invoiceData.payment_method === 'online' && invoiceData.payment_gateway_charge > 0 ? `
         <div class="tax-row">
             <span>Payment Gateway Charge (2%):</span>
             <span><strong>${formatCurrency(invoiceData.payment_gateway_charge)}</strong></span>
         </div>
+        ` : ''}
 
         <div class="tax-row tax-total">
             <span>Total Amount:</span>

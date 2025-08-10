@@ -21,6 +21,7 @@ interface Order {
   customer_address: string | null;
   customer_note: string | null;
   order_type: string;
+  payment_method?: string;
   items: any[];
   total_amount: number;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'served';
@@ -557,7 +558,7 @@ export default function OrdersManagementPage() {
       if ((window as any).addOrderActivity) {
         (window as any).addOrderActivity({
           type: 'new_order',
-          message: `New order received from ${order.customer_name}${order.payment_status === 'completed' ? ' (PAID)' : ''}`,
+          message: `New order received from ${order.customer_name}${order.payment_status === 'completed' ? ` (PAID${order.payment_method ? ` - ${order.payment_method === 'cash' ? 'Cash' : 'Online'}` : ''})` : ''}`,
           orderId: order.unique_order_id,
           customerName: order.customer_name
         });
@@ -712,6 +713,7 @@ export default function OrdersManagementPage() {
           clearInterval(interval);
           setWaitingForPayment(false);
           setPaymentWindow(null);
+          setIsCreatingOrder(false); // Reset creating order state when window is closed
           resolve(false);
           return;
         }
@@ -732,6 +734,7 @@ export default function OrdersManagementPage() {
         if (attempts >= maxAttempts) {
           clearInterval(interval);
           setWaitingForPayment(false);
+          setIsCreatingOrder(false); // Reset creating order state on timeout
           if (paymentWindow) {
             paymentWindow.close();
             setPaymentWindow(null);
@@ -981,11 +984,21 @@ export default function OrdersManagementPage() {
     });
   };
 
-  // Get manual order total
-  const getManualOrderTotal = () => {
+  // Get manual order subtotal (without gateway charges)
+  const getManualOrderSubtotal = () => {
     return manualOrder.items.reduce((total, item) => 
       total + (item.menuItem.price * item.quantity), 0
     );
+  };
+
+  // Get payment gateway charge (2% for online payments)
+  const getManualOrderGatewayCharge = () => {
+    return manualOrder.paymentMethod === 'online' ? getManualOrderSubtotal() * 0.02 : 0;
+  };
+
+  // Get manual order total (subtotal + gateway charges if applicable)
+  const getManualOrderTotal = () => {
+    return getManualOrderSubtotal() + getManualOrderGatewayCharge();
   };
 
   // Update payment status for cash orders
@@ -1550,7 +1563,9 @@ export default function OrdersManagementPage() {
                         {getStatusLabel(order.status)}
                       </span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(order.payment_status)}`}>
-                        {order.payment_status === 'completed' ? 'PAID' : order.payment_status.toUpperCase()}
+                        {order.payment_status === 'completed' 
+                          ? `PAID${order.payment_method ? ` (${order.payment_method === 'cash' ? 'Cash' : 'Online'})` : ''}` 
+                          : order.payment_status.toUpperCase()}
                       </span>
                     </div>
                   </div>  
@@ -1811,11 +1826,12 @@ export default function OrdersManagementPage() {
                           order.payment_status === 'verifying' ? 'bg-blue-100 text-blue-800' :
                           'bg-red-100 text-red-800'
                         }`}>
-                          {order.payment_status === 'completed' ? 'PAID' :
-                           order.payment_status === 'pending' ? 'PENDING' :
-                           order.payment_status === 'verifying' ? 'VERIFYING' :
-                           order.payment_status === 'not_configured' ? 'NOT_CONFIGURED' :
-                           'FAILED'}
+                          {order.payment_status === 'completed' 
+                            ? `PAID${order.payment_method ? ` (${order.payment_method === 'cash' ? 'Cash' : 'Online'})` : ''}` 
+                            : order.payment_status === 'pending' ? 'PENDING' :
+                              order.payment_status === 'verifying' ? 'VERIFYING' :
+                              order.payment_status === 'not_configured' ? 'NOT_CONFIGURED' :
+                              'FAILED'}
                         </span>
                       </div>
                     </div>
@@ -2009,6 +2025,7 @@ export default function OrdersManagementPage() {
                     onClick={() => {
                       setWaitingForPayment(false);
                       setPaymentOrderId(null);
+                      setIsCreatingOrder(false); // Reset the creating order state
                       if (paymentWindow) {
                         paymentWindow.close();
                         setPaymentWindow(null);
@@ -2153,7 +2170,7 @@ export default function OrdersManagementPage() {
                       <div>
                         <p className="text-sm font-medium text-gray-900">Online Payment Selected</p>
                         <p className="text-xs text-gray-600 mt-1">
-                          Customer will need to complete payment online. Order will be pending until payment is confirmed.
+                          Customer will need to complete payment online. A 2% payment gateway charge will be added to the total. Order will be pending until payment is confirmed.
                         </p>
                       </div>
                     </div>
@@ -2212,8 +2229,18 @@ export default function OrdersManagementPage() {
                         <span>₹{(item.menuItem.price * item.quantity).toFixed(2)}</span>
                       </div>
                     ))}
-                    <div className="border-t pt-2 mt-2">
-                      <div className="flex justify-between font-semibold">
+                    <div className="border-t pt-2 mt-2 space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span>Subtotal:</span>
+                        <span>₹{getManualOrderSubtotal().toFixed(2)}</span>
+                      </div>
+                      {manualOrder.paymentMethod === 'online' && getManualOrderGatewayCharge() > 0 && (
+                        <div className="flex justify-between text-sm text-gray-600">
+                          <span>Payment Gateway Charge (2%):</span>
+                          <span>₹{getManualOrderGatewayCharge().toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-semibold pt-1 border-t">
                         <span>Total:</span>
                         <span>₹{getManualOrderTotal().toFixed(2)}</span>
                       </div>

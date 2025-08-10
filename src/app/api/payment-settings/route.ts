@@ -51,7 +51,8 @@ export async function POST(request: NextRequest) {
           cashfree_client_id,
           cashfree_client_secret_encrypted: encryptedSecret,
           cashfree_environment,
-          is_payment_enabled: false
+          is_payment_enabled: false,
+          cash_payment_enabled: false
         }])
         .select()
         .single()
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await supabase
       .from('payment_settings')
-      .select('id, restaurant_id, cashfree_client_id, cashfree_environment, is_payment_enabled, created_at, updated_at')
+      .select('id, restaurant_id, cashfree_client_id, cashfree_environment, is_payment_enabled, cash_payment_enabled, created_at, updated_at')
       .eq('restaurant_id', restaurant_id)
       .single()
 
