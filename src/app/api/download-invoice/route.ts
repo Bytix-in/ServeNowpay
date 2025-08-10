@@ -74,7 +74,14 @@ function generateFallbackInvoice(order: any): string {
   const formatCurrency = (amount: number) => `Rs. ${amount.toFixed(2)}`;
   const formatDate = (dateString: string) => new Date(dateString).toLocaleString('en-IN');
 
-  // No GST calculations - simple total amount
+  // Calculate subtotal from items
+  const subtotal = order.items && order.items.length > 0 
+    ? order.items.reduce((sum: number, item: any) => sum + (item.total || (item.price * item.quantity) || 0), 0)
+    : order.total_amount * (100/102); // Reverse calculate if no items
+  
+  // Calculate payment gateway charge (2%)
+  const paymentGatewayCharge = subtotal * 0.02;
+  
   const totalAmount = order.total_amount;
 
   return `
@@ -226,6 +233,11 @@ function generateFallbackInvoice(order: any): string {
             <span>Subtotal:</span>
             <span>${formatCurrency(subtotal)}</span>
         </div>
+        
+        <div class="tax-row">
+            <span>Payment Gateway Charge (2%):</span>
+            <span>${formatCurrency(paymentGatewayCharge)}</span>
+        </div>
 
         <div class="tax-row tax-total">
             <span>Total Amount:</span>
@@ -234,7 +246,8 @@ function generateFallbackInvoice(order: any): string {
     </div>
 
     <div class="footer">
-        <p><strong>ServeNowPay</strong> - Digital Restaurant Ordering System</p>
+        <p><strong>ServeNow</strong> - Digital Restaurant Ordering System</p>
+        <p>www.servenow.in</p>
         <p>This is a computer-generated invoice.</p>
         <p>Generated on: ${new Date().toLocaleString('en-IN')}</p>
     </div>

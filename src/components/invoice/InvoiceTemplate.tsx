@@ -26,6 +26,7 @@ export interface InvoiceData {
   restaurant_phone?: string;
   restaurant_email?: string;
   subtotal: number;
+  payment_gateway_charge: number;
   items: InvoiceItem[];
 }
 
@@ -161,6 +162,11 @@ export const InvoiceTemplate = React.forwardRef<HTMLDivElement, InvoiceTemplateP
               <span>Subtotal:</span>
               <span className="font-medium">{formatCurrency(data.subtotal)}</span>
             </div>
+            
+            <div className="flex justify-between items-center">
+              <span>Payment Gateway Charge (2%):</span>
+              <span className="font-medium">{formatCurrency(data.payment_gateway_charge)}</span>
+            </div>
 
             <div className="border-t-2 border-purple-600 pt-3 mt-3">
               <div className="flex justify-between items-center text-xl font-bold text-purple-600">
@@ -173,12 +179,12 @@ export const InvoiceTemplate = React.forwardRef<HTMLDivElement, InvoiceTemplateP
 
         {/* Footer */}
         <div className="text-center border-t-2 border-gray-200 pt-6 text-gray-600">
-          <p className="text-lg font-semibold text-purple-600 mb-2">ServeNowPay</p>
+          <p className="text-lg font-semibold text-purple-600 mb-2">ServeNow</p>
           <p className="text-sm">Digital Restaurant Ordering System</p>
+          <p className="text-sm">www.servenow.in</p>
           <p className="text-sm">This is a computer-generated invoice. No signature required.</p>
           <div className="mt-4 text-xs">
             <p>Generated on: {new Date().toLocaleString('en-IN')}</p>
-            <p className="text-purple-600 font-medium">⚡ Fresh Invoice - Generated from order data</p>
           </div>
         </div>
       </div>

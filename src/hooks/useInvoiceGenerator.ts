@@ -1004,6 +1004,12 @@ export const useInvoiceGenerator = (options: UseInvoiceGeneratorOptions = {}) =>
             <span>Subtotal:</span>
             <span><strong>${formatCurrency(invoiceData.subtotal)}</strong></span>
         </div>
+        
+        <div class="tax-row">
+            <span>Payment Gateway Charge (2%):</span>
+            <span><strong>${formatCurrency(invoiceData.payment_gateway_charge || 0)}</strong></span>
+        </div>
+        
         <div class="tax-row tax-total">
             <span>Total Amount:</span>
             <span>${formatCurrency(invoiceData.total_amount)}</span>
@@ -1011,11 +1017,11 @@ export const useInvoiceGenerator = (options: UseInvoiceGeneratorOptions = {}) =>
     </div>
 
     <div class="footer">
-        <p><span class="brand">ServeNowPay</span> - Digital Restaurant Ordering System</p>
+        <p><span class="brand">ServeNow</span> - Digital Restaurant Ordering System</p>
+        <p>www.servenow.in</p>
         <p>This is a computer-generated invoice. No signature required.</p>
         <div class="generated-info">
             <p>Generated on: ${new Date().toLocaleString('en-IN')}</p>
-            <p>⚡ Dynamic Invoice - Generated from immutable order data</p>
         </div>
     </div>
 </body>

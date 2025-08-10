@@ -309,6 +309,18 @@ export default function PublicMenuPage() {
     return cart.reduce((total, item) => total + (item.dish.price * item.quantity), 0)
   }
 
+  const getCartSubtotal = () => {
+    return cart.reduce((total, item) => total + (item.dish.price * item.quantity), 0)
+  }
+
+  const getPaymentGatewayCharge = () => {
+    return getCartSubtotal() * 0.02
+  }
+
+  const getFinalTotal = () => {
+    return getCartSubtotal() + getPaymentGatewayCharge()
+  }
+
   const getCartItemCount = () => {
     return cart.reduce((total, item) => total + item.quantity, 0)
   }
@@ -403,7 +415,7 @@ export default function PublicMenuPage() {
             price: item.dish.price,
             total: item.dish.price * item.quantity
           })),
-          total_amount: getCartTotal()
+          total_amount: getFinalTotal()
         })
       })
 
@@ -877,7 +889,7 @@ export default function PublicMenuPage() {
               </div>
               <div className="flex items-center bg-white/20 px-3 py-2 rounded-xl">
                 <IndianRupee className="w-5 h-5" />
-                <span className="text-lg font-bold">{getCartTotal().toFixed(2)}</span>
+                <span className="text-lg font-bold">{getFinalTotal().toFixed(2)}</span>
               </div>
             </motion.button>
           </motion.div>
@@ -990,11 +1002,27 @@ export default function PublicMenuPage() {
 
             {/* Cart Footer - Fixed */}
             <div className="p-4 border-t bg-gray-50 flex-shrink-0">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-lg font-semibold">Total:</span>
-                <div className="flex items-center text-purple-600 font-bold text-xl">
-                  <IndianRupee className="w-5 h-5" />
-                  <span>{getCartTotal().toFixed(2)}</span>
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Subtotal:</span>
+                  <div className="flex items-center text-gray-900">
+                    <IndianRupee className="w-4 h-4" />
+                    <span>{getCartSubtotal().toFixed(2)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Payment Gateway Charge (2%):</span>
+                  <div className="flex items-center text-gray-900">
+                    <IndianRupee className="w-4 h-4" />
+                    <span>{getPaymentGatewayCharge().toFixed(2)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <span className="text-lg font-semibold">Total:</span>
+                  <div className="flex items-center text-purple-600 font-bold text-xl">
+                    <IndianRupee className="w-5 h-5" />
+                    <span>{getFinalTotal().toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
               
@@ -1210,11 +1238,27 @@ export default function PublicMenuPage() {
                     </div>
                   </div>
                 ))}
-                <div className="border-t pt-2 mt-2 flex justify-between font-semibold">
-                  <span>Total:</span>
-                  <div className="flex items-center text-purple-600">
-                    <IndianRupee className="w-4 h-4" />
-                    <span>{getCartTotal().toFixed(2)}</span>
+                <div className="border-t pt-2 mt-2 space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal:</span>
+                    <div className="flex items-center">
+                      <IndianRupee className="w-3 h-3" />
+                      <span>{getCartSubtotal().toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Payment Gateway Charge (2%):</span>
+                    <div className="flex items-center">
+                      <IndianRupee className="w-3 h-3" />
+                      <span>{getPaymentGatewayCharge().toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between font-semibold pt-1 border-t">
+                    <span>Total:</span>
+                    <div className="flex items-center text-purple-600">
+                      <IndianRupee className="w-4 h-4" />
+                      <span>{getFinalTotal().toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
                 </div>

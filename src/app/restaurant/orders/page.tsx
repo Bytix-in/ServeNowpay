@@ -125,8 +125,17 @@ export default function OrdersManagementPage() {
       // Generate and print invoice using the same rich template
       const printWindow = window.open('', '_blank');
       if (!printWindow) {
-        throw new Error('Could not open print window. Please allow popups.');
+        throw new Error('Could not open print window. Please allow popups and try again.');
       }
+
+      // Add error handler for the print window
+      printWindow.onerror = (error) => {
+        console.error('Print window error:', error);
+        setPrintError('Print window encountered an error');
+        if (printWindow && !printWindow.closed) {
+          printWindow.close();
+        }
+      };
 
       // Use the same rich HTML template as the invoice modal
       const formatCurrency = (amount: number): string => `₹${amount.toFixed(2)}`;
@@ -408,6 +417,12 @@ export default function OrdersManagementPage() {
             <span>Subtotal:</span>
             <span><strong>${formatCurrency(invoiceData.subtotal)}</strong></span>
         </div>
+        
+        <div class="tax-row">
+            <span>Payment Gateway Charge (2%):</span>
+            <span><strong>${formatCurrency(invoiceData.payment_gateway_charge || 0)}</strong></span>
+        </div>
+        
         <div class="tax-row tax-total">
             <span>Total Amount:</span>
             <span>${formatCurrency(invoiceData.total_amount)}</span>
@@ -415,30 +430,94 @@ export default function OrdersManagementPage() {
     </div>
 
     <div class="footer">
-        <p><span class="brand">ServeNowPay</span> - Digital Restaurant Ordering System</p>
+        <p><span class="brand">ServeNow</span> - Digital Restaurant Ordering System</p>
+        <p>www.servenow.in</p>
         <p>This is a computer-generated invoice. No signature required.</p>
         <div class="generated-info">
             <p>Generated on: ${new Date().toLocaleString('en-IN')}</p>
-            <p>⚡ Dynamic Invoice - Generated from immutable order data</p>
         </div>
     </div>
 </body>
 </html>`;
 
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      
-      // Wait for content to load then print
-      printWindow.onload = () => {
-        setTimeout(() => {
-          printWindow.print();
+      try {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+      } catch (writeError) {
+        console.error('Error writing to print window:', writeError);
+        if (printWindow && !printWindow.closed) {
           printWindow.close();
-        }, 500);
+        }
+        throw new Error('Failed to prepare invoice for printing');
+      }
+      
+      // Wait for content to load then print with better error handling
+      const handlePrint = () => {
+        try {
+          if (printWindow && !printWindow.closed) {
+            printWindow.print();
+            setTimeout(() => {
+              if (printWindow && !printWindow.closed) {
+                printWindow.close();
+              }
+            }, 1000);
+          }
+        } catch (printError) {
+          console.error('Print error:', printError);
+          if (printWindow && !printWindow.closed) {
+            printWindow.close();
+          }
+        }
       };
+
+      // Set up a timeout to prevent hanging
+      const printTimeout = setTimeout(() => {
+        console.warn('Print operation timed out');
+        if (printWindow && !printWindow.closed) {
+          printWindow.close();
+        }
+      }, 10000); // 10 second timeout
+
+      const executePrint = () => {
+        clearTimeout(printTimeout);
+        handlePrint();
+      };
+
+      if (printWindow.document.readyState === 'complete') {
+        setTimeout(executePrint, 500);
+      } else {
+        printWindow.onload = () => {
+          setTimeout(executePrint, 500);
+        };
+        
+        // Fallback in case onload doesn't fire
+        setTimeout(() => {
+          if (printWindow && !printWindow.closed && printWindow.document.readyState !== 'complete') {
+            console.warn('Print window load timeout, attempting print anyway');
+            executePrint();
+          }
+        }, 5000);
+      }
 
     } catch (error) {
       setPrintError(error instanceof Error ? error.message : 'Failed to print invoice');
       alert(`Failed to print invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Cleanup: close any open print windows
+      try {
+        const printWindows = Array.from(window.frames);
+        printWindows.forEach((frame) => {
+          try {
+            if (frame && !frame.closed) {
+              frame.close();
+            }
+          } catch (closeError) {
+            // Ignore close errors
+          }
+        });
+      } catch (cleanupError) {
+        // Ignore cleanup errors
+      }
     } finally {
       setIsPrintingInvoice(false);
     }

@@ -36,6 +36,7 @@ export interface InvoiceData {
   restaurant_phone?: string
   restaurant_email?: string
   subtotal: number
+  payment_gateway_charge: number
   items: OrderItemData[]
 }
 
@@ -120,9 +121,14 @@ export async function fetchInvoiceData(orderId: string): Promise<InvoiceData> {
       }
     }
 
-    // Calculate tax breakdown dynamically
+    // Calculate subtotal from order items
+    const subtotal = items.reduce((sum, item) => sum + item.total_price, 0)
+    
+    // Calculate payment gateway charge (2%)
+    const paymentGatewayCharge = subtotal * 0.02
+    
+    // Total amount should be subtotal + payment gateway charge
     const totalAmount = order.total_amount
-    const subtotal = totalAmount // No GST calculation, subtotal equals total
 
     return {
       order_id: order.id,
@@ -139,6 +145,7 @@ export async function fetchInvoiceData(orderId: string): Promise<InvoiceData> {
       restaurant_phone: order.restaurants?.phone_number,
       restaurant_email: order.restaurants?.email,
       subtotal,
+      payment_gateway_charge: paymentGatewayCharge,
       items
     }
 
@@ -419,6 +426,11 @@ export function generateInvoiceHTML(invoiceData: InvoiceData): string {
             <span>Subtotal:</span>
             <span><strong>${formatCurrency(invoiceData.subtotal)}</strong></span>
         </div>
+        
+        <div class="tax-row">
+            <span>Payment Gateway Charge (2%):</span>
+            <span><strong>${formatCurrency(invoiceData.payment_gateway_charge)}</strong></span>
+        </div>
 
         <div class="tax-row tax-total">
             <span>Total Amount:</span>
@@ -427,11 +439,11 @@ export function generateInvoiceHTML(invoiceData: InvoiceData): string {
     </div>
 
     <div class="footer">
-        <p><span class="brand">ServeNowPay</span> - Digital Restaurant Ordering System</p>
+        <p><span class="brand">ServeNow</span> - Digital Restaurant Ordering System</p>
+        <p>www.servenow.in</p>
         <p>This is a computer-generated invoice. No signature required.</p>
         <div class="generated-info">
             <p>Generated on: ${new Date().toLocaleString('en-IN')}</p>
-            <p>⚡ Dynamic Invoice - Generated from immutable order data</p>
         </div>
     </div>
 </body>
