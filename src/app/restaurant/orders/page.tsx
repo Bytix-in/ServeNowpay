@@ -21,6 +21,7 @@ interface Order {
   customer_address: string | null;
   customer_note: string | null;
   order_type: string;
+  payment_method?: string;
   items: any[];
   total_amount: number;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'served';
@@ -557,7 +558,7 @@ export default function OrdersManagementPage() {
       if ((window as any).addOrderActivity) {
         (window as any).addOrderActivity({
           type: 'new_order',
-          message: `New order received from ${order.customer_name}${order.payment_status === 'completed' ? ' (PAID)' : ''}`,
+          message: `New order received from ${order.customer_name}${order.payment_status === 'completed' ? ` (PAID${order.payment_method ? ` - ${order.payment_method === 'cash' ? 'Cash' : 'Online'}` : ''})` : ''}`,
           orderId: order.unique_order_id,
           customerName: order.customer_name
         });
@@ -1550,7 +1551,9 @@ export default function OrdersManagementPage() {
                         {getStatusLabel(order.status)}
                       </span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(order.payment_status)}`}>
-                        {order.payment_status === 'completed' ? 'PAID' : order.payment_status.toUpperCase()}
+                        {order.payment_status === 'completed' 
+                          ? `PAID${order.payment_method ? ` (${order.payment_method === 'cash' ? 'Cash' : 'Online'})` : ''}` 
+                          : order.payment_status.toUpperCase()}
                       </span>
                     </div>
                   </div>  
@@ -1811,11 +1814,12 @@ export default function OrdersManagementPage() {
                           order.payment_status === 'verifying' ? 'bg-blue-100 text-blue-800' :
                           'bg-red-100 text-red-800'
                         }`}>
-                          {order.payment_status === 'completed' ? 'PAID' :
-                           order.payment_status === 'pending' ? 'PENDING' :
-                           order.payment_status === 'verifying' ? 'VERIFYING' :
-                           order.payment_status === 'not_configured' ? 'NOT_CONFIGURED' :
-                           'FAILED'}
+                          {order.payment_status === 'completed' 
+                            ? `PAID${order.payment_method ? ` (${order.payment_method === 'cash' ? 'Cash' : 'Online'})` : ''}` 
+                            : order.payment_status === 'pending' ? 'PENDING' :
+                              order.payment_status === 'verifying' ? 'VERIFYING' :
+                              order.payment_status === 'not_configured' ? 'NOT_CONFIGURED' :
+                              'FAILED'}
                         </span>
                       </div>
                     </div>

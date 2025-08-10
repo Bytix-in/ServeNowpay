@@ -25,6 +25,7 @@ interface OrderDetails {
   total_amount: number
   status: string
   payment_status: string
+  payment_method?: string
   unique_order_id: string | null
   created_at: string
   restaurant?: {
@@ -543,6 +544,18 @@ function PaymentSuccessContent() {
                           order.payment_status}
                 </span>
               </div>
+              {order.payment_method && (
+                <div className="flex justify-between items-center text-sm text-gray-600">
+                  <span>Payment Method</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    order.payment_method === 'cash' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {order.payment_method === 'cash' ? '💵 Cash' : '💳 Online'}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between items-center text-sm text-gray-600">
                 <span>Order Time</span>
                 <span>{formatDate(order.created_at)}</span>
