@@ -89,16 +89,12 @@ export default function AdminLayout({
       <aside className="w-64 bg-white border-r flex flex-col h-screen fixed">
         {/* Logo and title */}
         <div className="p-6 border-b">
-          <div className="flex items-center gap-5">
+          <div className="flex items-center justify-center">
             <img 
-              src="/servenow-white.svg" 
+              src="/Logo-White2.png" 
               alt="ServeNow Logo" 
               className="w-14 h-14"
             />
-            <div>
-              <h1 className="font-bold text-2xl text-gray-900">ServeNow Admin</h1>
-              <p className="text-gray-600 text-base">Management Portal</p>
-            </div>
           </div>
         </div>
 
