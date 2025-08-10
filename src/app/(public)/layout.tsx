@@ -68,12 +68,14 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             <nav className="flex items-center justify-between">
               {/* Logo */}
               <div className="flex items-center">
-                <img
-                  src="/logo-black.png"
-                  alt="ServeNow Logo"
-                  className={`transition-all duration-300 ease-out ${scrolled ? 'w-12 h-12' : 'w-16 h-16'
-                    }`}
-                />
+                <Link href="/" className="cursor-pointer">
+                  <img
+                    src="/logo-black.png"
+                    alt="ServeNow Logo"
+                    className={`transition-all duration-300 ease-out hover:opacity-80 ${scrolled ? 'w-12 h-12' : 'w-16 h-16'
+                      }`}
+                  />
+                </Link>
               </div>
 
               {/* Navigation Links */}
