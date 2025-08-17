@@ -90,7 +90,7 @@ export default function Footer() {
               {/* Social Media Links */}
               <div className="grid grid-cols-2 gap-4">
                 <a 
-                  href="https://instagram.com/servenow" 
+                  href="https://www.instagram.com/servenow.in?igsh=MWdydTE0dndpdGN1dQ==" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center space-x-3 p-3 bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors duration-200 group"
@@ -100,7 +100,7 @@ export default function Footer() {
                 </a>
                 
                 <a 
-                  href="https://x.com/servenow" 
+                  href="https://www.instagram.com/servenow.in?igsh=MWdydTE0dndpdGN1dQ==" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center space-x-3 p-3 bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors duration-200 group"
@@ -110,7 +110,7 @@ export default function Footer() {
                 </a>
                 
                 <a 
-                  href="https://linkedin.com/company/servenow" 
+                  href="https://www.linkedin.com/company/servenow-in/" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center space-x-3 p-3 bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors duration-200 group"
@@ -120,7 +120,7 @@ export default function Footer() {
                 </a>
                 
                 <a 
-                  href="https://youtube.com/@servenow" 
+                  href="https://youtube.com/@servenow-t5k7h?si=pa83E7a3UjyP4MX_" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center space-x-3 p-3 bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors duration-200 group"
@@ -130,7 +130,7 @@ export default function Footer() {
                 </a>
                 
                 <a 
-                  href="https://facebook.com/servenow" 
+                  href="https://facebook.com/" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center space-x-3 p-3 bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors duration-200 group col-span-2"
